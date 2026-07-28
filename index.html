@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tra cứu vào lớp - Khóa học bắt đáy</title>
+</head>
+<body>
+<section id="app">
+  <div class="card">
+    <h1 id="pageTitle">Tra cứu thông tin vào room</h1>
+    <p class="subtitle" id="pageSubtitle">Chọn lớp học bạn đang tham gia và nhập thông tin để tra cứu</p>
+
+    <div class="field">
+      <label for="courseSelect">Chọn lớp học tham gia</label>
+      <select id="courseSelect"></select>
+    </div>
+
+    <div class="field">
+      <label for="q" id="qLabel">Nhập thông tin đã đăng ký</label>
+      <input id="q" type="text" inputmode="text" placeholder="Nhập thông tin cần tra cứu" autocomplete="off">
+    </div>
+    <button id="btnSearch" class="btn-primary">Tra cứu</button>
+
+    <div id="loading" class="hidden">Đang tra cứu...</div>
+
+    <div id="resultOk" class="result ok hidden">
+      <div class="label">Tên vào Zoom (đổi tên hiển thị của bạn thành đúng dòng này):</div>
+      <div id="zoomName" class="zoom-name"></div>
+      <button id="btnCopy" class="btn-secondary">Sao chép tên</button>
+
+      <div class="info-row"><span>Meeting ID</span><b id="meetingId"></b></div>
+      <div class="info-row"><span>Passcode</span><b id="passcode"></b></div>
+
+      <a id="btnJoin" class="btn-join" href="#" target="_blank" rel="noopener noreferrer">Vào phòng Zoom (đã gắn sẵn tên)</a>
+      <div class="fallback-link-wrap">
+        <span class="fallback-label">Nếu bấm nút trên không vào được, chạm giữ hoặc chép link này rồi dán vào trình duyệt:</span>
+        <a id="btnJoinFallback" class="fallback-link" href="#" target="_blank" rel="noopener noreferrer"></a>
+      </div>
+      <div class="note">Nếu Zoom mở bằng app cài sẵn, tên có thể không tự điền — hãy tự đổi tên hiển thị (Rename) đúng như dòng trên để được duyệt vào phòng nhanh nhất.</div>
+    </div>
+
+    <div id="resultAmbiguous" class="result warn hidden">
+      <div class="label">Có nhiều người trùng thông tin này, vui lòng chọn đúng tên của bạn:</div>
+      <div id="candidateList" class="candidate-list"></div>
+    </div>
+
+    <div id="resultNotFound" class="result err hidden">
+      Không tìm thấy thông tin phù hợp. Vui lòng kiểm tra lại STK/SĐT đã nhập, hoặc liên hệ trợ lý lớp học để được hỗ trợ.
+    </div>
+
+    <div id="resultError" class="result err hidden">
+      Có lỗi xảy ra, vui lòng thử lại sau.
+    </div>
+  </div>
+</section>
+
+<style>
+:root{
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --ink:#1a2233;
+  --muted:#5b6478;
+  --brand:#2451e0;
+  --brand-dark:#1a3ba8;
+  --ok-bg:#eafbf1;
+  --ok-border:#1fa971;
+  --ok-ink:#0d6b45;
+  --warn-bg:#fff8e8;
+  --warn-border:#e0a125;
+  --err-bg:#fdeef0;
+  --err-border:#d64550;
+  --radius:16px;
+  --shadow:0 8px 30px rgba(20,30,60,0.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1420;
+    --card:#181f30;
+    --ink:#eef1f8;
+    --muted:#9aa4bd;
+    --ok-bg:#0f2a1e;
+    --warn-bg:#2b230c;
+    --err-bg:#2c1418;
+    --shadow:0 8px 30px rgba(0,0,0,0.4);
+  }
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:32px 16px;
+}
+.card{
+  width:100%;
+  max-width:440px;
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:28px 24px 32px;
+}
+h1{
+  font-size:22px;
+  line-height:1.3;
+  margin:0 0 2px;
+  font-weight:800;
+  color:var(--brand);
+}
+.subtitle{
+  margin:0 0 22px;
+  color:var(--muted);
+  font-size:14px;
+  font-weight:600;
+}
+.field label{
+  display:block;
+  font-size:13.5px;
+  font-weight:700;
+  margin-bottom:8px;
+  color:var(--ink);
+}
+#q{
+  width:100%;
+  padding:14px 14px;
+  font-size:17px;
+  border-radius:10px;
+  border:2px solid #dde2ee;
+  background:transparent;
+  color:var(--ink);
+  outline:none;
+  transition:border-color .15s ease;
+}
+#q:focus{border-color:var(--brand);}
+#courseSelect{
+  width:100%;
+  padding:14px 14px;
+  font-size:16px;
+  border-radius:10px;
+  border:2px solid #dde2ee;
+  background:var(--card);
+  color:var(--ink);
+  outline:none;
+}
+#courseSelect:focus{border-color:var(--brand);}
+.btn-primary{
+  width:100%;
+  margin-top:14px;
+  padding:15px;
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+  background:var(--brand);
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  transition:background .15s ease, transform .05s ease;
+}
+.btn-primary:hover{background:var(--brand-dark);}
+.btn-primary:active{transform:scale(0.98);}
+.btn-primary:disabled{opacity:0.6;cursor:default;}
+#loading{
+  margin-top:18px;
+  font-size:14px;
+  color:var(--muted);
+  text-align:center;
+}
+.hidden{display:none !important;}
+.result{
+  margin-top:20px;
+  padding:18px;
+  border-radius:12px;
+  border:1.5px solid transparent;
+  font-size:14.5px;
+  line-height:1.55;
+}
+.result.ok{background:var(--ok-bg);border-color:var(--ok-border);}
+.result.warn{background:var(--warn-bg);border-color:var(--warn-border);}
+.result.err{background:var(--err-bg);border-color:var(--err-border);color:var(--ink);}
+.result .label{font-weight:700;margin-bottom:8px;color:var(--muted);font-size:13px;}
+.zoom-name{
+  font-size:19px;
+  font-weight:800;
+  color:var(--ok-ink);
+  background:rgba(255,255,255,0.6);
+  border-radius:8px;
+  padding:10px 12px;
+  word-break:break-word;
+}
+@media (prefers-color-scheme: dark){ .zoom-name{background:rgba(255,255,255,0.06);} }
+.btn-secondary{
+  margin-top:10px;
+  padding:9px 14px;
+  font-size:13px;
+  font-weight:700;
+  background:transparent;
+  border:1.5px solid var(--ok-border);
+  color:var(--ok-ink);
+  border-radius:8px;
+  cursor:pointer;
+}
+.btn-secondary.copied{background:var(--ok-border);color:#fff;}
+.info-row{
+  display:flex;
+  justify-content:space-between;
+  margin-top:14px;
+  padding-top:10px;
+  border-top:1px dashed rgba(0,0,0,0.12);
+  font-size:14px;
+}
+.info-row span{color:var(--muted);}
+.btn-join{
+  display:block;
+  text-align:center;
+  margin-top:16px;
+  padding:14px;
+  background:var(--ok-border);
+  color:#fff;
+  font-weight:800;
+  border-radius:10px;
+  text-decoration:none;
+  font-size:15px;
+}
+.note{margin-top:12px;font-size:12.5px;color:var(--muted);}
+.fallback-link-wrap{margin-top:10px;padding:10px;border-radius:8px;background:rgba(0,0,0,0.04);}
+@media (prefers-color-scheme: dark){ .fallback-link-wrap{background:rgba(255,255,255,0.05);} }
+.fallback-label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;}
+.fallback-link{display:block;font-size:12.5px;word-break:break-all;color:var(--brand);text-decoration:underline;}
+.candidate-list{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+.candidate-btn{
+  padding:12px;
+  border-radius:8px;
+  border:1.5px solid var(--warn-border);
+  background:rgba(255,255,255,0.5);
+  color:var(--ink);
+  text-align:left;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+}
+@media (prefers-color-scheme: dark){ .candidate-btn{background:rgba(255,255,255,0.05);} }
+.candidate-btn:hover{border-color:var(--brand);}
+</style>
+
+<script>
+(function(){
+  const SUPABASE_URL = "https://tvhzojcfycbikxkenhev.supabase.co";
+  const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2aHpvamNmeWNiaWt4a2VuaGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMjMzMzAsImV4cCI6MjEwMDY5OTMzMH0.-_hvVaUqsArDZcHHkv_5y0HSWNQuezyeYNTrzXEfmpU";
+  let COURSE_SLUG = new URLSearchParams(window.location.search).get('course') || null;
+  let coursesList = [];
+
+  const els = {
+    pageTitle: document.getElementById('pageTitle'),
+    pageSubtitle: document.getElementById('pageSubtitle'),
+    qLabel: document.getElementById('qLabel'),
+    courseSelect: document.getElementById('courseSelect'),
+    q: document.getElementById('q'),
+    btnSearch: document.getElementById('btnSearch'),
+    loading: document.getElementById('loading'),
+    resultOk: document.getElementById('resultOk'),
+    resultAmbiguous: document.getElementById('resultAmbiguous'),
+    resultNotFound: document.getElementById('resultNotFound'),
+    resultError: document.getElementById('resultError'),
+    zoomName: document.getElementById('zoomName'),
+    meetingId: document.getElementById('meetingId'),
+    passcode: document.getElementById('passcode'),
+    btnJoin: document.getElementById('btnJoin'),
+    btnJoinFallback: document.getElementById('btnJoinFallback'),
+    btnCopy: document.getElementById('btnCopy'),
+    candidateList: document.getElementById('candidateList'),
+  };
+
+  function hideAll(){
+    els.loading.classList.add('hidden');
+    els.resultOk.classList.add('hidden');
+    els.resultAmbiguous.classList.add('hidden');
+    els.resultNotFound.classList.add('hidden');
+    els.resultError.classList.add('hidden');
+  }
+
+  function showOk(data){
+    hideAll();
+    els.zoomName.textContent = data.zoom_name;
+    els.meetingId.textContent = data.meeting_id;
+    els.passcode.textContent = data.passcode;
+    const joinUrl = data.meeting_link + "&uname=" + encodeURIComponent(data.zoom_name);
+    els.btnJoin.href = joinUrl;
+    els.btnJoin.dataset.url = joinUrl;
+    els.btnJoinFallback.href = joinUrl;
+    els.btnJoinFallback.textContent = joinUrl;
+    els.resultOk.classList.remove('hidden');
+  }
+
+  async function rpc(fn, body){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${ANON_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if(!res.ok) throw new Error('http_error');
+    return res.json();
+  }
+
+  async function doSearch(){
+    const q = els.q.value.trim();
+    if(!q) return;
+    if(!COURSE_SLUG){ hideAll(); els.resultError.classList.remove('hidden'); return; }
+    hideAll();
+    els.loading.classList.remove('hidden');
+    els.btnSearch.disabled = true;
+    try{
+      const data = await rpc('lookup_course_info', { p_course_slug: COURSE_SLUG, p_query: q });
+      hideAll();
+      if(data.status === 'ok'){
+        showOk(data);
+      } else if(data.status === 'ambiguous'){
+        els.candidateList.innerHTML = '';
+        (data.candidates || []).forEach(c => {
+          const b = document.createElement('button');
+          b.className = 'candidate-btn';
+          b.textContent = `${c.stt}. ${c.full_name}`;
+          b.addEventListener('click', async () => {
+            hideAll();
+            els.loading.classList.remove('hidden');
+            try{
+              const confirmed = await rpc('confirm_course_info', { p_course_slug: COURSE_SLUG, p_stt: c.stt, p_query: q });
+              hideAll();
+              if(confirmed.status === 'ok'){ showOk(confirmed); }
+              else { els.resultNotFound.classList.remove('hidden'); }
+            }catch(e){ hideAll(); els.resultError.classList.remove('hidden'); }
+          });
+          els.candidateList.appendChild(b);
+        });
+        els.resultAmbiguous.classList.remove('hidden');
+      } else {
+        els.resultNotFound.classList.remove('hidden');
+      }
+    }catch(e){
+      hideAll();
+      els.resultError.classList.remove('hidden');
+    }finally{
+      els.btnSearch.disabled = false;
+    }
+  }
+
+  els.btnSearch.addEventListener('click', doSearch);
+  els.q.addEventListener('keydown', (e) => { if(e.key === 'Enter') doSearch(); });
+
+  function applyCourseLabel(){
+    const c = coursesList.find(x => x.slug === COURSE_SLUG);
+    if(c){ els.qLabel.textContent = `Nhập ${c.search_label} đã đăng ký`; }
+  }
+
+  els.courseSelect.addEventListener('change', () => {
+    COURSE_SLUG = els.courseSelect.value;
+    applyCourseLabel();
+    hideAll();
+    els.q.value = '';
+  });
+
+  (async function initCourses(){
+    try{
+      const data = await rpc('list_courses_public', {});
+      if(data.status === 'ok'){
+        coursesList = data.courses || [];
+        els.courseSelect.innerHTML = '';
+        coursesList.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.slug;
+          opt.textContent = c.name;
+          els.courseSelect.appendChild(opt);
+        });
+        if(!COURSE_SLUG || !coursesList.some(c => c.slug === COURSE_SLUG)){
+          COURSE_SLUG = coursesList.length ? coursesList[0].slug : null;
+        }
+        els.courseSelect.value = COURSE_SLUG;
+        applyCourseLabel();
+      }
+    }catch(e){ /* keep defaults if this fails */ }
+  })();
+
+  els.btnJoin.addEventListener('click', function(e){
+    // Plain native anchor navigation only — no window.open()/top.location tricks.
+    // Those get blocked unpredictably on iOS Safari when the page is wrapped in
+    // another site's iframe (e.g. Send.co). A real <a target="_blank"> click is
+    // the most compatible path across iOS/Android/desktop; the visible fallback
+    // link below covers the rare case even that is blocked.
+  });
+
+  els.btnCopy.addEventListener('click', () => {
+    const text = els.zoomName.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      els.btnCopy.textContent = 'Đã sao chép';
+      els.btnCopy.classList.add('copied');
+      setTimeout(() => { els.btnCopy.textContent = 'Sao chép tên'; els.btnCopy.classList.remove('copied'); }, 1800);
+    });
+  });
+})();
+</script>
+</body>
+</html>
