@@ -31,7 +31,14 @@
         <div class="field wide"><label>Lớp đang quản lý</label>
           <select id="courseSelect"></select>
         </div>
+        <div class="field wide"><label>Tên lớp</label><input id="c_name" type="text"></div>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+        <button id="btnSaveCourseName" class="btn-secondary">Lưu tên lớp</button>
+        <button id="btnSetDefault" class="btn-secondary">Đặt làm lớp mặc định</button>
+        <span id="defaultBadge" class="muted small"></span>
+      </div>
+      <p class="muted small" style="margin:0 0 14px;">Lớp mặc định là lớp tự hiện lên khi ai đó mở link tra cứu mà không kèm ?course= (link chung bạn gửi cho mọi người).</p>
       <button id="btnToggleNewCourse" class="btn-ghost">+ Thêm lớp mới</button>
       <div id="newCourseForm" class="grid hidden" style="margin-top:14px;">
         <div class="field"><label>Mã lớp (slug, không dấu, vd: nvt2)</label><input id="nc_slug" type="text"></div>
@@ -75,6 +82,14 @@
         <span id="pageInfo" class="muted"></span>
         <button id="btnNext" class="btn-ghost">Sau &rarr;</button>
       </div>
+    </div>
+
+    <div class="panel">
+      <h2>Import danh sách học viên từ Excel</h2>
+      <p class="muted small">File cần đúng thứ tự cột: STT, Họ và tên, Mã tra cứu chính, Mã tra cứu phụ (để trống nếu không có), Tên vào Zoom. Dòng đầu tiên (tiêu đề) sẽ tự bị bỏ qua. Học viên trùng STT với người đã có trong lớp sẽ được cập nhật đè lên, không trùng thì được thêm mới.</p>
+      <input id="importFile" type="file" accept=".xlsx,.xls,.csv">
+      <button id="btnImport" class="btn-primary" style="margin-top:12px;">Nhập danh sách vào lớp đang chọn</button>
+      <div id="importStatus" class="muted small" style="margin-top:10px;"></div>
     </div>
 
     <div class="panel">
@@ -160,6 +175,7 @@ td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px 
 .pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:14px;}
 </style>
 
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script>
 (function(){
   const SUPABASE_URL = "https://tvhzojcfycbikxkenhev.supabase.co";
@@ -171,10 +187,24 @@ td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px 
   let currentTotal = 0;
   let courses = [];
   let currentCourseSlug = null;
+  let defaultCourseSlug = null;
 
   const el = (id) => document.getElementById(id);
 
   function currentCourse(){ return courses.find(c => c.slug === currentCourseSlug); }
+
+  async function refreshDefaultCourse(){
+    try{
+      const data = await rpc('list_courses_public', {});
+      if(data.status === 'ok'){ defaultCourseSlug = data.default_course_slug; }
+    }catch(e){ /* ignore */ }
+    updateDefaultBadge();
+  }
+
+  function updateDefaultBadge(){
+    const c = currentCourse();
+    el('defaultBadge').textContent = (c && c.slug === defaultCourseSlug) ? 'Đây đang là lớp mặc định' : '';
+  }
 
   function populateCourseSelect(){
     const sel = el('courseSelect');
@@ -194,8 +224,89 @@ td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px 
     el('s_link').value = c.meeting_link || '';
     el('s_id').value = c.meeting_id || '';
     el('s_pass').value = c.passcode || '';
+    el('c_name').value = c.name || '';
     el('thKey1').textContent = c.search_label || 'Mã tra cứu chính';
     el('eKey1Label').textContent = c.search_label || 'Mã tra cứu chính';
+    updateDefaultBadge();
+  }
+
+  async function saveCourseName(){
+    const c = currentCourse();
+    if(!c) return;
+    const name = el('c_name').value.trim();
+    if(!name){ toast('Cần nhập tên lớp', true); return; }
+    try{
+      const data = await rpc('admin_update_course', {
+        p_password: ADMIN_PW,
+        p_course_slug: currentCourseSlug,
+        p_meeting_link: c.meeting_link || '',
+        p_meeting_id: c.meeting_id || '',
+        p_passcode: c.passcode || '',
+        p_name: name,
+      });
+      if(data.status === 'ok'){ toast('Đã lưu tên lớp'); await refreshCourses(); populateCourseSelect(); }
+      else toast('Không lưu được: ' + data.status, true);
+    }catch(e){ toast('Lỗi kết nối', true); }
+  }
+
+  async function setDefaultCourse(){
+    if(!currentCourseSlug) return;
+    try{
+      const data = await rpc('admin_set_default_course', { p_password: ADMIN_PW, p_course_slug: currentCourseSlug });
+      if(data.status === 'ok'){ toast('Đã đặt làm lớp mặc định'); defaultCourseSlug = currentCourseSlug; updateDefaultBadge(); }
+      else toast('Không đặt được: ' + data.status, true);
+    }catch(e){ toast('Lỗi kết nối', true); }
+  }
+
+  async function importExcel(){
+    const fileInput = el('importFile');
+    const file = fileInput.files && fileInput.files[0];
+    if(!file){ toast('Chọn file trước đã', true); return; }
+    if(!currentCourseSlug){ toast('Chưa chọn lớp', true); return; }
+    el('importStatus').textContent = 'Đang đọc file...';
+    try{
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+      const students = [];
+      for(let i = 1; i < rows.length; i++){
+        const r = rows[i];
+        if(!r || r.length === 0) continue;
+        const sttRaw = String(r[0] || '').trim();
+        if(!sttRaw) continue;
+        const stt = parseInt(sttRaw, 10);
+        if(!stt) continue;
+        students.push({
+          stt,
+          full_name: String(r[1] || '').trim(),
+          search_key1: String(r[2] || '').trim(),
+          search_key2: String(r[3] || '').trim(),
+          zoom_name: String(r[4] || '').trim(),
+        });
+      }
+      if(students.length === 0){ el('importStatus').textContent = ''; toast('Không đọc được dòng nào hợp lệ trong file', true); return; }
+      el('importStatus').textContent = `Đang nhập ${students.length} dòng vào lớp...`;
+      const result = await rpc('admin_bulk_upsert_course_students', {
+        p_password: ADMIN_PW,
+        p_course_slug: currentCourseSlug,
+        p_students: students,
+      });
+      if(result.status === 'ok'){
+        toast(`Đã nhập ${result.imported} học viên`);
+        el('importStatus').textContent = `Đã nhập ${result.imported} / ${students.length} dòng đọc được từ file.`;
+        fileInput.value = '';
+        await refreshCourses(); populateCourseSelect();
+        page = 0; currentSearch = ''; el('search').value = '';
+        loadStudents();
+      } else {
+        el('importStatus').textContent = '';
+        toast('Nhập thất bại: ' + (result.message || result.status), true);
+      }
+    }catch(e){
+      el('importStatus').textContent = '';
+      toast('Không đọc được file, kiểm tra lại định dạng (.xlsx/.xls/.csv)', true);
+    }
   }
 
   async function refreshCourses(){
@@ -235,6 +346,7 @@ td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px 
       currentCourseSlug = courses.length ? courses[0].slug : null;
       populateCourseSelect();
       applyCourseToSettingsForm();
+      await refreshDefaultCourse();
       el('gate').classList.add('hidden');
       el('dashboard').classList.remove('hidden');
       loadStudents();
@@ -384,6 +496,9 @@ td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px 
   });
   el('btnToggleNewCourse').addEventListener('click', () => el('newCourseForm').classList.toggle('hidden'));
   el('btnCreateCourse').addEventListener('click', createCourse);
+  el('btnSaveCourseName').addEventListener('click', saveCourseName);
+  el('btnSetDefault').addEventListener('click', setDefaultCourse);
+  el('btnImport').addEventListener('click', importExcel);
   el('btnSearch').addEventListener('click', () => { currentSearch = el('search').value.trim(); page = 0; loadStudents(); });
   el('search').addEventListener('keydown', (e) => { if(e.key === 'Enter'){ currentSearch = el('search').value.trim(); page = 0; loadStudents(); } });
   el('btnPrev').addEventListener('click', () => { if(page > 0){ page--; loadStudents(); } });

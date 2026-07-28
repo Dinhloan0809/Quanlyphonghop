@@ -380,7 +380,10 @@ h1{
           els.courseSelect.appendChild(opt);
         });
         if(!COURSE_SLUG || !coursesList.some(c => c.slug === COURSE_SLUG)){
-          COURSE_SLUG = coursesList.length ? coursesList[0].slug : null;
+          const fallback = (data.default_course_slug && coursesList.some(c => c.slug === data.default_course_slug))
+            ? data.default_course_slug
+            : (coursesList.length ? coursesList[0].slug : null);
+          COURSE_SLUG = fallback;
         }
         els.courseSelect.value = COURSE_SLUG;
         applyCourseLabel();
