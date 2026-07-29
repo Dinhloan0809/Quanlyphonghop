@@ -253,6 +253,7 @@ h1{
   const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2aHpvamNmeWNiaWt4a2VuaGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMjMzMzAsImV4cCI6MjEwMDY5OTMzMH0.-_hvVaUqsArDZcHHkv_5y0HSWNQuezyeYNTrzXEfmpU";
   let COURSE_SLUG = new URLSearchParams(window.location.search).get('course') || null;
   let coursesList = [];
+  let currentStt = null;
 
   const els = {
     pageTitle: document.getElementById('pageTitle'),
@@ -285,6 +286,7 @@ h1{
 
   function showOk(data){
     hideAll();
+    currentStt = data.stt;
     els.zoomName.textContent = data.zoom_name;
     els.meetingId.textContent = data.meeting_id;
     els.passcode.textContent = data.passcode;
@@ -397,6 +399,17 @@ h1{
     // another site's iframe (e.g. Send.co). A real <a target="_blank"> click is
     // the most compatible path across iOS/Android/desktop; the visible fallback
     // link below covers the rare case even that is blocked.
+    // Fire-and-forget: log the join click for attendance, without blocking or
+    // intercepting the native navigation in any way.
+    if(COURSE_SLUG && currentStt){
+      rpc('log_zoom_join', { p_course_slug: COURSE_SLUG, p_stt: currentStt }).catch(() => {});
+    }
+  });
+
+  els.btnJoinFallback.addEventListener('click', function(e){
+    if(COURSE_SLUG && currentStt){
+      rpc('log_zoom_join', { p_course_slug: COURSE_SLUG, p_stt: currentStt }).catch(() => {});
+    }
   });
 
   els.btnCopy.addEventListener('click', () => {

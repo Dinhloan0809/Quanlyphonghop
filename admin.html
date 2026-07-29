@@ -72,7 +72,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>STT</th><th>Họ tên</th><th id="thKey1">Mã tra cứu chính</th><th id="thKey2">Mã tra cứu phụ</th><th>Tên vào Zoom</th><th>Đã tra cứu</th><th></th></tr>
+            <tr><th>STT</th><th>Họ tên</th><th id="thKey1">Mã tra cứu chính</th><th id="thKey2">Mã tra cứu phụ</th><th>Tên vào Zoom</th><th>Đã tra cứu</th><th>Đã vào Zoom (điểm danh)</th><th></th></tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
@@ -381,7 +381,8 @@ td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px 
         <td><input data-field="search_key1" value="${escapeAttr(r.search_key1 || '')}"></td>
         <td><input data-field="search_key2" value="${escapeAttr(r.search_key2 || '')}"></td>
         <td><input data-field="zoom_name" value="${escapeAttr(r.zoom_name || '')}"></td>
-        <td class="muted">${r.retrieved_count || 0}${r.retrieved_at ? ' · ' + new Date(r.retrieved_at).toLocaleTimeString('vi-VN') : ''}</td>
+        <td class="muted">${r.retrieved_count || 0}${r.retrieved_at ? ' · ' + fmtDT(r.retrieved_at) : ''}</td>
+        <td class="muted">${r.zoom_joined_count || 0}${r.zoom_joined_at ? ' · ' + fmtDT(r.zoom_joined_at) : ''}</td>
         <td>
           <button class="btn-secondary btn-row-save">Lưu</button>
           <button class="btn-danger btn-row-del">Xoá</button>
@@ -413,6 +414,11 @@ td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px 
       });
       tbody.appendChild(tr);
     });
+  }
+
+  function fmtDT(iso){
+    const d = new Date(iso);
+    return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN');
   }
 
   function escapeAttr(s){
