@@ -66,6 +66,11 @@
       <div class="search-row">
         <input id="search" type="text" placeholder="Tìm theo STT / tên / STK / SĐT...">
         <button id="btnSearch" class="btn-secondary">Tìm</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;">
+          <input id="joinedOnly" type="checkbox" style="width:auto;">
+          Chỉ hiện đã vào Zoom
+        </label>
+        <button id="btnExport" class="btn-secondary">Xuất Excel</button>
         <span id="totalCount" class="muted"></span>
       </div>
 
@@ -309,6 +314,41 @@ td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px 
     }
   }
 
+  async function exportExcel(){
+    if(!currentCourseSlug){ toast('Chưa chọn lớp', true); return; }
+    const joinedOnly = el('joinedOnly').checked;
+    const c = currentCourse();
+    try{
+      toast('Đang lấy dữ liệu để xuất...');
+      const countData = await rpc('admin_list_course_students', { p_password: ADMIN_PW, p_course_slug: currentCourseSlug, p_search: currentSearch, p_limit: 1, p_offset: 0, p_joined_only: joinedOnly });
+      if(countData.status !== 'ok'){ toast('Không lấy được dữ liệu', true); return; }
+      const total = countData.total || 0;
+      if(total === 0){ toast('Không có học viên nào phù hợp để xuất', true); return; }
+      const fullData = await rpc('admin_list_course_students', { p_password: ADMIN_PW, p_course_slug: currentCourseSlug, p_search: currentSearch, p_limit: total, p_offset: 0, p_joined_only: joinedOnly });
+      if(fullData.status !== 'ok'){ toast('Không lấy được dữ liệu', true); return; }
+      const key1Label = (c && c.search_label) || 'Mã tra cứu chính';
+      const rows = (fullData.rows || []).map(r => ({
+        'STT': r.stt,
+        'Họ tên': r.full_name || '',
+        [key1Label]: r.search_key1 || '',
+        'Mã tra cứu phụ': r.search_key2 || '',
+        'Tên vào Zoom': r.zoom_name || '',
+        'Số lần tra cứu': r.retrieved_count || 0,
+        'Tra cứu gần nhất': r.retrieved_at ? fmtDT(r.retrieved_at) : '',
+        'Số lần vào Zoom': r.zoom_joined_count || 0,
+        'Vào Zoom gần nhất': r.zoom_joined_at ? fmtDT(r.zoom_joined_at) : '',
+        'Đã vào Zoom': r.zoom_joined_count > 0 ? 'Có' : 'Không',
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Học viên');
+      const courseName = (c && c.name) ? c.name.replace(/[^\p{L}\p{N}]+/gu, '_') : 'lop_hoc';
+      const suffix = joinedOnly ? '_da_vao_zoom' : '';
+      XLSX.writeFile(wb, `${courseName}${suffix}.xlsx`);
+      toast(`Đã xuất ${rows.length} học viên`);
+    }catch(e){ toast('Lỗi khi xuất file', true); }
+  }
+
   async function refreshCourses(){
     const data = await rpc('admin_list_courses', { p_password: ADMIN_PW });
     if(data.status === 'ok'){ courses = data.courses || []; }
@@ -428,7 +468,7 @@ td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px 
   async function loadStudents(){
     if(!currentCourseSlug) return;
     try{
-      const data = await rpc('admin_list_course_students', { p_password: ADMIN_PW, p_course_slug: currentCourseSlug, p_search: currentSearch, p_limit: PAGE_SIZE, p_offset: page * PAGE_SIZE });
+      const data = await rpc('admin_list_course_students', { p_password: ADMIN_PW, p_course_slug: currentCourseSlug, p_search: currentSearch, p_limit: PAGE_SIZE, p_offset: page * PAGE_SIZE, p_joined_only: el('joinedOnly').checked });
       if(data.status !== 'ok'){ toast('Không tải được danh sách', true); return; }
       currentTotal = data.total;
       renderRows(data.rows || []);
@@ -507,6 +547,8 @@ td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px 
   el('btnImport').addEventListener('click', importExcel);
   el('btnSearch').addEventListener('click', () => { currentSearch = el('search').value.trim(); page = 0; loadStudents(); });
   el('search').addEventListener('keydown', (e) => { if(e.key === 'Enter'){ currentSearch = el('search').value.trim(); page = 0; loadStudents(); } });
+  el('joinedOnly').addEventListener('change', () => { page = 0; loadStudents(); });
+  el('btnExport').addEventListener('click', exportExcel);
   el('btnPrev').addEventListener('click', () => { if(page > 0){ page--; loadStudents(); } });
   el('btnNext').addEventListener('click', () => { page++; loadStudents(); });
   el('btnUpsert').addEventListener('click', upsertFromForm);
