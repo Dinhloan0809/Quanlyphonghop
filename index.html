@@ -3,233 +3,424 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tổng quan (dữ liệu thật) – Grammar Master</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{--bg:#faf9ff;--text:#241541;--muted:#9c93b5;--primary:#8b7ff5;--primary-dark:#7267e0;
-    --green:#4cd273;--green-dark:#22b573;--shadow:0 8px 20px rgba(80,60,140,.07);}
-  *{box-sizing:border-box;}
-  body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);}
-  h1,h2,h3{font-family:'Baloo 2';margin:0;}
-  a{text-decoration:none;color:inherit;}
-  .page{max-width:480px;margin:0 auto;padding:0 14px 40px;}
-
-  .dash-top{display:flex;align-items:center;gap:12px;margin:16px 0 14px;}
-  .avatar{width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#bfe3ff,#8fc9ec);
-    display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex:0 0 46px;}
-  .who h1{font-size:1.1rem;}
-  .who p{margin:2px 0 0;font-size:.78rem;color:var(--muted);}
-
-  .hero-banner{background:linear-gradient(135deg,#a79bff,#7267e0);color:#fff;border-radius:26px;
-    padding:20px 20px 18px;margin-bottom:16px;position:relative;overflow:hidden;box-shadow:0 14px 28px rgba(114,103,224,.25);}
-  .hero-banner .deco{position:absolute;right:-6px;bottom:-10px;font-size:4.5rem;opacity:.18;transform:rotate(-8deg);}
-  .hero-label-row{display:flex;justify-content:space-between;font-size:.76rem;font-weight:600;opacity:.9;margin-bottom:6px;}
-  .hero-track{height:9px;background:rgba(255,255,255,.28);border-radius:999px;overflow:hidden;}
-  .hero-fill{height:100%;border-radius:999px;background:#fff;}
-  .hero-bottom-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:.82rem;}
-  .hero-bottom-row .big-pct{font-family:'Baloo 2';font-weight:800;font-size:1.3rem;}
-
-  .section-label{display:flex;justify-content:space-between;align-items:center;margin:18px 4px 10px;font-weight:700;font-size:.92rem;}
-  .section-label a{font-size:.78rem;color:var(--primary-dark);font-weight:700;}
-
-  .continue-card{background:linear-gradient(135deg,#a79bff,#7267e0);color:#fff;border-radius:22px;padding:16px 18px;
-    display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;box-shadow:0 10px 22px rgba(114,103,224,.22);}
-  .continue-card .label{font-size:.72rem;opacity:.85;margin-bottom:2px;}
-  .continue-card h3{font-size:1.02rem;margin-bottom:10px;line-height:1.3;}
-  .continue-card .icon{font-size:2.1rem;flex:0 0 auto;}
-  .mini-btn{display:inline-block;background:#fff;color:var(--primary-dark);font-weight:800;font-size:.78rem;padding:6px 14px;border-radius:999px;}
-
-  .stage-strip{display:flex;gap:14px;overflow-x:auto;padding:2px 2px 6px;}
-  .stage-strip .item{flex:0 0 auto;text-align:center;width:70px;}
-  .stage-strip .bubble{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    font-family:'Baloo 2';font-weight:800;margin:0 auto 6px;font-size:.95rem;}
-  .stage-strip .completed .bubble{background:#e9f9ec;color:var(--green-dark);}
-  .stage-strip .current .bubble{background:var(--primary);color:#fff;box-shadow:0 0 0 4px rgba(139,127,245,.22);}
-  .stage-strip .locked .bubble{background:#f1eefb;color:#c7c1de;}
-  .stage-strip .name{font-size:.64rem;color:var(--muted);line-height:1.2;}
-
-  .stat-row{display:flex;gap:10px;margin:0 0 6px;}
-  .stat-box{flex:1;background:#fff;border-radius:16px;padding:13px 8px;text-align:center;box-shadow:var(--shadow);}
-  .stat-box .ic{font-size:1.2rem;margin-bottom:4px;}
-  .stat-box .val{font-weight:800;font-size:.98rem;}
-  .stat-box .lbl{font-size:.64rem;color:var(--muted);margin-top:2px;}
-
-  .streak-strip{margin-top:16px;background:#fff6e3;border-radius:20px;padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);}
-  .streak-strip .ic{font-size:2rem;}
-  .streak-strip .title{font-weight:800;font-size:.92rem;color:#8a5a12;}
-  .streak-strip .sub{font-size:.74rem;color:#b98a3a;margin-top:2px;}
-
-  .loading{color:var(--muted);font-size:.86rem;padding:30px 0;text-align:center;}
-
-  .login-wrap{max-width:340px;margin:60px auto;padding:0 16px;text-align:center;}
-  .login-wrap .emoji{font-size:2.6rem;margin-bottom:10px;}
-  .login-wrap h2{font-family:'Baloo 2';font-size:1.2rem;margin-bottom:6px;}
-  .login-wrap p{color:var(--muted);font-size:.84rem;margin:0 0 18px;}
-  .login-card{background:#fff;border-radius:20px;padding:20px;box-shadow:var(--shadow);text-align:left;}
-  .login-card label{display:block;font-size:.8rem;font-weight:700;color:var(--muted);margin:0 0 6px;}
-  .login-card select,.login-card input{width:100%;padding:12px;border-radius:10px;border:1px solid #e5e0f7;font-size:16px;margin-bottom:14px;box-sizing:border-box;font-family:inherit;}
-  .login-card button{width:100%;border:none;border-radius:12px;padding:12px;font-weight:800;font-size:.92rem;background:var(--primary);color:#fff;cursor:pointer;}
-  .login-err{color:#e0578a;font-size:.8rem;font-weight:600;margin-top:10px;display:none;}
-  .logout-link{position:fixed;top:14px;right:14px;background:#fff;box-shadow:var(--shadow);border-radius:999px;padding:6px 14px;font-size:.72rem;font-weight:700;color:var(--muted);z-index:20;}
-</style>
+<title>Tra cứu vào Zoom</title>
 </head>
 <body>
+<section id="app">
+  <div class="card">
+    <h1 id="pageTitle">Tra cứu thông tin vào room</h1>
+    <p class="subtitle" id="pageSubtitle">Chọn lớp học bạn đang tham gia và nhập thông tin để tra cứu</p>
 
+    <div class="field">
+      <label for="courseSelect">Chọn lớp học tham gia</label>
+      <select id="courseSelect"></select>
+    </div>
 
-<div class="page" id="content">
-  <p class="loading">Đang tải dữ liệu thật...</p>
-</div>
+    <div class="field">
+      <label for="q" id="qLabel">Nhập thông tin đã đăng ký</label>
+      <input id="q" type="text" inputmode="text" placeholder="Nhập thông tin cần tra cứu" autocomplete="off">
+    </div>
+    <button id="btnSearch" class="btn-primary">Tra cứu</button>
+
+    <div id="loading" class="hidden">Đang tra cứu...</div>
+
+    <div id="resultOk" class="result ok hidden">
+      <div class="label">Tên vào Zoom (đổi tên hiển thị của bạn thành đúng dòng này):</div>
+      <div id="zoomName" class="zoom-name"></div>
+      <button id="btnCopy" class="btn-secondary">Sao chép tên</button>
+
+      <div class="info-row"><span>Meeting ID</span><b id="meetingId"></b></div>
+      <div class="info-row"><span>Passcode</span><b id="passcode"></b></div>
+
+      <a id="btnJoin" class="btn-join" href="#" target="_blank" rel="noopener noreferrer">Vào phòng Zoom (đã gắn sẵn tên)</a>
+      <div class="fallback-link-wrap">
+        <span class="fallback-label">Nếu bấm nút trên không vào được, chạm giữ hoặc chép link này rồi dán vào trình duyệt:</span>
+        <a id="btnJoinFallback" class="fallback-link" href="#" target="_blank" rel="noopener noreferrer"></a>
+      </div>
+      <div class="note">Nếu Zoom mở bằng app cài sẵn, tên có thể không tự điền — hãy tự đổi tên hiển thị (Rename) đúng như dòng trên để được duyệt vào phòng nhanh nhất.</div>
+    </div>
+
+    <div id="resultAmbiguous" class="result warn hidden">
+      <div class="label">Có nhiều người trùng thông tin này, vui lòng chọn đúng tên của bạn:</div>
+      <div id="candidateList" class="candidate-list"></div>
+    </div>
+
+    <div id="resultNotFound" class="result err hidden">
+      Không tìm thấy thông tin phù hợp. Vui lòng kiểm tra lại STK/SĐT đã nhập, hoặc liên hệ trợ lý lớp học để được hỗ trợ.
+    </div>
+
+    <div id="resultError" class="result err hidden">
+      Có lỗi xảy ra, vui lòng thử lại sau.
+    </div>
+  </div>
+</section>
+
+<style>
+:root{
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --ink:#1a2233;
+  --muted:#5b6478;
+  --brand:#2451e0;
+  --brand-dark:#1a3ba8;
+  --ok-bg:#eafbf1;
+  --ok-border:#1fa971;
+  --ok-ink:#0d6b45;
+  --warn-bg:#fff8e8;
+  --warn-border:#e0a125;
+  --err-bg:#fdeef0;
+  --err-border:#d64550;
+  --radius:16px;
+  --shadow:0 8px 30px rgba(20,30,60,0.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1420;
+    --card:#181f30;
+    --ink:#eef1f8;
+    --muted:#9aa4bd;
+    --ok-bg:#0f2a1e;
+    --warn-bg:#2b230c;
+    --err-bg:#2c1418;
+    --shadow:0 8px 30px rgba(0,0,0,0.4);
+  }
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:32px 16px;
+}
+.card{
+  width:100%;
+  max-width:440px;
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:28px 24px 32px;
+}
+h1{
+  font-size:22px;
+  line-height:1.3;
+  margin:0 0 2px;
+  font-weight:800;
+  color:var(--brand);
+}
+.subtitle{
+  margin:0 0 22px;
+  color:var(--muted);
+  font-size:14px;
+  font-weight:600;
+}
+.field label{
+  display:block;
+  font-size:13.5px;
+  font-weight:700;
+  margin-bottom:8px;
+  color:var(--ink);
+}
+#q{
+  width:100%;
+  padding:14px 14px;
+  font-size:17px;
+  border-radius:10px;
+  border:2px solid #dde2ee;
+  background:transparent;
+  color:var(--ink);
+  outline:none;
+  transition:border-color .15s ease;
+}
+#q:focus{border-color:var(--brand);}
+#courseSelect{
+  width:100%;
+  padding:14px 14px;
+  font-size:16px;
+  border-radius:10px;
+  border:2px solid #dde2ee;
+  background:var(--card);
+  color:var(--ink);
+  outline:none;
+}
+#courseSelect:focus{border-color:var(--brand);}
+.btn-primary{
+  width:100%;
+  margin-top:14px;
+  padding:15px;
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+  background:var(--brand);
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  transition:background .15s ease, transform .05s ease;
+}
+.btn-primary:hover{background:var(--brand-dark);}
+.btn-primary:active{transform:scale(0.98);}
+.btn-primary:disabled{opacity:0.6;cursor:default;}
+#loading{
+  margin-top:18px;
+  font-size:14px;
+  color:var(--muted);
+  text-align:center;
+}
+.hidden{display:none !important;}
+.result{
+  margin-top:20px;
+  padding:18px;
+  border-radius:12px;
+  border:1.5px solid transparent;
+  font-size:14.5px;
+  line-height:1.55;
+}
+.result.ok{background:var(--ok-bg);border-color:var(--ok-border);}
+.result.warn{background:var(--warn-bg);border-color:var(--warn-border);}
+.result.err{background:var(--err-bg);border-color:var(--err-border);color:var(--ink);}
+.result .label{font-weight:700;margin-bottom:8px;color:var(--muted);font-size:13px;}
+.zoom-name{
+  font-size:19px;
+  font-weight:800;
+  color:var(--ok-ink);
+  background:rgba(255,255,255,0.6);
+  border-radius:8px;
+  padding:10px 12px;
+  word-break:break-word;
+}
+@media (prefers-color-scheme: dark){ .zoom-name{background:rgba(255,255,255,0.06);} }
+.btn-secondary{
+  margin-top:10px;
+  padding:9px 14px;
+  font-size:13px;
+  font-weight:700;
+  background:transparent;
+  border:1.5px solid var(--ok-border);
+  color:var(--ok-ink);
+  border-radius:8px;
+  cursor:pointer;
+}
+.btn-secondary.copied{background:var(--ok-border);color:#fff;}
+.info-row{
+  display:flex;
+  justify-content:space-between;
+  margin-top:14px;
+  padding-top:10px;
+  border-top:1px dashed rgba(0,0,0,0.12);
+  font-size:14px;
+}
+.info-row span{color:var(--muted);}
+.btn-join{
+  display:block;
+  text-align:center;
+  margin-top:16px;
+  padding:14px;
+  background:var(--ok-border);
+  color:#fff;
+  font-weight:800;
+  border-radius:10px;
+  text-decoration:none;
+  font-size:15px;
+}
+.note{margin-top:12px;font-size:12.5px;color:var(--muted);}
+.fallback-link-wrap{margin-top:10px;padding:10px;border-radius:8px;background:rgba(0,0,0,0.04);}
+@media (prefers-color-scheme: dark){ .fallback-link-wrap{background:rgba(255,255,255,0.05);} }
+.fallback-label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;}
+.fallback-link{display:block;font-size:12.5px;word-break:break-all;color:var(--brand);text-decoration:underline;}
+.candidate-list{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+.candidate-btn{
+  padding:12px;
+  border-radius:8px;
+  border:1.5px solid var(--warn-border);
+  background:rgba(255,255,255,0.5);
+  color:var(--ink);
+  text-align:left;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+}
+@media (prefers-color-scheme: dark){ .candidate-btn{background:rgba(255,255,255,0.05);} }
+.candidate-btn:hover{border-color:var(--brand);}
+</style>
 
 <script>
-  const SUPABASE_URL = 'https://zwkphtxotqdzilotiwpf.supabase.co';
-  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3a3BodHhvdHFkemlsb3Rpd3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MDUwNDgsImV4cCI6MjEwMTE4MTA0OH0.ftxH01_FlELoc1m9cPunoMNcxvKeEDnJ-ccu26IHxjg';
+(function(){
+  const SUPABASE_URL = "https://tvhzojcfycbikxkenhev.supabase.co";
+  const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2aHpvamNmeWNiaWt4a2VuaGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMjMzMzAsImV4cCI6MjEwMDY5OTMzMH0.-_hvVaUqsArDZcHHkv_5y0HSWNQuezyeYNTrzXEfmpU";
+  let COURSE_SLUG = new URLSearchParams(window.location.search).get('course') || null;
+  let coursesList = [];
+  let currentStt = null;
+
+  const els = {
+    pageTitle: document.getElementById('pageTitle'),
+    pageSubtitle: document.getElementById('pageSubtitle'),
+    qLabel: document.getElementById('qLabel'),
+    courseSelect: document.getElementById('courseSelect'),
+    q: document.getElementById('q'),
+    btnSearch: document.getElementById('btnSearch'),
+    loading: document.getElementById('loading'),
+    resultOk: document.getElementById('resultOk'),
+    resultAmbiguous: document.getElementById('resultAmbiguous'),
+    resultNotFound: document.getElementById('resultNotFound'),
+    resultError: document.getElementById('resultError'),
+    zoomName: document.getElementById('zoomName'),
+    meetingId: document.getElementById('meetingId'),
+    passcode: document.getElementById('passcode'),
+    btnJoin: document.getElementById('btnJoin'),
+    btnJoinFallback: document.getElementById('btnJoinFallback'),
+    btnCopy: document.getElementById('btnCopy'),
+    candidateList: document.getElementById('candidateList'),
+  };
+
+  function hideAll(){
+    els.loading.classList.add('hidden');
+    els.resultOk.classList.add('hidden');
+    els.resultAmbiguous.classList.add('hidden');
+    els.resultNotFound.classList.add('hidden');
+    els.resultError.classList.add('hidden');
+  }
+
+  function showOk(data){
+    hideAll();
+    currentStt = data.stt;
+    els.zoomName.textContent = data.zoom_name;
+    els.meetingId.textContent = data.meeting_id;
+    els.passcode.textContent = data.passcode;
+    const joinUrl = data.meeting_link + "&uname=" + encodeURIComponent(data.zoom_name);
+    els.btnJoin.href = joinUrl;
+    els.btnJoin.dataset.url = joinUrl;
+    els.btnJoinFallback.href = joinUrl;
+    els.btnJoinFallback.textContent = joinUrl;
+    els.resultOk.classList.remove('hidden');
+  }
 
   async function rpc(fn, body){
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':ANON_KEY,'Authorization':`Bearer ${ANON_KEY}`},
-      body: JSON.stringify(body)
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${ANON_KEY}`,
+      },
+      body: JSON.stringify(body),
     });
-    let data;
-    try{ data = await res.json(); } catch(e){ data = null; }
-    if(!res.ok){
-      const msg = (data && data.message) ? data.message : `Lỗi máy chủ (${res.status})`;
-      throw new Error(msg);
-    }
-    return data;
+    if(!res.ok) throw new Error('http_error');
+    return res.json();
   }
 
-  async function renderLogin(){
-    const box = document.getElementById('content');
-    const students = await rpc('list_students', {});
-    box.innerHTML = `
-      <div class="login-wrap">
-        <div class="emoji">🔐</div>
-        <h2>Đăng nhập</h2>
-        <p>Chọn tên em và nhập mật khẩu để vào học nhé!</p>
-        <div class="login-card">
-          <label>Tên học sinh</label>
-          <select id="loginName">
-            <option value="">-- Chọn tên --</option>
-            ${students.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}
-          </select>
-          <label>Mật khẩu</label>
-          <input type="password" id="loginPin" placeholder="Nhập mật khẩu">
-          <button id="loginBtn" onclick="doLogin()">Đăng nhập</button>
-          <div class="login-err" id="loginErr">❌ Sai tên hoặc mật khẩu, thử lại nhé.</div>
-        </div>
-      </div>
-    `;
-  }
-
-  async function doLogin(){
-    const name = document.getElementById('loginName').value;
-    const pin = document.getElementById('loginPin').value;
-    const errBox = document.getElementById('loginErr');
-    const btn = document.getElementById('loginBtn');
-    if(!name || !pin){ errBox.style.display='block'; errBox.textContent='Vui lòng chọn tên và nhập mật khẩu.'; return; }
+  async function doSearch(){
+    const q = els.q.value.trim();
+    if(!q) return;
+    if(!COURSE_SLUG){ hideAll(); els.resultError.classList.remove('hidden'); return; }
+    hideAll();
+    els.loading.classList.remove('hidden');
+    els.btnSearch.disabled = true;
     try{
-      btn.disabled = true; btn.textContent = 'Đang kiểm tra...';
-      const res = await rpc('login_student', {p_name: name, p_pin: pin});
-      if(!res || !res.id){
-        errBox.style.display='block';
-        errBox.textContent = '❌ Sai tên hoặc mật khẩu, thử lại nhé.';
-        btn.disabled = false; btn.textContent = 'Đăng nhập';
-        return;
+      const data = await rpc('lookup_course_info', { p_course_slug: COURSE_SLUG, p_query: q });
+      hideAll();
+      if(data.status === 'ok'){
+        showOk(data);
+      } else if(data.status === 'ambiguous'){
+        els.candidateList.innerHTML = '';
+        (data.candidates || []).forEach(c => {
+          const b = document.createElement('button');
+          b.className = 'candidate-btn';
+          b.textContent = `${c.stt}. ${c.full_name}`;
+          b.addEventListener('click', async () => {
+            hideAll();
+            els.loading.classList.remove('hidden');
+            try{
+              const confirmed = await rpc('confirm_course_info', { p_course_slug: COURSE_SLUG, p_stt: c.stt, p_query: q });
+              hideAll();
+              if(confirmed.status === 'ok'){ showOk(confirmed); }
+              else { els.resultNotFound.classList.remove('hidden'); }
+            }catch(e){ hideAll(); els.resultError.classList.remove('hidden'); }
+          });
+          els.candidateList.appendChild(b);
+        });
+        els.resultAmbiguous.classList.remove('hidden');
+      } else {
+        els.resultNotFound.classList.remove('hidden');
       }
-      localStorage.setItem('gm_student_id', res.id);
-      localStorage.setItem('gm_student_name', res.name);
-      await rpc('ensure_first_stage_unlocked', {p_student_id: res.id});
-      init();
-    } catch(err){
-      errBox.style.display='block';
-      const isBadLogin = err && err.message && err.message.includes('invalid_login');
-      errBox.textContent = isBadLogin
-        ? '❌ Sai tên hoặc mật khẩu, thử lại nhé.'
-        : '❌ Có lỗi kết nối, thử lại nhé. (' + (err && err.message ? err.message : err) + ')';
-      btn.disabled = false; btn.textContent = 'Đăng nhập';
+    }catch(e){
+      hideAll();
+      els.resultError.classList.remove('hidden');
+    }finally{
+      els.btnSearch.disabled = false;
     }
   }
 
-  function logout(){
-    localStorage.removeItem('gm_student_id');
-    localStorage.removeItem('gm_student_name');
-    init();
+  els.btnSearch.addEventListener('click', doSearch);
+  els.q.addEventListener('keydown', (e) => { if(e.key === 'Enter') doSearch(); });
+
+  function applyCourseLabel(){
+    const c = coursesList.find(x => x.slug === COURSE_SLUG);
+    if(c){ els.qLabel.textContent = `Nhập ${c.search_label} đã đăng ký`; }
   }
 
-  function buildStatusMap(progressRows){
-    const map = {};
-    (progressRows||[]).forEach(p => { map[p.stage_id] = p.status; }); // 'unlocked' | 'completed'
-    return map;
-  }
-  function statusForStage(stage, map){
-    const st = map[stage.id];
-    if(!st) return 'locked';
-    return st === 'completed' ? 'completed' : 'current';
-  }
+  els.courseSelect.addEventListener('change', () => {
+    COURSE_SLUG = els.courseSelect.value;
+    applyCourseLabel();
+    hideAll();
+    els.q.value = '';
+  });
 
-  async function init(){
-    const studentId = localStorage.getItem('gm_student_id');
-    const studentName = localStorage.getItem('gm_student_name');
-    if(!studentId){ renderLogin(); return; }
+  (async function initCourses(){
+    try{
+      const data = await rpc('list_courses_public', {});
+      if(data.status === 'ok'){
+        coursesList = data.courses || [];
+        els.courseSelect.innerHTML = '';
+        coursesList.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.slug;
+          opt.textContent = c.name;
+          els.courseSelect.appendChild(opt);
+        });
+        if(!COURSE_SLUG || !coursesList.some(c => c.slug === COURSE_SLUG)){
+          const fallback = (data.default_course_slug && coursesList.some(c => c.slug === data.default_course_slug))
+            ? data.default_course_slug
+            : (coursesList.length ? coursesList[0].slug : null);
+          COURSE_SLUG = fallback;
+        }
+        els.courseSelect.value = COURSE_SLUG;
+        applyCourseLabel();
+      }
+    }catch(e){ /* keep defaults if this fails */ }
+  })();
 
-    const stages = await rpc('list_stages', {});
-    const progressRows = await rpc('get_student_progress', {p_student_id: parseInt(studentId)});
-    const statusMap = buildStatusMap(progressRows);
-    const box = document.getElementById('content');
-    const currentIndex = stages.findIndex(s => statusForStage(s, statusMap) === 'current');
-    const current = stages[currentIndex] || stages[0];
-    const doneCount = stages.filter(s => statusForStage(s, statusMap)==='completed').length;
-    const pct = Math.round(doneCount / stages.length * 100);
+  els.btnJoin.addEventListener('click', function(e){
+    // Plain native anchor navigation only — no window.open()/top.location tricks.
+    // Those get blocked unpredictably on iOS Safari when the page is wrapped in
+    // another site's iframe (e.g. Send.co). A real <a target="_blank"> click is
+    // the most compatible path across iOS/Android/desktop; the visible fallback
+    // link below covers the rare case even that is blocked.
+    // Fire-and-forget: log the join click for attendance, without blocking or
+    // intercepting the native navigation in any way.
+    if(COURSE_SLUG && currentStt){
+      rpc('log_zoom_join', { p_course_slug: COURSE_SLUG, p_stt: currentStt }).catch(() => {});
+    }
+  });
 
-    let html = `
-      <div class="logout-link" onclick="logout()">Đăng xuất</div>
-      <div class="dash-top">
-        <div class="avatar">🧒</div>
-        <div class="who"><h1>Xin chào, ${studentName}! 👋</h1><p>Cố gắng học mỗi ngày nhé!</p></div>
-      </div>
+  els.btnJoinFallback.addEventListener('click', function(e){
+    if(COURSE_SLUG && currentStt){
+      rpc('log_zoom_join', { p_course_slug: COURSE_SLUG, p_stt: currentStt }).catch(() => {});
+    }
+  });
 
-      <div class="hero-banner">
-        <div class="deco">🗺️</div>
-        <div class="hero-label-row"><span>Tiến độ hành trình</span><span>${doneCount} / ${stages.length} chặng</span></div>
-        <div class="hero-track"><div class="hero-fill" style="width:${pct}%;"></div></div>
-        <div class="hero-bottom-row"><span>Bạn đang học rất tốt! 💪</span><span class="big-pct">${pct}%</span></div>
-      </div>
-
-      <div class="section-label">Tiếp tục học</div>
-      <a href="xem-chang.html?stage=${current.order_no}">
-        <div class="continue-card">
-          <div><p class="label">${current.badge_label}</p><h3>${current.title}</h3><span class="mini-btn">Học tiếp</span></div>
-          <div class="icon">📖</div>
-        </div>
-      </a>
-
-      <div class="section-label">Hành trình ${stages.length} chặng <a href="xem-hanh-trinh.html">Xem tất cả ›</a></div>
-      <div class="stage-strip">
-        ${stages.slice(0,6).map((s) => {
-          const st = statusForStage(s, statusMap);
-          const inner = st==='completed' ? '✓' : s.order_no;
-          return `<a class="item ${st}" href="xem-chang.html?stage=${s.order_no}">
-            <div class="bubble">${inner}</div><div class="name">${s.title}</div></a>`;
-        }).join('')}
-      </div>
-
-      <div class="section-label">Thống kê nhanh <span style="font-weight:400;color:var(--muted);font-size:.7rem;">(số mẫu)</span></div>
-      <div class="stat-row">
-        <div class="stat-box"><div class="ic">📘</div><div class="val">${doneCount}/${stages.length}</div><div class="lbl">Bài học</div></div>
-        <div class="stat-box"><div class="ic">🎯</div><div class="val">45</div><div class="lbl">Quiz đã làm</div></div>
-        <div class="stat-box"><div class="ic">⭐</div><div class="val">680</div><div class="lbl">Điểm XP</div></div>
-      </div>
-
-      <div class="streak-strip">
-        <div class="ic">🔥</div>
-        <div><div class="title">7 ngày liên tiếp (mẫu)</div><div class="sub">Học hôm nay để giữ chuỗi nhé!</div></div>
-      </div>
-    `;
-    box.innerHTML = html;
-  }
-  init();
+  els.btnCopy.addEventListener('click', () => {
+    const text = els.zoomName.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      els.btnCopy.textContent = 'Đã sao chép';
+      els.btnCopy.classList.add('copied');
+      setTimeout(() => { els.btnCopy.textContent = 'Sao chép tên'; els.btnCopy.classList.remove('copied'); }, 1800);
+    });
+  });
+})();
 </script>
 </body>
 </html>

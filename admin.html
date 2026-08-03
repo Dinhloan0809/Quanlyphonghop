@@ -3,832 +3,556 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quản trị nội dung – Grammar Master</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{--primary:#8b7ff5;--primary-dark:#7267e0;--bg:#faf9ff;--text:#241541;--muted:#9c93b5;}
-  *{box-sizing:border-box;}
-  body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);padding:20px 16px 60px;}
-  .wrap{max-width:700px;margin:0 auto;}
-  h1{font-family:'Baloo 2';font-size:1.4rem;margin:0 0 18px;}
-  .card{background:#fff;border-radius:18px;padding:20px;box-shadow:0 8px 20px rgba(80,60,140,.07);margin-bottom:18px;}
-  label{display:block;font-size:.82rem;font-weight:700;color:var(--muted);margin:14px 0 6px;}
-  label:first-child{margin-top:0;}
-  input[type=text],input[type=password],input[type=number],textarea,select{
-    width:100%;padding:10px 12px;border:1px solid #e5e0f7;border-radius:10px;font-size:.9rem;
-    font-family:inherit;color:var(--text);background:#faf9ff;
-  }
-  textarea{resize:vertical;}
-  button{border:none;border-radius:10px;padding:10px 16px;font-weight:700;font-size:.86rem;cursor:pointer;margin-top:10px;}
-  button.primary{background:var(--primary);color:#fff;}
-  button.secondary{background:#efe9ff;color:var(--primary-dark);}
-  button.danger{background:#ffe8f0;color:#e0578a;}
-  button.small{padding:6px 12px;font-size:.78rem;margin-top:0;}
-  .row-flex{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
-  .row-flex > div{flex:1;min-width:140px;}
-  .example-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
-  .example-row input{flex:1;}
-  .example-row button{margin:0;flex:0 0 auto;}
-  #authMsg,.msg{font-size:.82rem;margin-top:8px;}
-  .ok{color:#22b573;font-weight:700;}
-  .err{color:#e0578a;font-weight:700;}
-
-  .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
-  .tabs button{background:#efe9ff;color:var(--primary-dark);margin-top:0;}
-  .tabs button.active{background:var(--primary);color:#fff;}
-  .tab-panel{display:none;}
-  .tab-panel.active{display:block;}
-
-  .vocab-slot{border:1px solid #eee7fb;border-radius:14px;padding:14px;margin-bottom:12px;}
-  .vocab-slot h4{margin:0 0 8px;font-size:.88rem;color:var(--primary-dark);}
-
-  .vocab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:8px;}
-  .vocab-card{border-radius:20px;padding:16px 14px;text-align:center;box-shadow:0 8px 18px rgba(80,60,140,.08);
-    display:flex;flex-direction:column;gap:8px;position:relative;}
-  .vocab-card .slot-tag{position:absolute;top:10px;left:12px;font-size:.66rem;font-weight:800;color:rgba(36,21,65,.4);}
-  .vocab-card .icon-preview{font-size:2.3rem;margin-top:8px;}
-  .vocab-card .icon-input{width:52px;margin:0 auto;text-align:center;background:#fff;border-radius:8px;font-size:.85rem;padding:5px;}
-  .vocab-card .word-input{background:transparent;border:none;border-bottom:2px solid rgba(36,21,65,.15);
-    text-align:center;font-weight:800;font-size:1.05rem;font-family:'Baloo 2';color:var(--text);padding:4px 2px;}
-  .vocab-card .meaning-input{background:transparent;border:none;border-bottom:1px solid rgba(36,21,65,.12);
-    text-align:center;font-size:.82rem;color:var(--text);padding:3px 2px;}
-  .vocab-card .example-input{background:transparent;border:none;border-bottom:1px solid rgba(36,21,65,.1);
-    text-align:center;font-size:.74rem;font-style:italic;color:#5a5177;padding:3px 2px;}
-  .vocab-card button{margin-top:auto;}
-  .vc-purple{background:#f1ecff;} .vc-pink{background:#ffe8f0;} .vc-blue{background:#e6f1ff;}
-  .vc-green{background:#e9f9ec;} .vc-peach{background:#fff3e6;}
-  .vocab-card .img-preview{width:100%;height:90px;object-fit:cover;border-radius:12px;background:rgba(255,255,255,.5);}
-  .vocab-card .img-btn-row{display:flex;gap:6px;justify-content:center;align-items:center;}
-  .vocab-card .img-btn{background:rgba(255,255,255,.7);color:var(--primary-dark);font-size:.68rem;font-weight:700;
-    padding:5px 10px;border-radius:8px;cursor:pointer;margin:0;}
-  .vocab-card input[type=file]{display:none;}
-  .qlist-item{border:1px solid #eee7fb;border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;align-items:center;}
-  .qlist-item .qtext{font-size:.86rem;flex:1;}
-  .qlist-item .qactions{display:flex;gap:6px;flex:0 0 auto;}
-  .opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-
-  .rpt-table{width:100%;border-collapse:collapse;font-size:.84rem;}
-  .rpt-table th{text-align:left;color:var(--muted);font-size:.74rem;padding:8px 6px;border-bottom:2px solid #f1eefb;}
-  .rpt-table td{padding:9px 6px;border-bottom:1px solid #f5f2fc;}
-  .rpt-table tr:last-child td{border-bottom:none;}
-  .wrong-bar-track{height:6px;background:#f1eefb;border-radius:999px;overflow:hidden;margin-top:4px;width:100px;}
-  .wrong-bar-fill{height:100%;background:linear-gradient(90deg,#fbbf24,#e0578a);border-radius:999px;}
-</style>
+<title>Admin - Khóa học bắt đáy</title>
 </head>
 <body>
-<div class="wrap">
-  <h1>🛠️ Quản trị nội dung — Grammar Master</h1>
-
-  <div class="card" id="authBox">
-    <label>Mật khẩu quản trị</label>
-    <input type="password" id="pw" placeholder="Nhập mật khẩu">
-    <button class="primary" onclick="unlock()">Vào chỉnh sửa</button>
-    <p id="authMsg"></p>
+<section id="gate">
+  <div class="gate-card">
+    <h1>Trang quản trị</h1>
+    <p class="muted">Khóa học bắt đáy — chỉ trợ lý lớp học được vào đây</p>
+    <input id="pw" type="password" placeholder="Nhập mật khẩu admin" autocomplete="off">
+    <button id="btnUnlock" class="btn-primary">Vào trang quản trị</button>
+    <div id="gateError" class="gate-error hidden">Sai mật khẩu, thử lại nhé.</div>
   </div>
+</section>
 
-  <div id="app" style="display:none;">
-    <div class="tabs">
-      <button class="active" data-tab="bai-hoc" onclick="switchTab('bai-hoc')">📖 Học bài</button>
-      <button data-tab="tu-vung" onclick="switchTab('tu-vung')">🔤 Từ vựng</button>
-      <button data-tab="quiz" onclick="switchTab('quiz')">📝 Quiz</button>
-      <button data-tab="mindmap" onclick="switchTab('mindmap')">🧠 Mindmap</button>
-      <button data-tab="hocsinh" onclick="switchTab('hocsinh')">📊 Học sinh</button>
-    </div>
+<section id="dashboard" class="hidden">
+  <div class="wrap">
+    <header>
+      <h1>Quản trị lớp học</h1>
+      <button id="btnLock" class="btn-ghost">Đăng xuất</button>
+    </header>
 
-    <!-- ================= HỌC BÀI ================= -->
-    <div class="tab-panel active" id="panel-bai-hoc">
-      <div class="card">
-        <div class="row-flex">
-          <div><label>Chặng</label><select id="bh_stage"></select></div>
-          <div style="max-width:120px;"><label>Trang số</label><input type="number" id="bh_sort" value="1" min="1"></div>
+    <div id="toast" class="toast hidden"></div>
+
+    <div class="panel">
+      <h2>Chọn lớp</h2>
+      <div class="grid">
+        <div class="field wide"><label>Lớp đang quản lý</label>
+          <select id="courseSelect"></select>
         </div>
-        <button class="secondary" onclick="loadLesson()">📥 Tải nội dung trang này</button>
-        <p class="msg" id="bh_loadMsg"></p>
+        <div class="field wide"><label>Tên lớp</label><input id="c_name" type="text"></div>
       </div>
-      <div class="card">
-        <label>Tiêu đề (VD: Danh từ (Noun))</label>
-        <input type="text" id="bh_heading">
-        <label>Nội dung lý thuyết</label>
-        <textarea id="bh_body" rows="4"></textarea>
-        <label>Ví dụ minh hoạ</label>
-        <div id="bh_examples"></div>
-        <button class="secondary small" onclick="addExampleRow('', '', '')">+ Thêm ví dụ</button>
-        <label>Lưu ý</label>
-        <textarea id="bh_note" rows="2"></textarea>
-
-        <label>📎 File đính kèm (ảnh, PDF, Word...) — học sinh sẽ thấy khi mở bài học này</label>
-        <div id="bh_attachmentPreview" style="margin-bottom:8px;"></div>
-        <input type="file" id="bh_file" accept="image/*,.pdf,.doc,.docx">
-        <button class="secondary small" onclick="uploadLessonFile()">⬆️ Tải file lên</button>
-        <span class="msg" id="bh_fileMsg"></span>
-        <input type="hidden" id="bh_attachmentUrl" value="">
-        <input type="hidden" id="bh_attachmentName" value="">
-
-        <button class="primary" onclick="saveLesson()">💾 Lưu nội dung</button>
-        <p class="msg" id="bh_saveMsg"></p>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+        <button id="btnSaveCourseName" class="btn-secondary">Lưu tên lớp</button>
+        <button id="btnSetDefault" class="btn-secondary">Đặt làm lớp mặc định</button>
+        <span id="defaultBadge" class="muted small"></span>
+      </div>
+      <p class="muted small" style="margin:0 0 14px;">Lớp mặc định là lớp tự hiện lên khi ai đó mở link tra cứu mà không kèm ?course= (link chung bạn gửi cho mọi người).</p>
+      <button id="btnToggleNewCourse" class="btn-ghost">+ Thêm lớp mới</button>
+      <div id="newCourseForm" class="grid hidden" style="margin-top:14px;">
+        <div class="field"><label>Mã lớp (slug, không dấu, vd: nvt2)</label><input id="nc_slug" type="text"></div>
+        <div class="field"><label>Tên lớp</label><input id="nc_name" type="text"></div>
+        <div class="field wide"><label>Học viên sẽ tra cứu theo trường gì? (vd: STK, ID môi giới...)</label><input id="nc_label" type="text"></div>
+        <div class="field"><label>Meeting ID</label><input id="nc_id" type="text"></div>
+        <div class="field"><label>Passcode</label><input id="nc_pass" type="text"></div>
+        <div class="field wide"><label>Link vào phòng</label><input id="nc_link" type="text"></div>
+        <div class="field wide"><button id="btnCreateCourse" class="btn-primary">Tạo lớp</button></div>
       </div>
     </div>
 
-    <!-- ================= TỪ VỰNG ================= -->
-    <div class="tab-panel" id="panel-tu-vung">
-      <div class="card" style="background:#ffe8f0;">
-        <label>📂 Import nhiều từ vựng cùng lúc từ file Excel/CSV</label>
-        <p class="msg" style="margin-top:0;">
-          File cần đúng 5 cột theo thứ tự: <strong>Ngày | Icon | Từ tiếng Anh | Nghĩa tiếng Việt | Câu ví dụ</strong> — dòng đầu là tiêu đề sẽ tự bỏ qua. Mỗi ngày chỉ hiển thị tối đa 5 từ trên thẻ, từ thứ 6 trở đi trong cùng 1 ngày sẽ không hiện ra. Từ được nhập vào đúng Chặng đang chọn ở khung dưới.
-        </p>
-        <input type="file" id="tv_importFile" accept=".xlsx,.xls,.csv">
-        <button class="secondary" onclick="previewImportVocab()">👀 Xem trước</button>
-        <div id="tv_importPreview" style="margin-top:10px;"></div>
-        <button class="primary" id="tv_importConfirmBtn" style="display:none;" onclick="confirmImportVocab()">✅ Nhập tất cả vào hệ thống</button>
-        <p class="msg" id="tv_importMsg"></p>
+    <div class="panel">
+      <h2>Thông tin phòng Zoom</h2>
+      <div class="grid">
+        <div class="field"><label>Link vào phòng</label><input id="s_link" type="text"></div>
+        <div class="field"><label>Meeting ID</label><input id="s_id" type="text"></div>
+        <div class="field"><label>Passcode</label><input id="s_pass" type="text"></div>
       </div>
-
-      <div class="card">
-        <div class="row-flex">
-          <div><label>Chặng</label><select id="tv_stage"></select></div>
-          <div style="max-width:120px;"><label>Ngày</label>
-            <select id="tv_day"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-          </div>
-        </div>
-        <button class="secondary" onclick="loadVocab()">📥 Tải 5 từ của ngày này</button>
-        <p class="msg" id="tv_loadMsg"></p>
-      </div>
-      <div id="tv_slots" class="vocab-grid"></div>
+      <button id="btnSaveSettings" class="btn-primary">Lưu thông tin phòng</button>
     </div>
 
-    <!-- ================= QUIZ ================= -->
-    <div class="tab-panel" id="panel-quiz">
-      <div class="card" style="background:#f1ecff;">
-        <label>📂 Import nhiều câu hỏi cùng lúc từ file Excel/CSV</label>
-        <p class="msg" style="margin-top:0;">
-          File cần đúng 6 cột theo thứ tự: <strong>Câu hỏi | Đáp án A | Đáp án B | Đáp án C | Đáp án D | Đáp án đúng (A/B/C/D)</strong> — dòng đầu tiên là tiêu đề sẽ tự bỏ qua. Câu hỏi sẽ được nhập vào đúng Chặng + Loại quiz đang chọn ở khung dưới.
-        </p>
-        <input type="file" id="qz_importFile" accept=".xlsx,.xls,.csv">
-        <button class="secondary" onclick="previewImportFile()">👀 Xem trước</button>
-        <div id="qz_importPreview" style="margin-top:10px;"></div>
-        <button class="primary" id="qz_importConfirmBtn" style="display:none;" onclick="confirmImportQuestions()">✅ Nhập tất cả vào hệ thống</button>
-        <p class="msg" id="qz_importMsg"></p>
+    <div class="panel">
+      <h2>Danh sách học viên</h2>
+      <div class="search-row">
+        <input id="search" type="text" placeholder="Tìm theo STT / tên / STK / SĐT...">
+        <button id="btnSearch" class="btn-secondary">Tìm</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;">
+          <input id="joinedOnly" type="checkbox" style="width:auto;">
+          Chỉ hiện đã vào Zoom
+        </label>
+        <button id="btnExport" class="btn-secondary">Xuất Excel</button>
+        <span id="totalCount" class="muted"></span>
       </div>
 
-      <div class="card">
-        <div class="row-flex">
-          <div><label>Chặng</label><select id="qz_stage"></select></div>
-          <div><label>Loại quiz</label>
-            <select id="qz_type"><option value="grammar">Ngữ pháp</option><option value="vocab">Từ vựng</option></select>
-          </div>
-        </div>
-        <button class="secondary" onclick="loadQuizList()">📥 Tải danh sách câu hỏi</button>
-        <p class="msg" id="qz_loadMsg"></p>
-        <div id="qz_list" style="margin-top:12px;"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>STT</th><th>Họ tên</th><th id="thKey1">Mã tra cứu chính</th><th id="thKey2">Mã tra cứu phụ</th><th>Tên vào Zoom</th><th>Đã tra cứu</th><th>Đã vào Zoom (điểm danh)</th><th></th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
       </div>
-
-      <div class="card">
-        <label>ID câu hỏi (để trống nếu thêm mới)</label>
-        <input type="text" id="qz_id" readonly style="background:#f1eefb;">
-        <label>Nội dung câu hỏi</label>
-        <textarea id="qz_question" rows="2"></textarea>
-        <label>4 đáp án</label>
-        <div class="opt-grid">
-          <input type="text" id="qz_optA" placeholder="A. ...">
-          <input type="text" id="qz_optB" placeholder="B. ...">
-          <input type="text" id="qz_optC" placeholder="C. ...">
-          <input type="text" id="qz_optD" placeholder="D. ...">
-        </div>
-        <label>Đáp án đúng</label>
-        <select id="qz_correct"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
-        <button class="secondary small" onclick="resetQuizForm()">+ Thêm câu mới</button>
-        <button class="primary" onclick="saveQuizQuestion()">💾 Lưu câu hỏi</button>
-        <p class="msg" id="qz_saveMsg"></p>
+      <div class="pager">
+        <button id="btnPrev" class="btn-ghost">&larr; Trước</button>
+        <span id="pageInfo" class="muted"></span>
+        <button id="btnNext" class="btn-ghost">Sau &rarr;</button>
       </div>
     </div>
-    <!-- ================= MINDMAP ================= -->
-    <div class="tab-panel" id="panel-mindmap">
-      <div class="card">
-        <label>Chặng</label>
-        <select id="mm_stage" onchange="loadMindmapPreview()"></select>
-        <p class="msg">Ảnh mindmap hiện tại:</p>
-        <img id="mm_preview" src="" style="display:none;max-width:100%;border-radius:12px;border:1px solid #eee7fb;margin-bottom:10px;">
-        <p class="msg" id="mm_previewMsg">Chưa có ảnh cho chặng này.</p>
 
-        <label>Chọn ảnh mindmap mới (PNG/JPG)</label>
-        <input type="file" id="mm_file" accept="image/*">
-        <button class="primary" onclick="uploadMindmap()">⬆️ Tải ảnh lên &amp; lưu</button>
-        <p class="msg" id="mm_msg"></p>
-      </div>
+    <div class="panel">
+      <h2>Import danh sách học viên từ Excel</h2>
+      <p class="muted small">File cần đúng thứ tự cột: STT, Họ và tên, Mã tra cứu chính, Mã tra cứu phụ (để trống nếu không có), Tên vào Zoom. Dòng đầu tiên (tiêu đề) sẽ tự bị bỏ qua. Học viên trùng STT với người đã có trong lớp sẽ được cập nhật đè lên, không trùng thì được thêm mới.</p>
+      <input id="importFile" type="file" accept=".xlsx,.xls,.csv">
+      <button id="btnImport" class="btn-primary" style="margin-top:12px;">Nhập danh sách vào lớp đang chọn</button>
+      <div id="importStatus" class="muted small" style="margin-top:10px;"></div>
     </div>
-    <!-- ================= HỌC SINH ================= -->
-    <div class="tab-panel" id="panel-hocsinh">
-      <div class="card">
-        <label>➕ Thêm học sinh mới</label>
-        <div class="row-flex">
-          <div><label>Tên học sinh</label><input type="text" id="hs_newName" placeholder="VD: Minh Anh"></div>
-          <div style="max-width:160px;"><label>Mật khẩu</label><input type="text" id="hs_newPin" value="123456"></div>
-        </div>
-        <button class="primary" onclick="addStudent()">Thêm học sinh</button>
-        <p class="msg" id="hs_addMsg"></p>
-      </div>
 
-      <div class="card">
-        <div class="card-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <label style="margin:0;">👥 Tình hình học tập từng học sinh</label>
-          <button class="secondary small" onclick="loadStudentsOverview()">🔄 Tải lại</button>
-        </div>
-        <div id="hs_overview"><p class="msg">Bấm "Tải lại" để xem dữ liệu.</p></div>
+    <div class="panel">
+      <h2>Thêm / sửa 1 học viên theo STT</h2>
+      <p class="muted small">Nhập đúng STT đã có để sửa, hoặc STT mới để thêm học viên mới.</p>
+      <div class="grid">
+        <div class="field"><label>STT</label><input id="e_stt" type="number"></div>
+        <div class="field"><label>Họ tên</label><input id="e_name" type="text"></div>
+        <div class="field"><label id="eKey1Label">Mã tra cứu chính</label><input id="e_stk" type="text"></div>
+        <div class="field"><label id="eKey2Label">Mã tra cứu phụ (nếu có)</label><input id="e_phone" type="text"></div>
+        <div class="field wide"><label>Tên vào Zoom</label><input id="e_zoom" type="text"></div>
       </div>
-
-      <div class="card">
-        <div class="card-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <label style="margin:0;">⚠️ Các câu hay sai nhất</label>
-          <button class="secondary small" onclick="loadWrongQuestions()">🔄 Tải lại</button>
-        </div>
-        <div id="hs_wrong"><p class="msg">Bấm "Tải lại" để xem dữ liệu.</p></div>
-      </div>
+      <button id="btnUpsert" class="btn-primary">Lưu học viên</button>
     </div>
   </div>
-</div>
+</section>
+
+<style>
+:root{
+  --bg:#f1f3f8;
+  --card:#ffffff;
+  --ink:#161c2b;
+  --muted:#697089;
+  --line:#e3e6ef;
+  --brand:#2451e0;
+  --brand-dark:#1a3ba8;
+  --danger:#d64550;
+  --ok:#1fa971;
+  --radius:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1320;
+    --card:#171e2e;
+    --ink:#e9edf7;
+    --muted:#8b93ac;
+    --line:#2a3346;
+  }
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+.hidden{display:none !important;}
+.muted{color:var(--muted);}
+.small{font-size:12.5px;}
+
+#gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.gate-card{background:var(--card);border-radius:var(--radius);padding:32px 28px;max-width:360px;width:100%;box-shadow:0 8px 30px rgba(20,30,60,0.1);text-align:center;}
+.gate-card h1{font-size:20px;margin:0 0 6px;}
+.gate-card p{margin:0 0 20px;font-size:13.5px;}
+#pw{width:100%;padding:12px;font-size:15px;border-radius:8px;border:1.5px solid var(--line);background:transparent;color:var(--ink);margin-bottom:12px;}
+.gate-error{color:var(--danger);font-size:13px;margin-top:10px;}
+
+.wrap{max-width:980px;margin:0 auto;padding:28px 20px 60px;}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+header h1{font-size:22px;margin:0;}
+
+.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;z-index:50;box-shadow:0 4px 20px rgba(0,0,0,0.2);}
+.toast.err{background:var(--danger);}
+
+.panel{background:var(--card);border-radius:var(--radius);padding:22px;margin-bottom:20px;border:1px solid var(--line);}
+.panel h2{font-size:16px;margin:0 0 16px;}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.field.wide{grid-column:1 / -1;}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:5px;}
+.field input, #search{width:100%;padding:10px 11px;font-size:14px;border-radius:8px;border:1.5px solid var(--line);background:transparent;color:var(--ink);outline:none;}
+.field input:focus, #search:focus, #pw:focus{border-color:var(--brand);}
+
+.btn-primary{padding:11px 18px;font-size:14px;font-weight:700;color:#fff;background:var(--brand);border:none;border-radius:8px;cursor:pointer;}
+.btn-primary:hover{background:var(--brand-dark);}
+.btn-secondary{padding:10px 16px;font-size:13.5px;font-weight:700;background:transparent;border:1.5px solid var(--brand);color:var(--brand);border-radius:8px;cursor:pointer;}
+.btn-ghost{padding:8px 12px;font-size:13px;font-weight:600;background:transparent;border:1.5px solid var(--line);color:var(--ink);border-radius:8px;cursor:pointer;}
+.btn-danger{padding:6px 10px;font-size:12px;font-weight:700;background:transparent;border:1.5px solid var(--danger);color:var(--danger);border-radius:6px;cursor:pointer;}
+
+.search-row{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.search-row input{flex:1;min-width:200px;}
+
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;color:var(--muted);font-size:12px;padding:8px;border-bottom:1.5px solid var(--line);white-space:nowrap;}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle;}
+td input{width:100%;padding:6px 8px;font-size:13px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink);}
+.pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:14px;}
+</style>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script>
-  const SUPABASE_URL = 'https://zwkphtxotqdzilotiwpf.supabase.co';
-  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3a3BodHhvdHFkemlsb3Rpd3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MDUwNDgsImV4cCI6MjEwMTE4MTA0OH0.ftxH01_FlELoc1m9cPunoMNcxvKeEDnJ-ccu26IHxjg';
-  let adminPassword = '';
+(function(){
+  const SUPABASE_URL = "https://tvhzojcfycbikxkenhev.supabase.co";
+  const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2aHpvamNmeWNiaWt4a2VuaGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMjMzMzAsImV4cCI6MjEwMDY5OTMzMH0.-_hvVaUqsArDZcHHkv_5y0HSWNQuezyeYNTrzXEfmpU";
+  let ADMIN_PW = null;
+  let page = 0;
+  const PAGE_SIZE = 30;
+  let currentSearch = '';
+  let currentTotal = 0;
+  let courses = [];
+  let currentCourseSlug = null;
+  let defaultCourseSlug = null;
+
+  const el = (id) => document.getElementById(id);
+
+  function currentCourse(){ return courses.find(c => c.slug === currentCourseSlug); }
+
+  async function refreshDefaultCourse(){
+    try{
+      const data = await rpc('list_courses_public', {});
+      if(data.status === 'ok'){ defaultCourseSlug = data.default_course_slug; }
+    }catch(e){ /* ignore */ }
+    updateDefaultBadge();
+  }
+
+  function updateDefaultBadge(){
+    const c = currentCourse();
+    el('defaultBadge').textContent = (c && c.slug === defaultCourseSlug) ? 'Đây đang là lớp mặc định' : '';
+  }
+
+  function populateCourseSelect(){
+    const sel = el('courseSelect');
+    sel.innerHTML = '';
+    courses.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.slug;
+      opt.textContent = `${c.name} (${c.student_count})`;
+      sel.appendChild(opt);
+    });
+    sel.value = currentCourseSlug;
+  }
+
+  function applyCourseToSettingsForm(){
+    const c = currentCourse();
+    if(!c) return;
+    el('s_link').value = c.meeting_link || '';
+    el('s_id').value = c.meeting_id || '';
+    el('s_pass').value = c.passcode || '';
+    el('c_name').value = c.name || '';
+    el('thKey1').textContent = c.search_label || 'Mã tra cứu chính';
+    el('eKey1Label').textContent = c.search_label || 'Mã tra cứu chính';
+    updateDefaultBadge();
+  }
+
+  async function saveCourseName(){
+    const c = currentCourse();
+    if(!c) return;
+    const name = el('c_name').value.trim();
+    if(!name){ toast('Cần nhập tên lớp', true); return; }
+    try{
+      const data = await rpc('admin_update_course', {
+        p_password: ADMIN_PW,
+        p_course_slug: currentCourseSlug,
+        p_meeting_link: c.meeting_link || '',
+        p_meeting_id: c.meeting_id || '',
+        p_passcode: c.passcode || '',
+        p_name: name,
+      });
+      if(data.status === 'ok'){ toast('Đã lưu tên lớp'); await refreshCourses(); populateCourseSelect(); }
+      else toast('Không lưu được: ' + data.status, true);
+    }catch(e){ toast('Lỗi kết nối', true); }
+  }
+
+  async function setDefaultCourse(){
+    if(!currentCourseSlug) return;
+    try{
+      const data = await rpc('admin_set_default_course', { p_password: ADMIN_PW, p_course_slug: currentCourseSlug });
+      if(data.status === 'ok'){ toast('Đã đặt làm lớp mặc định'); defaultCourseSlug = currentCourseSlug; updateDefaultBadge(); }
+      else toast('Không đặt được: ' + data.status, true);
+    }catch(e){ toast('Lỗi kết nối', true); }
+  }
+
+  async function importExcel(){
+    const fileInput = el('importFile');
+    const file = fileInput.files && fileInput.files[0];
+    if(!file){ toast('Chọn file trước đã', true); return; }
+    if(!currentCourseSlug){ toast('Chưa chọn lớp', true); return; }
+    el('importStatus').textContent = 'Đang đọc file...';
+    try{
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+      const students = [];
+      for(let i = 1; i < rows.length; i++){
+        const r = rows[i];
+        if(!r || r.length === 0) continue;
+        const sttRaw = String(r[0] || '').trim();
+        if(!sttRaw) continue;
+        const stt = parseInt(sttRaw, 10);
+        if(!stt) continue;
+        students.push({
+          stt,
+          full_name: String(r[1] || '').trim(),
+          search_key1: String(r[2] || '').trim(),
+          search_key2: String(r[3] || '').trim(),
+          zoom_name: String(r[4] || '').trim(),
+        });
+      }
+      if(students.length === 0){ el('importStatus').textContent = ''; toast('Không đọc được dòng nào hợp lệ trong file', true); return; }
+      el('importStatus').textContent = `Đang nhập ${students.length} dòng vào lớp...`;
+      const result = await rpc('admin_bulk_upsert_course_students', {
+        p_password: ADMIN_PW,
+        p_course_slug: currentCourseSlug,
+        p_students: students,
+      });
+      if(result.status === 'ok'){
+        toast(`Đã nhập ${result.imported} học viên`);
+        el('importStatus').textContent = `Đã nhập ${result.imported} / ${students.length} dòng đọc được từ file.`;
+        fileInput.value = '';
+        await refreshCourses(); populateCourseSelect();
+        page = 0; currentSearch = ''; el('search').value = '';
+        loadStudents();
+      } else {
+        el('importStatus').textContent = '';
+        toast('Nhập thất bại: ' + (result.message || result.status), true);
+      }
+    }catch(e){
+      el('importStatus').textContent = '';
+      toast('Không đọc được file, kiểm tra lại định dạng (.xlsx/.xls/.csv)', true);
+    }
+  }
+
+  async function exportExcel(){
+    if(!currentCourseSlug){ toast('Chưa chọn lớp', true); return; }
+    const joinedOnly = el('joinedOnly').checked;
+    const c = currentCourse();
+    try{
+      toast('Đang lấy dữ liệu để xuất...');
+      const countData = await rpc('admin_list_course_students', { p_password: ADMIN_PW, p_course_slug: currentCourseSlug, p_search: currentSearch, p_limit: 1, p_offset: 0, p_joined_only: joinedOnly });
+      if(countData.status !== 'ok'){ toast('Không lấy được dữ liệu', true); return; }
+      const total = countData.total || 0;
+      if(total === 0){ toast('Không có học viên nào phù hợp để xuất', true); return; }
+      const fullData = await rpc('admin_list_course_students', { p_password: ADMIN_PW, p_course_slug: currentCourseSlug, p_search: currentSearch, p_limit: total, p_offset: 0, p_joined_only: joinedOnly });
+      if(fullData.status !== 'ok'){ toast('Không lấy được dữ liệu', true); return; }
+      const key1Label = (c && c.search_label) || 'Mã tra cứu chính';
+      const rows = (fullData.rows || []).map(r => ({
+        'STT': r.stt,
+        'Họ tên': r.full_name || '',
+        [key1Label]: r.search_key1 || '',
+        'Mã tra cứu phụ': r.search_key2 || '',
+        'Tên vào Zoom': r.zoom_name || '',
+        'Số lần tra cứu': r.retrieved_count || 0,
+        'Tra cứu gần nhất': r.retrieved_at ? fmtDT(r.retrieved_at) : '',
+        'Số lần vào Zoom': r.zoom_joined_count || 0,
+        'Vào Zoom gần nhất': r.zoom_joined_at ? fmtDT(r.zoom_joined_at) : '',
+        'Đã vào Zoom': r.zoom_joined_count > 0 ? 'Có' : 'Không',
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Học viên');
+      const courseName = (c && c.name) ? c.name.replace(/[^\p{L}\p{N}]+/gu, '_') : 'lop_hoc';
+      const suffix = joinedOnly ? '_da_vao_zoom' : '';
+      XLSX.writeFile(wb, `${courseName}${suffix}.xlsx`);
+      toast(`Đã xuất ${rows.length} học viên`);
+    }catch(e){ toast('Lỗi khi xuất file', true); }
+  }
+
+  async function refreshCourses(){
+    const data = await rpc('admin_list_courses', { p_password: ADMIN_PW });
+    if(data.status === 'ok'){ courses = data.courses || []; }
+  }
 
   async function rpc(fn, body){
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':ANON_KEY,'Authorization':`Bearer ${ANON_KEY}`},
-      body: JSON.stringify(body)
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
+      body: JSON.stringify(body),
     });
+    if(!res.ok) throw new Error('http_error');
     return res.json();
   }
 
-  function unlock(){
-    adminPassword = document.getElementById('pw').value;
-    if(!adminPassword){ document.getElementById('authMsg').innerHTML = '<span class="err">Nhập mật khẩu trước đã.</span>'; return; }
-    document.getElementById('authMsg').innerHTML = '';
-    document.getElementById('app').style.display = 'block';
-    loadAllStageSelects();
+  function toast(msg, isErr){
+    const t = el('toast');
+    t.textContent = msg;
+    t.classList.toggle('err', !!isErr);
+    t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), 2200);
   }
 
-  function switchTab(tab){
-    document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-    document.getElementById('panel-'+tab).classList.add('active');
-  }
-
-  let allStages = [];
-  async function loadAllStageSelects(){
-    allStages = await rpc('list_stages', {});
-    const optionsHtml = allStages.map(s => `<option value="${s.order_no}">${s.badge_label} — ${s.title}</option>`).join('');
-    ['bh_stage','tv_stage','qz_stage','mm_stage'].forEach(id => document.getElementById(id).innerHTML = optionsHtml);
-    loadMindmapPreview();
-  }
-
-  /* ---------- HỌC BÀI ---------- */
-  let currentExamples = [];
-  function renderExamples(){
-    document.getElementById('bh_examples').innerHTML = currentExamples.map((ex,i) => `
-      <div class="example-row">
-        <input type="text" placeholder="icon" value="${ex.icon||''}" onchange="currentExamples[${i}].icon=this.value">
-        <input type="text" placeholder="từ" value="${ex.word||''}" onchange="currentExamples[${i}].word=this.value">
-        <input type="text" placeholder="nghĩa" value="${ex.meaning||''}" onchange="currentExamples[${i}].meaning=this.value">
-        <button class="danger small" onclick="currentExamples.splice(${i},1);renderExamples();">✕</button>
-      </div>`).join('');
-  }
-  function addExampleRow(icon, word, meaning){ currentExamples.push({icon, word, meaning}); renderExamples(); }
-
-  function renderAttachmentPreview(url, name){
-    const box = document.getElementById('bh_attachmentPreview');
-    document.getElementById('bh_attachmentUrl').value = url || '';
-    document.getElementById('bh_attachmentName').value = name || '';
-    if(!url){ box.innerHTML = '<span class="msg">Chưa có file đính kèm.</span>'; return; }
-    const isImage = /\.(png|jpe?g|gif|webp)$/i.test(url);
-    box.innerHTML = isImage
-      ? `<img src="${url}" style="max-width:100%;border-radius:10px;border:1px solid #eee7fb;">
-         <div><a href="${url}" target="_blank">${name||'Xem ảnh'}</a> · <span class="err" style="cursor:pointer;" onclick="removeLessonFile()">✕ Bỏ file</span></div>`
-      : `<div>📎 <a href="${url}" target="_blank">${name||'Xem file'}</a> · <span class="err" style="cursor:pointer;" onclick="removeLessonFile()">✕ Bỏ file</span></div>`;
-  }
-  function removeLessonFile(){ renderAttachmentPreview('', ''); document.getElementById('bh_fileMsg').innerHTML = ' <span class="ok">Đã bỏ — nhớ bấm Lưu nội dung.</span>'; }
-
-  async function loadLesson(){
-    const stageOrder = document.getElementById('bh_stage').value;
-    const sortOrder = parseInt(document.getElementById('bh_sort').value || '1');
-    const msg = document.getElementById('bh_loadMsg');
-    msg.textContent = 'Đang tải...';
-    const lessons = await rpc('get_lessons', {p_stage_order: parseInt(stageOrder)});
-    const found = (lessons||[]).find(l => l.sort_order === sortOrder);
-    document.getElementById('bh_heading').value = found?.heading || '';
-    document.getElementById('bh_body').value = found?.body || '';
-    document.getElementById('bh_note').value = found?.note || '';
-    currentExamples = found?.examples || [];
-    renderExamples();
-    renderAttachmentPreview(found?.attachment_url, found?.attachment_name);
-    msg.innerHTML = found ? '<span class="ok">✅ Đã tải nội dung có sẵn.</span>' : '<span class="ok">Trang này chưa có nội dung — điền mới rồi Lưu.</span>';
-  }
-
-  async function uploadLessonFile(){
-    const file = document.getElementById('bh_file').files[0];
-    const msg = document.getElementById('bh_fileMsg');
-    if(!file){ msg.innerHTML = ' <span class="err">Chọn file trước đã.</span>'; return; }
-    msg.textContent = ' Đang tải lên...';
+  async function unlock(){
+    const pw = el('pw').value;
+    if(!pw) return;
     try{
-      let blob = file, contentType = file.type, ext = file.name.split('.').pop();
-      if(file.type.startsWith('image/')){
-        blob = await resizeImageFile(file, 1000, 0.85);
-        contentType = 'image/jpeg'; ext = 'jpg';
+      const data = await rpc('admin_list_courses', { p_password: pw });
+      if(data.status === 'unauthorized'){
+        el('gateError').classList.remove('hidden');
+        return;
       }
-      const path = `lesson-${Date.now()}.${ext}`;
-      const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/lesson-files/${path}`, {
-        method:'POST',
-        headers:{'apikey':ANON_KEY,'Authorization':`Bearer ${ANON_KEY}`,'Content-Type':contentType},
-        body: blob
+      ADMIN_PW = pw;
+      courses = data.courses || [];
+      currentCourseSlug = courses.length ? courses[0].slug : null;
+      populateCourseSelect();
+      applyCourseToSettingsForm();
+      await refreshDefaultCourse();
+      el('gate').classList.add('hidden');
+      el('dashboard').classList.remove('hidden');
+      loadStudents();
+    }catch(e){
+      el('gateError').textContent = 'Có lỗi kết nối, thử lại.';
+      el('gateError').classList.remove('hidden');
+    }
+  }
+
+  async function saveSettings(){
+    try{
+      const data = await rpc('admin_update_course', {
+        p_password: ADMIN_PW,
+        p_course_slug: currentCourseSlug,
+        p_meeting_link: el('s_link').value.trim(),
+        p_meeting_id: el('s_id').value.trim(),
+        p_passcode: el('s_pass').value.trim(),
       });
-      if(!uploadRes.ok){ msg.innerHTML = ' <span class="err">❌ Tải lên thất bại.</span>'; return; }
-      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/lesson-files/${path}`;
-      renderAttachmentPreview(publicUrl, file.name);
-      msg.innerHTML = ' <span class="ok">✅ Đã tải lên — nhớ bấm "Lưu nội dung" để gắn vào bài học.</span>';
-    } catch(err){
-      msg.innerHTML = ' <span class="err">❌ Có lỗi khi xử lý file.</span>';
-    }
+      if(data.status === 'ok'){ toast('Đã lưu thông tin phòng Zoom'); await refreshCourses(); populateCourseSelect(); }
+      else toast('Không lưu được: ' + data.status, true);
+    }catch(e){ toast('Lỗi kết nối', true); }
   }
 
-  async function saveLesson(){
-    const msg = document.getElementById('bh_saveMsg');
-    msg.textContent = 'Đang lưu...';
-    const result = await rpc('admin_upsert_lesson', {
-      p_password: adminPassword,
-      p_stage_order: parseInt(document.getElementById('bh_stage').value),
-      p_sort_order: parseInt(document.getElementById('bh_sort').value || '1'),
-      p_heading: document.getElementById('bh_heading').value,
-      p_body: document.getElementById('bh_body').value,
-      p_examples: currentExamples,
-      p_note: document.getElementById('bh_note').value,
-      p_attachment_url: document.getElementById('bh_attachmentUrl').value || null,
-      p_attachment_name: document.getElementById('bh_attachmentName').value || null
-    });
-    msg.innerHTML = result.status==='ok' ? '<span class="ok">✅ Đã lưu thành công!</span>'
-      : result.status==='unauthorized' ? '<span class="err">❌ Sai mật khẩu quản trị.</span>'
-      : '<span class="err">❌ Có lỗi xảy ra.</span>';
-  }
-
-  /* ---------- IMPORT TỪ VỰNG TỪ FILE ---------- */
-  let parsedVocab = [];
-
-  function previewImportVocab(){
-    const file = document.getElementById('tv_importFile').files[0];
-    const box = document.getElementById('tv_importPreview');
-    const msg = document.getElementById('tv_importMsg');
-    document.getElementById('tv_importConfirmBtn').style.display = 'none';
-    parsedVocab = [];
-    if(!file){ msg.innerHTML = '<span class="err">Chọn file trước đã.</span>'; return; }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try{
-        const wb = XLSX.read(e.target.result, {type:'array'});
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
-        const dataRows = rows.slice(1).filter(r => r && r[2]); // cần ít nhất có từ tiếng Anh
-
-        const dayCounters = {};
-        let overflowWarning = false;
-        parsedVocab = dataRows.map(r => {
-          const day = parseInt(r[0]) || 1;
-          dayCounters[day] = (dayCounters[day] || 0) + 1;
-          if(dayCounters[day] > 5) overflowWarning = true;
-          return {
-            day_number: day,
-            sort_order: dayCounters[day],
-            icon: String(r[1]||'').trim(),
-            word: String(r[2]||'').trim(),
-            meaning: String(r[3]||'').trim(),
-            example_sentence: String(r[4]||'').trim()
-          };
-        });
-
-        if(parsedVocab.length === 0){
-          box.innerHTML = '';
-          msg.innerHTML = '<span class="err">Không đọc được từ nào — kiểm tra lại đúng 5 cột.</span>';
-          return;
-        }
-        box.innerHTML = `<p class="msg"><strong>Tìm thấy ${parsedVocab.length} từ hợp lệ:</strong></p>` +
-          parsedVocab.slice(0,6).map(v => `<div class="qlist-item"><div class="qtext">Ngày ${v.day_number} · ${v.icon} ${v.word} — ${v.meaning}</div></div>`).join('') +
-          (parsedVocab.length > 6 ? `<p class="msg">... và ${parsedVocab.length-6} từ khác</p>` : '') +
-          (overflowWarning ? `<p class="msg"><span class="err">⚠️ Có ngày quá 5 từ — từ dư sẽ được lưu nhưng không hiện trên thẻ (chỉ hiện tối đa 5 từ/ngày).</span></p>` : '');
-        document.getElementById('tv_importConfirmBtn').style.display = 'inline-block';
-        msg.innerHTML = '';
-      } catch(err){
-        msg.innerHTML = '<span class="err">❌ Không đọc được file, kiểm tra lại định dạng.</span>';
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  async function confirmImportVocab(){
-    const msg = document.getElementById('tv_importMsg');
-    if(parsedVocab.length === 0) return;
-    msg.textContent = `Đang nhập ${parsedVocab.length} từ...`;
-    const result = await rpc('admin_bulk_upsert_vocabulary', {
-      p_password: adminPassword,
-      p_stage_order: parseInt(document.getElementById('tv_stage').value),
-      p_items: parsedVocab
-    });
-    if(result.status === 'ok'){
-      msg.innerHTML = `<span class="ok">✅ Đã nhập thành công ${result.imported} từ!</span>`;
-      document.getElementById('tv_importPreview').innerHTML = '';
-      document.getElementById('tv_importConfirmBtn').style.display = 'none';
-      document.getElementById('tv_importFile').value = '';
-      parsedVocab = [];
-    } else if(result.status === 'unauthorized'){
-      msg.innerHTML = '<span class="err">❌ Sai mật khẩu quản trị.</span>';
-    } else {
-      msg.innerHTML = '<span class="err">❌ Có lỗi khi nhập, thử lại.</span>';
-    }
-  }
-
-  /* ---------- TỪ VỰNG ---------- */
-  async function loadVocab(){
-    const stageOrder = parseInt(document.getElementById('tv_stage').value);
-    const day = parseInt(document.getElementById('tv_day').value);
-    const msg = document.getElementById('tv_loadMsg');
-    msg.textContent = 'Đang tải...';
-    const rows = await rpc('get_vocabulary', {p_stage_order: stageOrder, p_day_number: day});
-    const box = document.getElementById('tv_slots');
-    box.innerHTML = '';
-    const colors = ['vc-purple','vc-pink','vc-blue','vc-green','vc-peach'];
-    for(let slot=1; slot<=5; slot++){
-      const existing = (rows||[]).find(r => r.sort_order === slot) || {};
-      const div = document.createElement('div');
-      div.className = 'vocab-card ' + colors[slot-1];
-      const hasImg = !!existing.image_url;
-      div.innerHTML = `
-        <span class="slot-tag">THẺ ${slot}</span>
-        ${hasImg
-          ? `<img class="img-preview" id="tv_imgPreview_${slot}" src="${existing.image_url}">`
-          : `<span class="icon-preview" id="tv_iconPreview_${slot}" style="display:block;">${existing.icon || '❓'}</span>
-             <img class="img-preview" id="tv_imgPreview_${slot}" style="display:none;">`}
-        <div class="img-btn-row">
-          <label class="img-btn" for="tv_imgfile_${slot}">📷 ${hasImg?'Đổi ảnh':'Thêm ảnh'}</label>
-          <input type="file" id="tv_imgfile_${slot}" accept="image/*" onchange="uploadVocabImage(${slot}, this.files[0])">
-          <span class="img-btn" onclick="clearVocabImage(${slot})" style="${hasImg?'':'display:none;'}" id="tv_clearBtn_${slot}">✕ Bỏ ảnh</span>
-        </div>
-        <input type="hidden" id="tv_imageUrl_${slot}" value="${existing.image_url||''}">
-        <input type="text" class="icon-input" id="tv_icon_${slot}" value="${existing.icon||''}"
-          placeholder="icon" oninput="document.getElementById('tv_iconPreview_${slot}').textContent = this.value || '❓';">
-        <input type="text" class="word-input" id="tv_word_${slot}" value="${existing.word||''}" placeholder="từ tiếng Anh">
-        <input type="text" class="meaning-input" id="tv_meaning_${slot}" value="${existing.meaning||''}" placeholder="nghĩa tiếng Việt">
-        <input type="text" class="example-input" id="tv_example_${slot}" value="${existing.example_sentence||''}" placeholder="câu ví dụ">
-        <button class="primary small" onclick="saveVocabSlot(${slot})">💾 Lưu</button>
-        <span class="msg" id="tv_msg_${slot}"></span>
+  function renderRows(rows){
+    const tbody = el('rows');
+    tbody.innerHTML = '';
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.stt}</td>
+        <td><input data-field="full_name" value="${escapeAttr(r.full_name || '')}"></td>
+        <td><input data-field="search_key1" value="${escapeAttr(r.search_key1 || '')}"></td>
+        <td><input data-field="search_key2" value="${escapeAttr(r.search_key2 || '')}"></td>
+        <td><input data-field="zoom_name" value="${escapeAttr(r.zoom_name || '')}"></td>
+        <td class="muted">${r.retrieved_count || 0}${r.retrieved_at ? ' · ' + fmtDT(r.retrieved_at) : ''}</td>
+        <td class="muted">${r.zoom_joined_count || 0}${r.zoom_joined_at ? ' · ' + fmtDT(r.zoom_joined_at) : ''}</td>
+        <td>
+          <button class="btn-secondary btn-row-save">Lưu</button>
+          <button class="btn-danger btn-row-del">Xoá</button>
+        </td>
       `;
-      box.appendChild(div);
-    }
-    msg.innerHTML = '<span class="ok">✅ Đã tải — sửa từng thẻ rồi bấm Lưu riêng từng thẻ.</span>';
-  }
-
-  async function saveVocabSlot(slot){
-    const msg = document.getElementById('tv_msg_'+slot);
-    msg.textContent = ' Đang lưu...';
-    const result = await rpc('admin_upsert_vocabulary', {
-      p_password: adminPassword,
-      p_stage_order: parseInt(document.getElementById('tv_stage').value),
-      p_day_number: parseInt(document.getElementById('tv_day').value),
-      p_sort_order: slot,
-      p_word: document.getElementById('tv_word_'+slot).value,
-      p_meaning: document.getElementById('tv_meaning_'+slot).value,
-      p_example_sentence: document.getElementById('tv_example_'+slot).value,
-      p_icon: document.getElementById('tv_icon_'+slot).value,
-      p_image_url: document.getElementById('tv_imageUrl_'+slot).value || null
-    });
-    msg.innerHTML = result.status==='ok' ? ' <span class="ok">✅ Đã lưu</span>'
-      : result.status==='unauthorized' ? ' <span class="err">❌ Sai mật khẩu</span>'
-      : ' <span class="err">❌ Lỗi</span>';
-  }
-
-  // nén ảnh về tối đa 500px cạnh dài + JPEG chất lượng 82% trước khi tải lên,
-  // để 1 flashcard ảnh chỉ nặng khoảng 30-80KB thay vì vài MB như ảnh chụp gốc
-  function resizeImageFile(file, maxDim=500, quality=0.82){
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const reader = new FileReader();
-      reader.onload = e => { img.src = e.target.result; };
-      reader.onerror = reject;
-      img.onload = () => {
-        let { width, height } = img;
-        if(width > maxDim || height > maxDim){
-          if(width > height){ height = Math.round(height*maxDim/width); width = maxDim; }
-          else { width = Math.round(width*maxDim/height); height = maxDim; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
-      };
-      img.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function uploadVocabImage(slot, file){
-    if(!file) return;
-    const msg = document.getElementById('tv_msg_'+slot);
-    msg.textContent = ' Đang nén & tải ảnh lên...';
-    try{
-      const blob = await resizeImageFile(file);
-      const path = `vocab-${Date.now()}-${slot}.jpg`;
-      const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/vocab-images/${path}`, {
-        method:'POST',
-        headers:{'apikey':ANON_KEY,'Authorization':`Bearer ${ANON_KEY}`,'Content-Type':'image/jpeg'},
-        body: blob
+      tr.querySelector('.btn-row-save').addEventListener('click', async () => {
+        const payload = {
+          p_password: ADMIN_PW,
+          p_course_slug: currentCourseSlug,
+          p_stt: r.stt,
+          p_full_name: tr.querySelector('[data-field="full_name"]').value.trim(),
+          p_search_key1: tr.querySelector('[data-field="search_key1"]').value.trim(),
+          p_search_key2: tr.querySelector('[data-field="search_key2"]').value.trim() || null,
+          p_zoom_name: tr.querySelector('[data-field="zoom_name"]').value.trim(),
+        };
+        try{
+          const data = await rpc('admin_upsert_course_student', payload);
+          if(data.status === 'ok') toast(`Đã lưu STT ${r.stt}`);
+          else toast('Không lưu được', true);
+        }catch(e){ toast('Lỗi kết nối', true); }
       });
-      if(!uploadRes.ok){ msg.innerHTML = ' <span class="err">❌ Tải ảnh thất bại</span>'; return; }
-      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/vocab-images/${path}`;
-      document.getElementById('tv_imageUrl_'+slot).value = publicUrl;
-      const imgEl = document.getElementById('tv_imgPreview_'+slot);
-      imgEl.src = publicUrl; imgEl.style.display = 'block';
-      const iconEl = document.getElementById('tv_iconPreview_'+slot);
-      if(iconEl) iconEl.style.display = 'none';
-      document.getElementById('tv_clearBtn_'+slot).style.display = 'inline-block';
-      msg.innerHTML = ' <span class="ok">✅ Đã tải ảnh — nhớ bấm Lưu để lưu vào thẻ</span>';
-    } catch(err){
-      msg.innerHTML = ' <span class="err">❌ Có lỗi khi xử lý ảnh</span>';
-    }
-  }
-
-  function clearVocabImage(slot){
-    document.getElementById('tv_imageUrl_'+slot).value = '';
-    document.getElementById('tv_imgPreview_'+slot).style.display = 'none';
-    const iconEl = document.getElementById('tv_iconPreview_'+slot);
-    if(iconEl) iconEl.style.display = 'block';
-    document.getElementById('tv_clearBtn_'+slot).style.display = 'none';
-    document.getElementById('tv_msg_'+slot).innerHTML = ' <span class="ok">Đã bỏ ảnh — nhớ bấm Lưu.</span>';
-  }
-
-  /* ---------- IMPORT QUIZ TỪ FILE ---------- */
-  let parsedQuestions = [];
-
-  function previewImportFile(){
-    const file = document.getElementById('qz_importFile').files[0];
-    const box = document.getElementById('qz_importPreview');
-    const msg = document.getElementById('qz_importMsg');
-    document.getElementById('qz_importConfirmBtn').style.display = 'none';
-    parsedQuestions = [];
-    if(!file){ msg.innerHTML = '<span class="err">Chọn file trước đã.</span>'; return; }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try{
-        const wb = XLSX.read(e.target.result, {type:'array'});
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
-        // bỏ dòng tiêu đề đầu tiên
-        const dataRows = rows.slice(1).filter(r => r && r[0]);
-        parsedQuestions = dataRows.map(r => ({
-          question: String(r[0]||'').trim(),
-          optionA: String(r[1]||'').trim(),
-          optionB: String(r[2]||'').trim(),
-          optionC: String(r[3]||'').trim(),
-          optionD: String(r[4]||'').trim(),
-          correct: String(r[5]||'').trim().toUpperCase()
-        })).filter(q => q.question && ['A','B','C','D'].includes(q.correct));
-
-        if(parsedQuestions.length === 0){
-          box.innerHTML = '';
-          msg.innerHTML = '<span class="err">Không đọc được câu hỏi hợp lệ nào — kiểm tra lại đúng 6 cột và cột "Đáp án đúng" phải là A/B/C/D.</span>';
-          return;
-        }
-        box.innerHTML = `<p class="msg"><strong>Tìm thấy ${parsedQuestions.length} câu hỏi hợp lệ:</strong></p>` +
-          parsedQuestions.slice(0,5).map(q => `<div class="qlist-item"><div class="qtext">${q.question} <em>(đúng: ${q.correct})</em></div></div>`).join('') +
-          (parsedQuestions.length > 5 ? `<p class="msg">... và ${parsedQuestions.length-5} câu khác</p>` : '');
-        document.getElementById('qz_importConfirmBtn').style.display = 'inline-block';
-        msg.innerHTML = '';
-      } catch(err){
-        msg.innerHTML = '<span class="err">❌ Không đọc được file, kiểm tra lại định dạng.</span>';
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  async function confirmImportQuestions(){
-    const msg = document.getElementById('qz_importMsg');
-    if(parsedQuestions.length === 0) return;
-    msg.textContent = `Đang nhập ${parsedQuestions.length} câu hỏi...`;
-    const result = await rpc('admin_bulk_upsert_quiz_questions', {
-      p_password: adminPassword,
-      p_stage_order: parseInt(document.getElementById('qz_stage').value),
-      p_quiz_type: document.getElementById('qz_type').value,
-      p_questions: parsedQuestions
+      tr.querySelector('.btn-row-del').addEventListener('click', async () => {
+        if(!confirm(`Xoá học viên STT ${r.stt} - ${r.full_name}?`)) return;
+        try{
+          const data = await rpc('admin_delete_course_student', { p_password: ADMIN_PW, p_course_slug: currentCourseSlug, p_stt: r.stt });
+          if(data.status === 'ok'){ toast(`Đã xoá STT ${r.stt}`); loadStudents(); }
+          else toast('Không xoá được', true);
+        }catch(e){ toast('Lỗi kết nối', true); }
+      });
+      tbody.appendChild(tr);
     });
-    if(result.status === 'ok'){
-      msg.innerHTML = `<span class="ok">✅ Đã nhập thành công ${result.imported} câu hỏi!</span>`;
-      document.getElementById('qz_importPreview').innerHTML = '';
-      document.getElementById('qz_importConfirmBtn').style.display = 'none';
-      document.getElementById('qz_importFile').value = '';
-      parsedQuestions = [];
-      loadQuizList();
-    } else if(result.status === 'unauthorized'){
-      msg.innerHTML = '<span class="err">❌ Sai mật khẩu quản trị.</span>';
-    } else {
-      msg.innerHTML = '<span class="err">❌ Có lỗi khi nhập, thử lại.</span>';
-    }
   }
 
-  /* ---------- QUIZ ---------- */
-  async function loadQuizList(){
-    const stageOrder = parseInt(document.getElementById('qz_stage').value);
-    const type = document.getElementById('qz_type').value;
-    const msg = document.getElementById('qz_loadMsg');
-    msg.textContent = 'Đang tải...';
-    const rows = await rpc('get_quiz_questions', {p_stage_order: stageOrder, p_quiz_type: type});
-    const box = document.getElementById('qz_list');
-    if(!rows || rows.length===0){
-      box.innerHTML = '<p class="msg">Chưa có câu hỏi nào cho chặng/loại này.</p>';
-    } else {
-      box.innerHTML = rows.map(q => `
-        <div class="qlist-item">
-          <div class="qtext">#${q.id} — ${q.question}</div>
-          <div class="qactions">
-            <button class="secondary small" onclick='editQuizQuestion(${JSON.stringify(q).replace(/'/g,"&apos;")})'>Sửa</button>
-            <button class="danger small" onclick="deleteQuizQuestion(${q.id})">Xoá</button>
-          </div>
-        </div>`).join('');
-    }
-    msg.innerHTML = '<span class="ok">✅ Đã tải danh sách.</span>';
-  }
-
-  function editQuizQuestion(q){
-    document.getElementById('qz_id').value = q.id;
-    document.getElementById('qz_question').value = q.question;
-    const opts = q.options || [];
-    document.getElementById('qz_optA').value = opts.find(o=>o.key==='A')?.text || '';
-    document.getElementById('qz_optB').value = opts.find(o=>o.key==='B')?.text || '';
-    document.getElementById('qz_optC').value = opts.find(o=>o.key==='C')?.text || '';
-    document.getElementById('qz_optD').value = opts.find(o=>o.key==='D')?.text || '';
-    document.getElementById('qz_correct').value = q.correct_key;
-  }
-
-  function resetQuizForm(){
-    document.getElementById('qz_id').value = '';
-    document.getElementById('qz_question').value = '';
-    document.getElementById('qz_optA').value = '';
-    document.getElementById('qz_optB').value = '';
-    document.getElementById('qz_optC').value = '';
-    document.getElementById('qz_optD').value = '';
-    document.getElementById('qz_correct').value = 'A';
-  }
-
-  async function saveQuizQuestion(){
-    const msg = document.getElementById('qz_saveMsg');
-    msg.textContent = 'Đang lưu...';
-    const idVal = document.getElementById('qz_id').value;
-    const options = [
-      {key:'A', text: document.getElementById('qz_optA').value},
-      {key:'B', text: document.getElementById('qz_optB').value},
-      {key:'C', text: document.getElementById('qz_optC').value},
-      {key:'D', text: document.getElementById('qz_optD').value},
-    ];
-    const result = await rpc('admin_upsert_quiz_question', {
-      p_password: adminPassword,
-      p_id: idVal ? parseInt(idVal) : null,
-      p_stage_order: parseInt(document.getElementById('qz_stage').value),
-      p_quiz_type: document.getElementById('qz_type').value,
-      p_question: document.getElementById('qz_question').value,
-      p_options: options,
-      p_correct_key: document.getElementById('qz_correct').value
-    });
-    if(result.status==='ok'){
-      msg.innerHTML = '<span class="ok">✅ Đã lưu thành công!</span>';
-      resetQuizForm();
-      loadQuizList();
-    } else if(result.status==='unauthorized'){
-      msg.innerHTML = '<span class="err">❌ Sai mật khẩu quản trị.</span>';
-    } else {
-      msg.innerHTML = '<span class="err">❌ Có lỗi xảy ra.</span>';
-    }
-  }
-
-  /* ---------- MINDMAP ---------- */
-  function loadMindmapPreview(){
-    const stageOrder = parseInt(document.getElementById('mm_stage').value);
-    const stage = allStages.find(s => s.order_no === stageOrder);
-    const img = document.getElementById('mm_preview');
-    const noMsg = document.getElementById('mm_previewMsg');
-    if(stage && stage.mindmap_url){
-      img.src = stage.mindmap_url;
-      img.style.display = 'block';
-      noMsg.style.display = 'none';
-    } else {
-      img.style.display = 'none';
-      noMsg.style.display = 'block';
-    }
-  }
-
-  async function uploadMindmap(){
-    const stageOrder = document.getElementById('mm_stage').value;
-    const file = document.getElementById('mm_file').files[0];
-    const msg = document.getElementById('mm_msg');
-    if(!file){ msg.innerHTML = '<span class="err">Chọn ảnh trước đã.</span>'; return; }
-    msg.textContent = 'Đang nén & tải ảnh lên...';
-    const blob = await resizeImageFile(file, 1400, 0.88);
-    const path = `stage-${stageOrder}-${Date.now()}.jpg`;
-    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/mindmaps/${path}`, {
-      method: 'POST',
-      headers: {'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}`, 'Content-Type': 'image/jpeg'},
-      body: blob
-    });
-    if(!uploadRes.ok){
-      msg.innerHTML = '<span class="err">❌ Tải ảnh lên thất bại, thử lại.</span>';
-      return;
-    }
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/mindmaps/${path}`;
-    const result = await rpc('admin_set_mindmap_url', {p_password: adminPassword, p_stage_order: parseInt(stageOrder), p_url: publicUrl});
-    if(result.status === 'ok'){
-      msg.innerHTML = '<span class="ok">✅ Đã lưu mindmap cho chặng này!</span>';
-      const stage = allStages.find(s => s.order_no === parseInt(stageOrder));
-      if(stage) stage.mindmap_url = publicUrl;
-      loadMindmapPreview();
-    } else if(result.status === 'unauthorized'){
-      msg.innerHTML = '<span class="err">❌ Sai mật khẩu quản trị.</span>';
-    } else {
-      msg.innerHTML = '<span class="err">❌ Có lỗi khi lưu đường dẫn ảnh.</span>';
-    }
-  }
-
-  /* ---------- HỌC SINH ---------- */
-  async function addStudent(){
-    const msg = document.getElementById('hs_addMsg');
-    const name = document.getElementById('hs_newName').value.trim();
-    const pin = document.getElementById('hs_newPin').value.trim() || '123456';
-    if(!name){ msg.innerHTML = '<span class="err">Nhập tên học sinh trước đã.</span>'; return; }
-    msg.textContent = 'Đang thêm...';
-    const result = await rpc('admin_add_student', {p_password: adminPassword, p_name: name, p_pin: pin});
-    if(result.status === 'ok'){
-      msg.innerHTML = `<span class="ok">✅ Đã thêm ${name} — mật khẩu: ${pin}</span>`;
-      document.getElementById('hs_newName').value = '';
-      document.getElementById('hs_newPin').value = '123456';
-    } else if(result.status === 'unauthorized'){
-      msg.innerHTML = '<span class="err">❌ Sai mật khẩu quản trị.</span>';
-    } else {
-      msg.innerHTML = '<span class="err">❌ Có lỗi khi thêm.</span>';
-    }
-  }
-
-  function fmtTime(iso){
-    if(!iso) return '—';
+  function fmtDT(iso){
     const d = new Date(iso);
-    return d.toLocaleString('vi-VN', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-  }
-  function fmtMinutes(m){
-    if(!m || m===0) return '0 phút';
-    if(m < 60) return `${m} phút`;
-    return `${Math.floor(m/60)}h ${Math.round(m%60)}p`;
+    return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN');
   }
 
-  async function loadStudentsOverview(){
-    const box = document.getElementById('hs_overview');
-    box.innerHTML = '<p class="msg">Đang tải...</p>';
-    const rows = await rpc('admin_get_students_overview', {p_password: adminPassword});
-    if(rows && rows.message){ box.innerHTML = '<p class="msg err">❌ Sai mật khẩu quản trị.</p>'; return; }
-    if(!rows || rows.length===0){ box.innerHTML = '<p class="msg">Chưa có học sinh nào vào học.</p>'; return; }
-    box.innerHTML = `
-      <table class="rpt-table">
-        <thead><tr><th>Học sinh</th><th>Mật khẩu</th><th>Thời gian học</th><th>Số buổi</th><th>Quiz (đúng/tổng)</th><th>Hoạt động gần nhất</th></tr></thead>
-        <tbody>
-          ${rows.map(r => `
-            <tr>
-              <td>${r.avatar||'🧒'} ${r.name}</td>
-              <td>${r.pin}</td>
-              <td>${fmtMinutes(r.total_minutes)}</td>
-              <td>${r.sessions_count}</td>
-              <td>${r.quiz_correct_count}/${r.quiz_attempts_count}</td>
-              <td>${fmtTime(r.last_active)}</td>
-            </tr>`).join('')}
-        </tbody>
-      </table>`;
+  function escapeAttr(s){
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  async function loadWrongQuestions(){
-    const box = document.getElementById('hs_wrong');
-    box.innerHTML = '<p class="msg">Đang tải...</p>';
-    const rows = await rpc('admin_get_wrong_questions', {p_password: adminPassword, p_limit: 20});
-    if(rows && rows.message){ box.innerHTML = '<p class="msg err">❌ Sai mật khẩu quản trị.</p>'; return; }
-    if(!rows || rows.length===0){ box.innerHTML = '<p class="msg">Chưa có dữ liệu làm quiz nào để thống kê.</p>'; return; }
-    box.innerHTML = rows.map(r => `
-      <div class="qlist-item" style="flex-direction:column;align-items:flex-start;">
-        <div class="qtext"><strong>${r.stage_title}</strong> · ${r.quiz_type==='grammar'?'Ngữ pháp':'Từ vựng'}<br>${r.question}</div>
-        <div style="font-size:.78rem;color:var(--muted);margin-top:4px;">
-          Sai ${r.wrong_count}/${r.total_count} lượt (${r.wrong_rate}%)
-          <div class="wrong-bar-track"><div class="wrong-bar-fill" style="width:${r.wrong_rate}%;"></div></div>
-        </div>
-      </div>`).join('');
+  async function loadStudents(){
+    if(!currentCourseSlug) return;
+    try{
+      const data = await rpc('admin_list_course_students', { p_password: ADMIN_PW, p_course_slug: currentCourseSlug, p_search: currentSearch, p_limit: PAGE_SIZE, p_offset: page * PAGE_SIZE, p_joined_only: el('joinedOnly').checked });
+      if(data.status !== 'ok'){ toast('Không tải được danh sách', true); return; }
+      currentTotal = data.total;
+      renderRows(data.rows || []);
+      el('totalCount').textContent = `${data.total} học viên`;
+      const maxPage = Math.max(0, Math.ceil(currentTotal / PAGE_SIZE) - 1);
+      el('pageInfo').textContent = `Trang ${page + 1} / ${maxPage + 1}`;
+      el('btnPrev').disabled = page <= 0;
+      el('btnNext').disabled = page >= maxPage;
+    }catch(e){ toast('Lỗi kết nối', true); }
   }
 
-  async function deleteQuizQuestion(id){
-    if(!confirm('Xoá câu hỏi #'+id+'?')) return;
-    const result = await rpc('admin_delete_quiz_question', {p_password: adminPassword, p_id: id});
-    if(result.status==='ok'){ loadQuizList(); } else { alert('Không xoá được — kiểm tra lại mật khẩu.'); }
+  async function upsertFromForm(){
+    const stt = parseInt(el('e_stt').value, 10);
+    if(!stt){ toast('Cần nhập STT', true); return; }
+    try{
+      const data = await rpc('admin_upsert_course_student', {
+        p_password: ADMIN_PW,
+        p_course_slug: currentCourseSlug,
+        p_stt: stt,
+        p_full_name: el('e_name').value.trim(),
+        p_search_key1: el('e_stk').value.trim(),
+        p_search_key2: el('e_phone').value.trim() || null,
+        p_zoom_name: el('e_zoom').value.trim(),
+      });
+      if(data.status === 'ok'){
+        toast(`Đã lưu STT ${stt}`);
+        el('e_stt').value=''; el('e_name').value=''; el('e_stk').value=''; el('e_phone').value=''; el('e_zoom').value='';
+        loadStudents();
+      } else toast('Không lưu được', true);
+    }catch(e){ toast('Lỗi kết nối', true); }
   }
+
+  async function createCourse(){
+    const slug = el('nc_slug').value.trim().toLowerCase();
+    const name = el('nc_name').value.trim();
+    const label = el('nc_label').value.trim();
+    if(!slug || !name || !label){ toast('Cần nhập đủ mã lớp / tên / trường tra cứu', true); return; }
+    try{
+      const data = await rpc('admin_create_course', {
+        p_password: ADMIN_PW,
+        p_slug: slug,
+        p_name: name,
+        p_search_label: label,
+        p_meeting_link: el('nc_link').value.trim() || null,
+        p_meeting_id: el('nc_id').value.trim() || null,
+        p_passcode: el('nc_pass').value.trim() || null,
+      });
+      if(data.status === 'ok'){
+        toast('Đã tạo lớp ' + name);
+        el('nc_slug').value=''; el('nc_name').value=''; el('nc_label').value=''; el('nc_id').value=''; el('nc_pass').value=''; el('nc_link').value='';
+        el('newCourseForm').classList.add('hidden');
+        await refreshCourses();
+        currentCourseSlug = slug;
+        populateCourseSelect();
+        applyCourseToSettingsForm();
+        page = 0; currentSearch=''; el('search').value='';
+        loadStudents();
+      } else toast('Không tạo được: ' + (data.message || data.status), true);
+    }catch(e){ toast('Lỗi kết nối', true); }
+  }
+
+  el('btnUnlock').addEventListener('click', unlock);
+  el('pw').addEventListener('keydown', (e) => { if(e.key === 'Enter') unlock(); });
+  el('btnLock').addEventListener('click', () => location.reload());
+  el('btnSaveSettings').addEventListener('click', saveSettings);
+  el('courseSelect').addEventListener('change', () => {
+    currentCourseSlug = el('courseSelect').value;
+    applyCourseToSettingsForm();
+    page = 0; currentSearch = ''; el('search').value = '';
+    loadStudents();
+  });
+  el('btnToggleNewCourse').addEventListener('click', () => el('newCourseForm').classList.toggle('hidden'));
+  el('btnCreateCourse').addEventListener('click', createCourse);
+  el('btnSaveCourseName').addEventListener('click', saveCourseName);
+  el('btnSetDefault').addEventListener('click', setDefaultCourse);
+  el('btnImport').addEventListener('click', importExcel);
+  el('btnSearch').addEventListener('click', () => { currentSearch = el('search').value.trim(); page = 0; loadStudents(); });
+  el('search').addEventListener('keydown', (e) => { if(e.key === 'Enter'){ currentSearch = el('search').value.trim(); page = 0; loadStudents(); } });
+  el('joinedOnly').addEventListener('change', () => { page = 0; loadStudents(); });
+  el('btnExport').addEventListener('click', exportExcel);
+  el('btnPrev').addEventListener('click', () => { if(page > 0){ page--; loadStudents(); } });
+  el('btnNext').addEventListener('click', () => { page++; loadStudents(); });
+  el('btnUpsert').addEventListener('click', upsertFromForm);
+})();
 </script>
 </body>
 </html>
