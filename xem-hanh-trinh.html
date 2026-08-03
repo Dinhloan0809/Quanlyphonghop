@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hành trình 21 chặng (dữ liệu thật) – Grammar Master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#faf9ff;--text:#241541;--muted:#9c93b5;--primary:#8b7ff5;--primary-dark:#7267e0;
+    --green-dark:#22b573;--shadow:0 8px 20px rgba(80,60,140,.07);}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);}
+  h1{font-family:'Baloo 2';margin:0;font-size:1.15rem;}
+  a{text-decoration:none;color:inherit;}
+  .page{max-width:480px;margin:0 auto;padding:0 14px 30px;}
+
+  .m-header{display:flex;align-items:center;gap:10px;margin:16px 0;}
+  .back-btn{width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:var(--shadow);border:none;
+    display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--text);flex:0 0 36px;}
+
+  .list-card{background:#fff;border-radius:22px;box-shadow:var(--shadow);overflow:hidden;}
+  .row{display:flex;align-items:center;gap:13px;padding:14px 15px;border-bottom:1px solid #f2effa;}
+  .row:last-child{border-bottom:none;}
+  .row-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex:0 0 44px;font-family:'Baloo 2';font-weight:800;}
+  .row-icon.purple{background:#efe9ff;color:var(--primary-dark);}
+  .row-icon.green{background:#e9f9ec;color:var(--green-dark);}
+  .row-icon.gray{background:#f1eefb;color:#c7c1de;}
+  .row .body{flex:1;min-width:0;}
+  .row .title{font-weight:700;font-size:.86rem;}
+  .row.locked .title{color:var(--muted);}
+  .arrow-btn{width:30px;height:30px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;flex:0 0 30px;}
+  .arrow-btn.purple{color:var(--primary-dark);}
+  .arrow-btn.green{color:var(--green-dark);}
+  .lock-ic{color:var(--muted);font-size:.95rem;}
+  .loading{color:var(--muted);font-size:.86rem;padding:30px 0;text-align:center;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="m-header">
+    <a class="back-btn" href="tong-quan-live.html">←</a>
+    <h1>Hành trình 21 chặng</h1>
+  </div>
+  <div class="list-card" id="stageList"><p class="loading">Đang tải...</p></div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://zwkphtxotqdzilotiwpf.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3a3BodHhvdHFkemlsb3Rpd3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MDUwNDgsImV4cCI6MjEwMTE4MTA0OH0.ftxH01_FlELoc1m9cPunoMNcxvKeEDnJ-ccu26IHxjg';
+
+  async function rpc(fn, body){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':ANON_KEY,'Authorization':`Bearer ${ANON_KEY}`},
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+
+  function statusForStage(stage, map){
+    const st = map[stage.id];
+    if(!st) return 'locked';
+    return st === 'completed' ? 'completed' : 'current';
+  }
+
+  async function init(){
+    const studentId = localStorage.getItem('gm_student_id');
+    if(!studentId){ window.location.href = 'index.html'; return; }
+
+    const stages = await rpc('list_stages', {});
+    const progressRows = await rpc('get_student_progress', {p_student_id: parseInt(studentId)});
+    const map = {};
+    (progressRows||[]).forEach(p => { map[p.stage_id] = p.status; });
+
+    const list = document.getElementById('stageList');
+    list.innerHTML = '';
+    stages.forEach((s) => {
+      const st = statusForStage(s, map);
+      const row = document.createElement(st==='locked' ? 'div' : 'a');
+      if(st !== 'locked') row.href = `xem-chang.html?stage=${s.order_no}`;
+      row.className = `row ${st}`;
+      const iconColor = st==='completed' ? 'green' : (st==='current' ? 'purple' : 'gray');
+      const iconInner = st==='completed' ? '✓' : s.order_no;
+      const right = st==='locked' ? '<span class="lock-ic">🔒</span>' : `<span class="arrow-btn ${iconColor}">›</span>`;
+      row.innerHTML = `
+        <div class="row-icon ${iconColor}">${iconInner}</div>
+        <div class="body"><div class="title">${s.title}</div></div>
+        ${right}
+      `;
+      list.appendChild(row);
+    });
+  }
+  init();
+</script>
+</body>
+</html>

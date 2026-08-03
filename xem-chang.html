@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chặng học (dữ liệu thật) – Grammar Master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#faf9ff;--text:#241541;--muted:#9c93b5;--primary:#8b7ff5;--primary-dark:#7267e0;
+    --green-dark:#22b573;--pink:#e0578a;--blue:#3b82f6;--shadow:0 8px 20px rgba(80,60,140,.07);}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);}
+  h1,h2{font-family:'Baloo 2';margin:0;}
+  a{text-decoration:none;color:inherit;}
+  .page{max-width:480px;margin:0 auto;padding:14px 14px 30px;}
+
+  .back-btn{width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:var(--shadow);border:none;
+    display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--text);cursor:pointer;margin-bottom:12px;}
+
+  .hero-banner{background:linear-gradient(135deg,#a79bff,#7267e0);color:#fff;border-radius:26px;
+    padding:22px 22px 20px;margin-bottom:16px;position:relative;overflow:hidden;box-shadow:0 14px 28px rgba(114,103,224,.25);}
+  .hero-banner .deco{position:absolute;right:-6px;bottom:-10px;font-size:5rem;opacity:.18;transform:rotate(-8deg);}
+  .hero-badge{display:inline-block;background:rgba(255,255,255,.22);font-weight:700;font-size:.72rem;padding:4px 12px;border-radius:999px;margin-bottom:8px;}
+  .hero-banner h1{font-size:1.6rem;letter-spacing:.02em;}
+
+  .list-card{background:#fff;border-radius:22px;box-shadow:var(--shadow);overflow:hidden;}
+  .row{display:flex;align-items:center;gap:13px;padding:14px 15px;border-bottom:1px solid #f2effa;}
+  .row:last-child{border-bottom:none;}
+  .row.wrap{align-items:flex-start;}
+  .row-icon{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;flex:0 0 52px;}
+  .row-icon.purple{background:#efe9ff;} .row-icon.pink{background:#ffe8f0;}
+  .row-icon.blue{background:#e6f1ff;} .row-icon.green{background:#e9f9ec;}
+  .row .body{flex:1;min-width:0;}
+  .row .title{font-weight:700;font-size:.88rem;}
+  .row .sub{font-size:.72rem;color:var(--muted);margin-top:2px;}
+  .arrow-btn{width:32px;height:32px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:.95rem;font-weight:800;flex:0 0 32px;}
+  .arrow-btn.purple{color:var(--primary-dark);} .arrow-btn.green{color:var(--green-dark);}
+
+  .quiz-parts{display:flex;gap:8px;margin-top:8px;}
+  .quiz-pill{flex:1;background:#e6f1ff;border-radius:12px;padding:8px 10px;text-align:center;}
+  .quiz-pill .qn{font-size:.68rem;color:var(--muted);font-weight:600;}
+  .quiz-pill .qs{font-family:'Baloo 2';font-weight:800;color:var(--blue);font-size:.85rem;}
+  .loading{color:var(--muted);font-size:.86rem;padding:30px 0;text-align:center;}
+</style>
+</head>
+<body>
+<div class="page" id="content"><p class="loading">Đang tải...</p></div>
+
+<script>
+  const SUPABASE_URL = 'https://zwkphtxotqdzilotiwpf.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3a3BodHhvdHFkemlsb3Rpd3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MDUwNDgsImV4cCI6MjEwMTE4MTA0OH0.ftxH01_FlELoc1m9cPunoMNcxvKeEDnJ-ccu26IHxjg';
+  async function rpc(fn, body){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method:'POST', headers:{'Content-Type':'application/json','apikey':ANON_KEY,'Authorization':`Bearer ${ANON_KEY}`},
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+  function getStageOrder(){ return parseInt(new URL(window.location.href).searchParams.get('stage')) || 1; }
+
+  async function init(){
+    const studentId = localStorage.getItem('gm_student_id');
+    if(!studentId){ window.location.href = 'index.html'; return; }
+
+    const stageOrder = getStageOrder();
+    const stages = await rpc('list_stages', {});
+    const stage = stages.find(s => s.order_no === stageOrder);
+
+    const progressRows = await rpc('get_student_progress', {p_student_id: parseInt(studentId)});
+    const myStatus = (progressRows||[]).find(p => p.stage_id === stage?.id)?.status;
+    if(!myStatus){
+      document.getElementById('content').innerHTML = `
+        <a class="back-btn" href="xem-hanh-trinh.html">←</a>
+        <div style="text-align:center;padding:60px 20px;color:var(--muted);">
+          <div style="font-size:2.4rem;margin-bottom:10px;">🔒</div>
+          Chặng này chưa được mở khoá cho em.<br>Hãy hoàn thành các chặng trước đó nhé!
+        </div>`;
+      return;
+    }
+
+    const grammarQ = await rpc('get_quiz_questions', {p_stage_order: stageOrder, p_quiz_type:'grammar'});
+    const vocabQ = await rpc('get_quiz_questions', {p_stage_order: stageOrder, p_quiz_type:'vocab'});
+    const vocabDay1 = await rpc('get_vocabulary', {p_stage_order: stageOrder, p_day_number: 1});
+
+    const hasVocab = (vocabDay1||[]).length > 0;
+    const hasMindmap = !!(stage && stage.mindmap_url);
+
+    document.getElementById('content').innerHTML = `
+      <a class="back-btn" href="xem-hanh-trinh.html">←</a>
+      <div class="hero-banner">
+        <div class="deco">📖</div>
+        <span class="hero-badge">📚 ${stage?.badge_label || ''}</span>
+        <h1>${(stage?.title || '').toUpperCase()}</h1>
+      </div>
+
+      <div class="list-card">
+        <a class="row" href="xem-bai-hoc.html?stage=${stageOrder}&page=1">
+          <div class="row-icon purple">📖</div>
+          <div class="body"><div class="title">1. Học bài</div><div class="sub">Ôn lại lý thuyết đã học cùng cô Loan</div></div>
+          <span class="arrow-btn purple">›</span>
+        </a>
+
+        ${hasMindmap
+          ? `<a class="row" href="xem-mindmap.html?stage=${stageOrder}">
+               <div class="row-icon green">🧠</div>
+               <div class="body"><div class="title">2. Ghi nhớ nhanh</div><div class="sub">Xem sơ đồ mindmap tổng hợp</div></div>
+               <span class="arrow-btn green">›</span>
+             </a>`
+          : `<div class="row"><div class="row-icon green">🧠</div>
+               <div class="body"><div class="title">2. Ghi nhớ nhanh</div><div class="sub" style="color:#c7c1de;">Chưa có mindmap cho chặng này</div></div>
+             </div>`}
+
+        ${hasVocab
+          ? `<a class="row" href="xem-tu-vung.html?stage=${stageOrder}&day=1">
+               <div class="row-icon pink">🔤</div>
+               <div class="body"><div class="title">3. Từ vựng</div><div class="sub">Học flashcard theo từng ngày</div></div>
+               <span class="arrow-btn purple" style="color:#e0578a;">›</span>
+             </a>`
+          : `<div class="row"><div class="row-icon pink">🔤</div>
+               <div class="body"><div class="title">3. Từ vựng</div><div class="sub" style="color:#c7c1de;">Chưa có từ vựng cho chặng này</div></div>
+             </div>`}
+
+        <div class="row wrap">
+          <div class="row-icon blue">📝</div>
+          <div class="body">
+            <div class="title">4. Quiz</div>
+            <div class="quiz-parts">
+              ${grammarQ && grammarQ.length
+                ? `<a class="quiz-pill" href="xem-quiz.html?stage=${stageOrder}&type=grammar"><div class="qn">Ngữ pháp</div><div class="qs">${grammarQ.length} câu</div></a>`
+                : `<div class="quiz-pill" style="opacity:.5;"><div class="qn">Ngữ pháp</div><div class="qs">Chưa có</div></div>`}
+              ${vocabQ && vocabQ.length
+                ? `<a class="quiz-pill" href="xem-quiz.html?stage=${stageOrder}&type=vocab"><div class="qn">Từ vựng</div><div class="qs">${vocabQ.length} câu</div></a>`
+                : `<div class="quiz-pill" style="opacity:.5;"><div class="qn">Từ vựng</div><div class="qs">Chưa có</div></div>`}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  init();
+</script>
+</body>
+</html>

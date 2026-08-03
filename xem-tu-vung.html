@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Từ vựng (dữ liệu thật) – Grammar Master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#faf9ff;--text:#241541;--muted:#9c93b5;--primary:#8b7ff5;--primary-dark:#7267e0;--pink:#e0578a;--shadow:0 8px 20px rgba(80,60,140,.07);}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);}
+  h1{font-family:'Baloo 2';margin:0;font-size:1.05rem;}
+  a{text-decoration:none;color:inherit;}
+  .page{max-width:480px;margin:0 auto;padding:14px 14px 30px;}
+
+  .m-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .back-btn{width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:var(--shadow);border:none;
+    display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--text);flex:0 0 36px;}
+
+  .day-tabs{display:flex;gap:6px;margin-bottom:18px;}
+  .day-tabs button{flex:1;border:none;background:#fff;color:var(--muted);font-weight:700;font-size:.82rem;padding:9px 0;border-radius:12px;cursor:pointer;box-shadow:var(--shadow);}
+  .day-tabs button.active{background:var(--pink);color:#fff;}
+
+  .flash-wrap{perspective:1000px;height:280px;margin-bottom:16px;}
+  .flashcard{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;cursor:pointer;}
+  .flashcard.flipped{transform:rotateY(180deg);}
+  .face{position:absolute;inset:0;border-radius:24px;backface-visibility:hidden;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:20px;text-align:center;box-shadow:0 12px 26px rgba(80,60,140,.14);}
+  .face.front{background:linear-gradient(145deg,#ffe8f0,#ffd6e6);}
+  .face.back{background:linear-gradient(145deg,#efe9ff,#ddd2ff);transform:rotateY(180deg);}
+  .face img{width:100px;height:100px;object-fit:cover;border-radius:16px;margin-bottom:12px;}
+  .face .emoji{font-size:3.4rem;margin-bottom:10px;}
+  .face .word{font-family:'Baloo 2';font-weight:800;font-size:1.5rem;color:var(--primary-dark);}
+  .face .meaning{font-size:1.1rem;font-weight:700;margin-bottom:10px;color:var(--pink);}
+  .face .example{font-size:.86rem;font-style:italic;color:#5a5177;}
+  .face .hint{position:absolute;bottom:12px;font-size:.68rem;color:var(--muted);font-weight:600;}
+  .speak-btn{width:40px;height:40px;border-radius:50%;border:none;background:#fff;box-shadow:0 4px 12px rgba(80,60,140,.15);
+    font-size:1.1rem;cursor:pointer;margin-top:8px;display:flex;align-items:center;justify-content:center;}
+  .speak-btn:active{transform:scale(.92);}
+
+  .nav-row{display:flex;justify-content:space-between;align-items:center;}
+  .nav-btn{width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:var(--shadow);border:none;font-size:1.2rem;color:var(--primary-dark);cursor:pointer;}
+  .nav-btn[disabled]{opacity:.35;cursor:not-allowed;}
+  .dots{display:flex;gap:6px;}
+  .dots span{width:8px;height:8px;border-radius:50%;background:#e3ddf7;}
+  .dots span.active{background:var(--primary);}
+  .loading,.empty{color:var(--muted);font-size:.86rem;padding:40px 0;text-align:center;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="m-header">
+    <a class="back-btn" id="backBtn" href="#">←</a>
+    <h1 id="title">Từ vựng</h1>
+  </div>
+  <div class="day-tabs" id="dayTabs"></div>
+  <div id="cardArea"><p class="loading">Đang tải...</p></div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://zwkphtxotqdzilotiwpf.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3a3BodHhvdHFkemlsb3Rpd3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MDUwNDgsImV4cCI6MjEwMTE4MTA0OH0.ftxH01_FlELoc1m9cPunoMNcxvKeEDnJ-ccu26IHxjg';
+  async function rpc(fn, body){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method:'POST', headers:{'Content-Type':'application/json','apikey':ANON_KEY,'Authorization':`Bearer ${ANON_KEY}`},
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+  function params(){
+    const u = new URL(window.location.href);
+    return { stage: parseInt(u.searchParams.get('stage'))||1, day: parseInt(u.searchParams.get('day'))||1 };
+  }
+
+  function ensureStudent(){
+    return new Promise((resolve) => {
+      const savedId = localStorage.getItem('gm_student_id');
+      const savedName = localStorage.getItem('gm_student_name');
+      if(savedId){ resolve({id:parseInt(savedId), name:savedName}); return; }
+      window.location.href = 'index.html';
+    });
+  }
+
+  let gmSessionId = null;
+  async function startTrackedSession(student, stageOrder, activityType){
+    gmSessionId = await rpc('start_study_session', {p_student_id: student.id, p_stage_order: stageOrder, p_activity_type: activityType});
+    setInterval(() => { if(document.visibilityState==='visible' && gmSessionId) rpc('ping_study_session', {p_session_id: gmSessionId}); }, 20000);
+    document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && gmSessionId) rpc('ping_study_session', {p_session_id: gmSessionId}); });
+  }
+
+  let stageOrder, currentDay, cards = [], idx = 0;
+
+  async function loadDay(day){
+    currentDay = day;
+    history.replaceState(null, '', `?stage=${stageOrder}&day=${day}`);
+    document.querySelectorAll('.day-tabs button').forEach(b => b.classList.toggle('active', parseInt(b.dataset.day)===day));
+    idx = 0;
+    const area = document.getElementById('cardArea');
+    area.innerHTML = '<p class="loading">Đang tải...</p>';
+    cards = await rpc('get_vocabulary', {p_stage_order: stageOrder, p_day_number: day});
+    if(!cards || cards.length===0){
+      area.innerHTML = '<p class="empty">🚧 Ngày này chưa có từ vựng nào.</p>';
+      return;
+    }
+    renderCard();
+  }
+
+  function speak(text, e){
+    if(e) e.stopPropagation();
+    if(!text || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'en-US';
+    utter.rate = 0.9;
+    window.speechSynthesis.speak(utter);
+  }
+
+  function renderCard(){
+    const area = document.getElementById('cardArea');
+    const v = cards[idx];
+    area.innerHTML = `
+      <div class="flash-wrap">
+        <div class="flashcard" id="flashcard">
+          <div class="face front">
+            ${v.image_url ? `<img src="${v.image_url}">` : `<div class="emoji">${v.icon||'❓'}</div>`}
+            <div class="word">${v.word||''}</div>
+            <button class="speak-btn" onclick="speak('${(v.word||'').replace(/'/g,"\\'")}', event)">🔊</button>
+            <div class="hint">👆 Bấm để xem nghĩa</div>
+          </div>
+          <div class="face back">
+            <div class="meaning">${v.meaning||''}</div>
+            <div class="example">${v.example_sentence||''}</div>
+            <button class="speak-btn" onclick="speak('${(v.example_sentence||v.word||'').replace(/'/g,"\\'")}', event)">🔊</button>
+            <div class="hint">👆 Bấm để quay lại</div>
+          </div>
+        </div>
+      </div>
+      <div class="nav-row">
+        <button class="nav-btn" id="prevBtn" ${idx===0?'disabled':''}>‹</button>
+        <div class="dots">${cards.map((c,i)=>`<span class="${i===idx?'active':''}"></span>`).join('')}</div>
+        <button class="nav-btn" id="nextBtn" ${idx===cards.length-1?'disabled':''}>›</button>
+      </div>
+    `;
+    document.getElementById('flashcard').addEventListener('click', function(){ this.classList.toggle('flipped'); });
+    document.getElementById('prevBtn').addEventListener('click', ()=>{ if(idx>0){ idx--; renderCard(); } });
+    document.getElementById('nextBtn').addEventListener('click', ()=>{ if(idx<cards.length-1){ idx++; renderCard(); } });
+  }
+
+  async function init(){
+    const p = params();
+    stageOrder = p.stage;
+    document.getElementById('backBtn').href = `xem-chang.html?stage=${stageOrder}`;
+    const student = await ensureStudent();
+    startTrackedSession(student, stageOrder, 'vocab');
+    const stages = await rpc('list_stages', {});
+    const stage = stages.find(s => s.order_no === stageOrder);
+    document.getElementById('title').textContent = `Từ vựng · ${stage?.title || ''}`;
+    document.getElementById('dayTabs').innerHTML = [1,2,3,4,5].map(d =>
+      `<button data-day="${d}" onclick="loadDay(${d})">Ngày ${d}</button>`).join('');
+    await loadDay(p.day);
+  }
+  init();
+</script>
+</body>
+</html>

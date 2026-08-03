@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz (dữ liệu thật) – Grammar Master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#faf9ff;--text:#241541;--muted:#9c93b5;--primary:#8b7ff5;--primary-dark:#7267e0;
+    --green:#4cd273;--green-dark:#22b573;--red:#e0578a;--shadow:0 8px 20px rgba(80,60,140,.07);}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);}
+  h1,h2{font-family:'Baloo 2';margin:0;}
+  a{text-decoration:none;color:inherit;}
+  .page{max-width:480px;margin:0 auto;padding:14px 14px 90px;}
+
+  .m-header{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .back-btn{width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:var(--shadow);border:none;
+    display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:var(--text);flex:0 0 36px;}
+  .m-header h1{flex:1;text-align:center;font-size:1rem;}
+  .m-header .meta{flex:0 0 36px;text-align:right;font-size:.78rem;color:var(--muted);font-weight:700;}
+  .thin-progress{height:6px;background:#ece8fb;border-radius:999px;margin:12px 0 18px;overflow:hidden;}
+  .thin-progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-dark));border-radius:999px;}
+
+  .quiz-question{font-weight:700;font-size:.98rem;line-height:1.4;margin-bottom:14px;}
+  .quiz-options{display:flex;flex-direction:column;gap:10px;}
+  .quiz-option{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid #f1eefb;border-radius:14px;padding:13px 14px;font-size:.88rem;cursor:pointer;}
+  .quiz-option .radio{width:20px;height:20px;border-radius:50%;border:2px solid #d8d3ef;flex:0 0 20px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#fff;}
+  .quiz-option.correct{border-color:var(--green);background:#e9f9ec;}
+  .quiz-option.correct .radio{background:var(--green);border-color:var(--green);}
+  .quiz-option.wrong{border-color:var(--red);background:#ffe8f0;}
+  .quiz-option.wrong .radio{background:var(--red);border-color:var(--red);}
+  .quiz-option.disabled{cursor:default;}
+
+  .feedback-box{margin-top:14px;padding:12px 14px;border-radius:14px;font-size:.86rem;font-weight:700;display:none;}
+  .feedback-box.correct{background:#e9f9ec;color:var(--green-dark);display:block;}
+  .feedback-box.wrong{background:#ffe8f0;color:var(--red);display:block;}
+  .feedback-box .sub{font-weight:500;font-size:.82rem;margin-top:4px;color:#5a5177;}
+
+  .next-btn{display:block;width:100%;border:none;border-radius:12px;padding:13px;font-weight:800;font-size:.92rem;
+    background:var(--primary);color:#fff;margin-top:18px;cursor:pointer;}
+  .next-btn[disabled]{opacity:.4;cursor:not-allowed;}
+
+  .result-hero{border-radius:24px;padding:32px 20px 24px;text-align:center;background:linear-gradient(160deg,#efe9ff,#ffe8f0);margin-bottom:16px;}
+  .result-hero .trophy{font-size:3.2rem;margin-bottom:8px;}
+  .result-hero h2{font-size:1.3rem;color:var(--primary-dark);margin-bottom:4px;}
+  .result-hero p{margin:0;color:var(--muted);font-size:.84rem;}
+  .result-stats{display:flex;gap:10px;margin-bottom:18px;}
+  .result-stats .box{flex:1;background:#fff;border-radius:16px;padding:14px 6px;text-align:center;box-shadow:var(--shadow);}
+  .result-stats .box .val{font-family:'Baloo 2';font-weight:800;font-size:1.25rem;}
+  .result-stats .box .val.green{color:var(--green-dark);}
+  .result-stats .box .val.purple{color:var(--primary-dark);}
+  .result-stats .box .lbl{font-size:.7rem;color:var(--muted);margin-top:2px;}
+  .result-btns{display:flex;gap:10px;}
+  .result-btns button,.result-btns a{flex:1;text-align:center;border:none;border-radius:12px;padding:12px;font-weight:700;font-size:.86rem;cursor:pointer;}
+  .btn-outline{background:#fff;color:var(--primary-dark);border:1px solid #efe9ff !important;}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .loading,.empty{color:var(--muted);font-size:.86rem;padding:40px 0;text-align:center;}
+</style>
+</head>
+<body>
+<div class="page" id="page"><p class="loading">Đang tải câu hỏi...</p></div>
+
+<script>
+  const SUPABASE_URL = 'https://zwkphtxotqdzilotiwpf.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3a3BodHhvdHFkemlsb3Rpd3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MDUwNDgsImV4cCI6MjEwMTE4MTA0OH0.ftxH01_FlELoc1m9cPunoMNcxvKeEDnJ-ccu26IHxjg';
+  async function rpc(fn, body){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method:'POST', headers:{'Content-Type':'application/json','apikey':ANON_KEY,'Authorization':`Bearer ${ANON_KEY}`},
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+  function params(){
+    const u = new URL(window.location.href);
+    return { stage: parseInt(u.searchParams.get('stage'))||1, type: u.searchParams.get('type')||'grammar' };
+  }
+
+  function ensureStudent(){
+    return new Promise((resolve) => {
+      const savedId = localStorage.getItem('gm_student_id');
+      const savedName = localStorage.getItem('gm_student_name');
+      if(savedId){ resolve({id:parseInt(savedId), name:savedName}); return; }
+      window.location.href = 'index.html';
+    });
+  }
+
+  let gmSessionId = null;
+  async function startTrackedSession(student, stageOrder, activityType){
+    gmSessionId = await rpc('start_study_session', {p_student_id: student.id, p_stage_order: stageOrder, p_activity_type: activityType});
+    setInterval(() => { if(document.visibilityState==='visible' && gmSessionId) rpc('ping_study_session', {p_session_id: gmSessionId}); }, 20000);
+    document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && gmSessionId) rpc('ping_study_session', {p_session_id: gmSessionId}); });
+  }
+
+  let stageOrder, quizType, questions = [], qIdx = 0, score = 0, answered = false;
+
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+    return arr;
+  }
+
+  function renderQuestion(){
+    answered = false;
+    const q = questions[qIdx];
+    const page = document.getElementById('page');
+    page.innerHTML = `
+      <div class="m-header">
+        <a class="back-btn" href="xem-chang.html?stage=${stageOrder}">←</a>
+        <h1>Quiz ${quizType==='grammar'?'Ngữ pháp':'Từ vựng'}</h1>
+        <div class="meta">${qIdx+1}/${questions.length}</div>
+      </div>
+      <div class="thin-progress"><div class="thin-progress-fill" style="width:${(qIdx)/questions.length*100}%;"></div></div>
+      <div class="quiz-question">Câu ${qIdx+1}: ${q.question}</div>
+      <div class="quiz-options" id="opts">
+        ${q.options.map(o => `<div class="quiz-option" data-key="${o.key}"><span class="radio"></span>${o.key}. ${o.text}</div>`).join('')}
+      </div>
+      <div class="feedback-box" id="feedbackBox"></div>
+      <button class="next-btn" id="nextBtn" disabled>${qIdx===questions.length-1 ? 'Xem kết quả' : 'Câu tiếp →'}</button>
+    `;
+    document.querySelectorAll('.quiz-option').forEach(el => el.addEventListener('click', () => selectOption(el, q)));
+    document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+  }
+
+  let currentStudent = null;
+
+  function selectOption(el, q){
+    if(answered) return;
+    answered = true;
+    const chosen = el.dataset.key;
+    const correctOpt = q.options.find(o => o.key === q.correct_key);
+    document.querySelectorAll('.quiz-option').forEach(o => {
+      o.classList.add('disabled');
+      if(o.dataset.key === q.correct_key) o.classList.add('correct');
+      else if(o.dataset.key === chosen) o.classList.add('wrong');
+    });
+    const isCorrect = chosen === q.correct_key;
+    if(isCorrect) score++;
+    if(currentStudent) rpc('log_quiz_attempt', {p_student_id: currentStudent.id, p_question_id: q.id, p_is_correct: isCorrect});
+    const fb = document.getElementById('feedbackBox');
+    fb.className = 'feedback-box ' + (isCorrect ? 'correct' : 'wrong');
+    fb.innerHTML = isCorrect
+      ? `✅ Chính xác! Đáp án đúng là ${q.correct_key}. ${correctOpt?.text || ''}`
+      : `❌ Chưa đúng. Đáp án đúng là <u>${q.correct_key}. ${correctOpt?.text || ''}</u>`;
+    document.getElementById('nextBtn').disabled = false;
+  }
+
+  function nextQuestion(){
+    if(qIdx < questions.length-1){ qIdx++; renderQuestion(); }
+    else { renderResult(); }
+  }
+
+  async function renderResult(){
+    const pct = Math.round(score/questions.length*100);
+    let unlockNote = '';
+    if(currentStudent){
+      const r = await rpc('complete_stage_quiz', {p_student_id: currentStudent.id, p_stage_order: stageOrder, p_score_pct: pct});
+      if(r.passed && r.next_unlocked) unlockNote = `<p style="color:#22b573;font-weight:700;font-size:.86rem;margin-top:-6px;margin-bottom:10px;">🎉 Đã mở khoá chặng tiếp theo!</p>`;
+      else if(r.passed) unlockNote = `<p style="color:#22b573;font-weight:700;font-size:.86rem;margin-top:-6px;margin-bottom:10px;">✅ Đã hoàn thành chặng này!</p>`;
+      else if(pct < 50) unlockNote = `<p style="color:#e0578a;font-weight:600;font-size:.82rem;margin-top:-6px;margin-bottom:10px;">Cần đạt từ 50% trở lên để mở khoá chặng tiếp theo — làm lại thử nhé!</p>`;
+    }
+    document.getElementById('page').innerHTML = `
+      <div class="m-header"><div style="flex:0 0 36px;"></div><h1>Kết quả Quiz</h1><div style="flex:0 0 36px;"></div></div>
+      <div class="result-hero">
+        <div class="trophy">${pct>=80?'🏆':pct>=50?'🎉':'💪'}</div>
+        <h2>${pct>=80?'Tuyệt vời!':pct>=50?'Khá lắm!':'Cố gắng thêm nhé!'}</h2>
+        <p>Bạn đã hoàn thành Quiz ${quizType==='grammar'?'Ngữ pháp':'Từ vựng'}!</p>
+      </div>
+      ${unlockNote}
+      <div class="result-stats">
+        <div class="box"><div class="val">${questions.length}</div><div class="lbl">Tổng câu</div></div>
+        <div class="box"><div class="val green">${score}</div><div class="lbl">Đúng</div></div>
+        <div class="box"><div class="val purple">${pct}%</div><div class="lbl">Điểm số</div></div>
+      </div>
+      <div class="result-btns">
+        <button class="btn-outline" onclick="restartQuiz()">↻ Làm lại</button>
+        <a class="btn-primary" href="xem-chang.html?stage=${stageOrder}">Quay lại chặng →</a>
+      </div>
+    `;
+  }
+
+  function restartQuiz(){ qIdx = 0; score = 0; questions = shuffle(questions); renderQuestion(); }
+
+  async function init(){
+    const p = params();
+    stageOrder = p.stage; quizType = p.type;
+    currentStudent = await ensureStudent();
+    startTrackedSession(currentStudent, stageOrder, 'quiz');
+    questions = await rpc('get_quiz_questions', {p_stage_order: stageOrder, p_quiz_type: quizType});
+    if(!questions || questions.length === 0){
+      document.getElementById('page').innerHTML = `
+        <div class="m-header"><a class="back-btn" href="xem-chang.html?stage=${stageOrder}">←</a><h1>Quiz</h1><div style="flex:0 0 36px;"></div></div>
+        <p class="empty">🚧 Chặng này chưa có câu hỏi loại "${quizType==='grammar'?'Ngữ pháp':'Từ vựng'}".</p>`;
+      return;
+    }
+    questions = shuffle(questions);
+    renderQuestion();
+  }
+  init();
+</script>
+</body>
+</html>

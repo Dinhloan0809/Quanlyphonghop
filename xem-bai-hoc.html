@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xem trước – Học bài (dữ liệu thật)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#faf9ff;--text:#241541;--muted:#9c93b5;--primary:#8b7ff5;--primary-dark:#7267e0;--shadow:0 8px 20px rgba(80,60,140,.07);}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);}
+  h1,h2{font-family:'Baloo 2';margin:0;}
+  a{color:var(--primary-dark);}
+  .page{max-width:480px;margin:0 auto;padding:16px 16px 40px;}
+
+  .devbar{background:#1c1836;padding:12px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .devbar select,.devbar input{padding:7px 10px;border-radius:8px;border:none;font-size:.82rem;}
+  .devbar button{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:700;cursor:pointer;}
+  .devbar .tag{color:#c9c4e6;font-size:.7rem;font-weight:700;}
+
+  .m-header{padding:16px 0 6px;}
+  .badge{display:inline-block;background:#efe9ff;color:var(--primary-dark);font-weight:700;font-size:.72rem;padding:4px 12px;border-radius:999px;margin-bottom:8px;}
+  .m-header h1{font-size:1.3rem;}
+  .thin-progress{height:6px;background:#ece8fb;border-radius:999px;margin:14px 0;overflow:hidden;}
+  .thin-progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-dark));border-radius:999px;}
+
+  .lesson-title h2{color:var(--primary-dark);font-size:1.2rem;margin-bottom:8px;}
+  .lesson-body{font-size:.9rem;line-height:1.65;color:#4a3f66;margin-bottom:16px;white-space:pre-wrap;}
+  .example-label{font-weight:700;font-size:.88rem;margin-bottom:8px;}
+  .example-grid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+  .example-item{flex:0 0 calc(33.33% - 7px);background:#fff;border-radius:14px;padding:12px 6px;text-align:center;box-shadow:var(--shadow);}
+  .example-item .ic{font-size:1.5rem;margin-bottom:6px;}
+  .example-item strong{display:block;font-size:.8rem;}
+  .example-item span{font-size:.66rem;color:var(--muted);}
+  .note-box{background:#efe9ff;border-left:4px solid var(--primary);border-radius:0 14px 14px 0;padding:12px 14px;font-size:.84rem;line-height:1.5;color:#4a3f66;margin-bottom:16px;}
+  .note-box strong{color:var(--primary-dark);display:block;margin-bottom:4px;}
+
+  .attach-card{background:#fff;border-radius:18px;padding:16px;box-shadow:var(--shadow);margin-top:6px;}
+  .attach-card h3{font-size:.94rem;margin-bottom:10px;}
+  .attach-card img{width:100%;border-radius:12px;display:block;}
+  .attach-card iframe{width:100%;height:480px;border:none;border-radius:12px;}
+  .attach-link{display:inline-block;margin-top:10px;font-size:.84rem;font-weight:700;}
+
+  .empty-box{border:2px dashed rgba(36,21,65,.15);border-radius:16px;padding:26px;text-align:center;color:var(--muted);font-size:.9rem;}
+  .loading{color:var(--muted);font-size:.86rem;padding:20px 0;text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="devbar">
+  <span class="tag">XEM THỬ:</span>
+  <select id="dv_stage"></select>
+  <input type="number" id="dv_page" value="1" min="1" style="width:60px;">
+  <button onclick="loadAndRender()">Xem</button>
+</div>
+
+<div class="page" id="content">
+  <p class="loading">Đang tải dữ liệu thật từ Supabase...</p>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://zwkphtxotqdzilotiwpf.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3a3BodHhvdHFkemlsb3Rpd3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MDUwNDgsImV4cCI6MjEwMTE4MTA0OH0.ftxH01_FlELoc1m9cPunoMNcxvKeEDnJ-ccu26IHxjg';
+
+  async function rpc(fn, body){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':ANON_KEY,'Authorization':`Bearer ${ANON_KEY}`},
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+
+  function getParams(){
+    const url = new URL(window.location.href);
+    return {
+      stage: parseInt(url.searchParams.get('stage')) || 1,
+      page: parseInt(url.searchParams.get('page')) || 1
+    };
+  }
+
+  function ensureStudent(){
+    return new Promise((resolve) => {
+      const savedId = localStorage.getItem('gm_student_id');
+      const savedName = localStorage.getItem('gm_student_name');
+      if(savedId){ resolve({id:parseInt(savedId), name:savedName}); return; }
+      window.location.href = 'index.html';
+    });
+  }
+
+  let gmSessionId = null;
+  async function startTrackedSession(student, stageOrder, activityType){
+    gmSessionId = await rpc('start_study_session', {p_student_id: student.id, p_stage_order: stageOrder, p_activity_type: activityType});
+    setInterval(() => { if(document.visibilityState==='visible' && gmSessionId) rpc('ping_study_session', {p_session_id: gmSessionId}); }, 20000);
+    document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && gmSessionId) rpc('ping_study_session', {p_session_id: gmSessionId}); });
+  }
+
+  function attachmentBlock(url, name){
+    if(!url) return '';
+    const isImage = /\.(png|jpe?g|gif|webp)$/i.test(url);
+    const isPdf = /\.pdf$/i.test(url);
+    let inner;
+    if(isImage){
+      inner = `<img src="${url}" alt="${name||''}">`;
+    } else if(isPdf){
+      inner = `<iframe src="${url}"></iframe>`;
+    } else {
+      inner = `<iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true"></iframe>`;
+    }
+    return `
+      <div class="attach-card">
+        <h3>📎 Tài liệu bài học${name ? ' — ' + name : ''}</h3>
+        ${inner}
+        <a class="attach-link" href="${url}" target="_blank">⬇️ Mở / tải file gốc</a>
+      </div>`;
+  }
+
+  async function loadAndRender(){
+    const stageOrder = parseInt(document.getElementById('dv_stage').value);
+    const page = parseInt(document.getElementById('dv_page').value) || 1;
+    history.replaceState(null, '', `?stage=${stageOrder}&page=${page}`);
+
+    const student = await ensureStudent();
+    startTrackedSession(student, stageOrder, 'lesson');
+
+    const box = document.getElementById('content');
+    box.innerHTML = '<p class="loading">Đang tải...</p>';
+
+    const stages = await rpc('list_stages', {});
+    const stage = stages.find(s => s.order_no === stageOrder);
+    const lessons = await rpc('get_lessons', {p_stage_order: stageOrder});
+    const lesson = (lessons||[]).find(l => l.sort_order === page);
+
+    let html = `
+      <div class="m-header">
+        <span class="badge">${stage?.badge_label || 'Chặng ' + stageOrder}</span>
+        <h1>${stage?.title || ''}</h1>
+        <div class="thin-progress"><div class="thin-progress-fill" style="width:${Math.min(page*12,100)}%;"></div></div>
+      </div>
+    `;
+
+    const hasStructured = lesson && (lesson.heading || lesson.body || (lesson.examples && lesson.examples.length));
+    const hasAttachment = lesson && lesson.attachment_url;
+
+    if(!lesson || (!hasStructured && !hasAttachment)){
+      html += `<div class="empty-box">🚧 Chặng này / trang này chưa có nội dung "Học bài" nào được lưu.</div>`;
+    } else {
+      if(hasStructured){
+        html += `<div class="lesson-title"><h2>${lesson.heading || ''}</h2></div>`;
+        if(lesson.body) html += `<p class="lesson-body">${lesson.body}</p>`;
+        if(lesson.examples && lesson.examples.length){
+          html += `<div class="example-label">Ví dụ:</div><div class="example-grid">` +
+            lesson.examples.map(ex => `<div class="example-item"><div class="ic">${ex.icon||'📌'}</div><strong>${ex.word||''}</strong><span>${ex.meaning||''}</span></div>`).join('') +
+            `</div>`;
+        }
+        if(lesson.note) html += `<div class="note-box"><strong>Lưu ý:</strong>${lesson.note}</div>`;
+      }
+      if(hasAttachment){
+        html += attachmentBlock(lesson.attachment_url, lesson.attachment_name);
+      }
+    }
+
+    box.innerHTML = html;
+  }
+
+  async function init(){
+    const stages = await rpc('list_stages', {});
+    document.getElementById('dv_stage').innerHTML = stages.map(s => `<option value="${s.order_no}">${s.badge_label} — ${s.title}</option>`).join('');
+    const params = getParams();
+    document.getElementById('dv_stage').value = params.stage;
+    document.getElementById('dv_page').value = params.page;
+    loadAndRender();
+  }
+  init();
+</script>
+</body>
+</html>
