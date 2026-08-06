@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Theo dõi nhắc Margin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --ink:#12222b;
+    --ink-soft:#1c333f;
+    --paper:#f6f4ee;
+    --paper-card:#ffffff;
+    --line:#e2ddd0;
+    --teal:#1f6f63;
+    --teal-dark:#154f46;
+    --amber:#c2872c;
+    --red:#b3452f;
+    --green:#3c7a5a;
+    --text:#1a2327;
+    --text-soft:#5c6b6f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    background:var(--paper);
+    color:var(--text);
+  }
+  h1,h2,h3,.brand{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- LOGIN ---------- */
+  #loginScreen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(160deg,var(--ink) 0%,var(--ink-soft) 100%);
+    padding:20px;
+  }
+  .login-card{
+    background:var(--paper-card);
+    border-radius:14px;
+    padding:36px 32px;
+    width:100%;
+    max-width:380px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+  }
+  .login-card .brand{font-size:22px;font-weight:700;color:var(--ink);margin:0 0 4px;}
+  .login-card p.sub{color:var(--text-soft);font-size:13px;margin:0 0 24px;}
+  label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;}
+  input[type=email],input[type=password],input[type=text],input[type=date],select,textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:14px;
+    font-family:'Inter',sans-serif;
+    background:#fff;
+    color:var(--text);
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:1px;}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;
+    cursor:pointer;font-family:'Inter',sans-serif;transition:transform .05s ease, opacity .15s;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-primary:hover{background:var(--teal-dark);}
+  .btn-ghost{background:transparent;color:var(--teal-dark);border:1px solid var(--line);}
+  .btn-ghost:hover{background:#f0ede4;}
+  .btn-danger{background:var(--red);color:#fff;}
+  .btn-block{width:100%;margin-top:20px;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .toggle-row{margin-top:16px;font-size:13px;color:var(--text-soft);text-align:center;}
+  .toggle-row a{color:var(--teal-dark);font-weight:600;cursor:pointer;text-decoration:none;}
+  .error-msg{background:#fbe9e5;color:var(--red);padding:10px 12px;border-radius:8px;font-size:13px;margin-top:14px;}
+  .ok-msg{background:#e6f2ec;color:var(--green);padding:10px 12px;border-radius:8px;font-size:13px;margin-top:14px;}
+
+  /* ---------- APP SHELL ---------- */
+  #app{display:none;min-height:100vh;flex-direction:column;}
+  header.topbar{
+    background:var(--ink);
+    color:#fff;
+    padding:14px 24px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:10;
+  }
+  header.topbar .brand{font-size:18px;font-weight:700;letter-spacing:-.01em;}
+  header.topbar .brand span{color:#8fd0c1;}
+  .user-chip{display:flex;align-items:center;gap:10px;font-size:13px;color:#cfd8d6;}
+  .user-chip .btn-ghost{color:#fff;border-color:rgba(255,255,255,.25);padding:6px 12px;font-size:12px;}
+  .user-chip .btn-ghost:hover{background:rgba(255,255,255,.1);}
+
+  nav.tabs{
+    background:var(--ink-soft);
+    display:flex;gap:4px;padding:0 20px;
+    overflow-x:auto;
+  }
+  nav.tabs button{
+    background:none;border:none;color:#a9bdc1;
+    padding:12px 16px;font-size:13.5px;font-weight:600;cursor:pointer;
+    border-bottom:3px solid transparent;font-family:'Inter',sans-serif;white-space:nowrap;
+  }
+  nav.tabs button.active{color:#fff;border-bottom-color:var(--teal);}
+  nav.tabs button:hover{color:#fff;}
+
+  main{flex:1;padding:24px;max-width:1100px;margin:0 auto;width:100%;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .card{background:var(--paper-card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:18px;}
+  .card h2{margin:0 0 4px;font-size:17px;}
+  .card p.desc{color:var(--text-soft);font-size:13px;margin:0 0 16px;}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+  .toolbar input,.toolbar select{width:auto;min-width:160px;}
+  .stat-pill{
+    font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;
+    background:#eee9db;color:var(--text-soft);
+  }
+
+  /* KH group cards */
+  .kh-group{border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden;background:#fff;}
+  .kh-group-head{padding:12px 16px;background:#faf8f2;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+  .kh-name{font-weight:700;font-size:15px;}
+  .kh-meta{font-size:12px;color:var(--text-soft);}
+  .loan-row{
+    display:flex;align-items:center;gap:12px;padding:10px 16px;
+    border-top:1px solid var(--line);flex-wrap:wrap;
+  }
+  .loan-row.overdue{border-left:4px solid var(--red);background:#fdf4f2;}
+  .loan-row.due-soon{border-left:4px solid var(--amber);}
+  .loan-row.ok{border-left:4px solid var(--teal);}
+  .loan-info{flex:1;min-width:180px;font-size:13px;}
+  .loan-info .date{font-weight:600;}
+  .status-chip{
+    font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;
+  }
+  .status-chua_nhac{background:#f3e3dd;color:var(--red);}
+  .status-da_nhac{background:#f4e6cd;color:var(--amber);}
+  .status-da_xu_ly{background:#dcece2;color:var(--green);}
+  .loan-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .loan-actions .btn{padding:6px 10px;font-size:12px;}
+  .loan-note{font-size:12px;color:var(--text-soft);font-style:italic;width:100%;margin-top:4px;}
+
+  /* Import */
+  .step-num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;
+    font-size:12px;font-weight:700;margin-right:8px;
+  }
+  .drop-zone{
+    border:2px dashed var(--line);border-radius:10px;padding:24px;text-align:center;
+    color:var(--text-soft);font-size:13px;cursor:pointer;background:#faf8f2;
+  }
+  .drop-zone:hover{border-color:var(--teal);}
+  table.preview{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:12px;}
+  table.preview th{background:#f0ede4;text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;color:var(--text-soft);}
+  table.preview td{padding:6px 8px;border-bottom:1px solid var(--line);}
+  table.preview tr.skip td{color:#b9a99a;text-decoration:line-through;background:#fbf8f2;}
+  .map-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:6px;}
+
+  /* whitelist */
+  .id-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .id-row .idtag{font-family:'IBM Plex Mono',monospace;font-weight:600;background:#eee9db;padding:3px 8px;border-radius:6px;font-size:13px;}
+  .id-row .note{flex:1;font-size:13px;color:var(--text-soft);}
+  .id-row .inactive{opacity:.45;}
+  .badge-active{font-size:11px;font-weight:700;color:var(--green);}
+  .badge-inactive{font-size:11px;font-weight:700;color:var(--red);}
+
+  .empty-state{text-align:center;padding:40px 20px;color:var(--text-soft);}
+  .empty-state .big{font-size:32px;margin-bottom:8px;}
+
+  @media (max-width:600px){
+    main{padding:14px;}
+    header.topbar{padding:12px 14px;}
+    .user-chip span.email{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <p class="brand">Theo dõi nhắc <span style="color:var(--teal)">Margin</span></p>
+    <p class="sub" id="loginSub">Đăng nhập để xem danh sách khách hàng cần nhắc</p>
+    <form id="loginForm">
+      <label>Email</label>
+      <input type="email" id="loginEmail" required autocomplete="username">
+      <label>Mật khẩu</label>
+      <input type="password" id="loginPassword" required autocomplete="current-password">
+      <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Đăng nhập</button>
+    </form>
+    <div class="toggle-row" id="toggleRow">
+      Chưa có tài khoản? <a id="toggleToSignup">Đăng ký</a>
+    </div>
+    <div id="authMsg"></div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <header class="topbar">
+    <div class="brand">Nhắc <span>Margin</span></div>
+    <div class="user-chip">
+      <span class="email mono" id="userEmail"></span>
+      <button class="btn btn-ghost" id="logoutBtn">Đăng xuất</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="danhSach">Cần nhắc</button>
+    <button class="tab-btn" data-tab="import">Import dữ liệu</button>
+    <button class="tab-btn" data-tab="whitelist">Danh sách ID theo dõi</button>
+  </nav>
+
+  <main>
+    <!-- TAB: DANH SACH -->
+    <section class="panel active" id="panel-danhSach">
+      <div class="card">
+        <h2>Khách hàng cần nhắc</h2>
+        <p class="desc">Khoản vay còn hiển thị ở đây cho tới khi được đánh dấu "Đã xử lý xong".</p>
+        <div class="toolbar">
+          <input type="text" id="searchKH" placeholder="Tìm theo tên khách hàng...">
+          <select id="filterGroup"><option value="">Tất cả ID</option></select>
+          <select id="filterStatus">
+            <option value="open">Đang cần theo dõi (chưa xử lý xong)</option>
+            <option value="all">Xem tất cả (kể cả đã xử lý)</option>
+          </select>
+          <span class="stat-pill" id="statCount">0 khoản</span>
+        </div>
+        <div id="danhSachList"></div>
+      </div>
+    </section>
+
+    <!-- TAB: IMPORT -->
+    <section class="panel" id="panel-import">
+      <div class="card">
+        <h2><span class="step-num">1</span>Đưa dữ liệu vào</h2>
+        <p class="desc">Tải file Excel/CSV, hoặc copy trực tiếp vùng dữ liệu từ Excel rồi dán vào ô bên dưới (Ctrl+V).</p>
+        <div class="drop-zone" id="dropZone">📄 Kéo thả file .xlsx / .csv vào đây, hoặc bấm để chọn file
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
+        </div>
+        <label>Hoặc dán dữ liệu đã copy từ Excel</label>
+        <textarea id="pasteArea" rows="5" placeholder="Dán dữ liệu (có dòng tiêu đề) từ Excel vào đây..."></textarea>
+        <button class="btn btn-primary" id="parsePasteBtn" style="margin-top:10px;">Đọc dữ liệu đã dán</button>
+      </div>
+
+      <div class="card" id="mapCard" style="display:none;">
+        <h2><span class="step-num">2</span>Chọn cột dữ liệu</h2>
+        <p class="desc">Cho hệ thống biết cột nào là ID (để lọc theo danh sách theo dõi) và cột nào là tên khách hàng.</p>
+        <div class="map-grid">
+          <div><label>Cột chứa ID *</label><select id="mapId"></select></div>
+          <div><label>Cột chứa Tên KH *</label><select id="mapTen"></select></div>
+          <div><label>Cột Ngày đến hạn (nếu có)</label><select id="mapNgay"></select></div>
+          <div><label>Cột Mã khoản vay (nếu có)</label><select id="mapMa"></select></div>
+          <div><label>Cột Ghi chú (nếu có)</label><select id="mapGhiChu"></select></div>
+        </div>
+        <button class="btn btn-ghost" id="buildPreviewBtn">Xem trước</button>
+      </div>
+
+      <div class="card" id="previewCard" style="display:none;">
+        <h2><span class="step-num">3</span>Xem trước &amp; xác nhận</h2>
+        <p class="desc" id="previewSummary"></p>
+        <div style="max-height:360px;overflow:auto;">
+          <table class="preview" id="previewTable"></table>
+        </div>
+        <button class="btn btn-primary" id="confirmImportBtn" style="margin-top:14px;">Import vào hệ thống</button>
+        <div id="importResultMsg"></div>
+      </div>
+    </section>
+
+    <!-- TAB: WHITELIST -->
+    <section class="panel" id="panel-whitelist">
+      <div class="card">
+        <h2>Danh sách ID được theo dõi</h2>
+        <p class="desc">Khi import, hệ thống chỉ giữ lại các dòng có ID nằm trong danh sách "Đang bật" dưới đây.</p>
+        <div class="toolbar">
+          <input type="text" id="newIdInput" placeholder="Mã ID mới, vd: MG012">
+          <input type="text" id="newIdNote" placeholder="Ghi chú (vd: tên môi giới)">
+          <button class="btn btn-primary" id="addIdBtn">+ Thêm ID</button>
+        </div>
+        <div id="whitelistList"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="bootError" style="display:none;position:fixed;inset:0;background:#12222b;color:#fff;z-index:9999;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:sans-serif;">
+  <div style="max-width:420px;">
+    <div style="font-size:32px;margin-bottom:10px;">⚠️</div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:8px;">Không tải được thư viện cần thiết</div>
+    <div style="font-size:13px;color:#cfd8d6;line-height:1.5;">
+      Trang này cần tải Supabase/SheetJS từ Internet (cdn.jsdelivr.net, cdn.sheetjs.com) nhưng bị chặn — có thể do mạng công ty, VPN, hoặc trình duyệt chặn quảng cáo/script lạ.<br><br>
+      Thử: tắt VPN/ứng dụng chặn quảng cáo cho trang này, đổi sang mạng 4G, hoặc mở bằng trình duyệt khác rồi tải lại trang.
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  if (typeof window.supabase === 'undefined' || typeof window.supabase.createClient !== 'function') {
+    document.getElementById('bootError').style.display = 'flex';
+    document.getElementById('loginScreen').style.display = 'none';
+    throw new Error('Thư viện Supabase chưa tải được — dừng khởi tạo trang.');
+  }
+})();
+const SUPABASE_URL = "https://tvhzojcfycbikxkenhev.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2aHpvamNmeWNiaWt4a2VuaGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMjMzMzAsImV4cCI6MjEwMDY5OTMzMH0.-_hvVaUqsArDZcHHkv_5y0HSWNQuezyeYNTrzXEfmpU";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+window.addEventListener('error', function(e){
+  console.error('Lỗi trang:', e.message);
+  const box = document.getElementById('authMsg');
+  if (box && document.getElementById('loginScreen').style.display !== 'none') {
+    box.innerHTML = '<div class="error-msg">Lỗi kỹ thuật: ' + (e.message || 'không rõ') + ' — chụp màn hình này gửi lại nhé.</div>';
+  }
+});
+
+let isSignupMode = false;
+let currentParsedRows = null; // {headers:[], rows:[[...]]}
+let whitelistCache = [];
+
+/* ---------------- AUTH ---------------- */
+const loginForm = document.getElementById('loginForm');
+const authMsg = document.getElementById('authMsg');
+const toggleToSignup = document.getElementById('toggleToSignup');
+const loginSub = document.getElementById('loginSub');
+const loginBtn = document.getElementById('loginBtn');
+
+// event delegation: hoạt động kể cả khi <a> bên trong bị thay thế qua innerHTML
+document.getElementById('toggleRow').addEventListener('click', (e) => {
+  if (!e.target || e.target.tagName !== 'A') return;
+  isSignupMode = !isSignupMode;
+  loginBtn.textContent = isSignupMode ? 'Tạo tài khoản' : 'Đăng nhập';
+  loginSub.textContent = isSignupMode
+    ? 'Tạo tài khoản mới bằng email được cấp'
+    : 'Đăng nhập để xem danh sách khách hàng cần nhắc';
+  document.getElementById('toggleRow').innerHTML = isSignupMode
+    ? 'Đã có tài khoản? <a>Đăng nhập</a>'
+    : 'Chưa có tài khoản? <a>Đăng ký</a>';
+  authMsg.innerHTML = '';
+});
+
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  loginBtn.disabled = true;
+  authMsg.innerHTML = '';
+  try {
+    if (isSignupMode) {
+      const { error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+      authMsg.innerHTML = `<div class="ok-msg">Đã tạo tài khoản. Nếu hệ thống yêu cầu xác nhận email, hãy kiểm tra hộp thư rồi quay lại đăng nhập.</div>`;
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    }
+  } catch (err) {
+    authMsg.innerHTML = `<div class="error-msg">${err.message || 'Có lỗi xảy ra'}</div>`;
+  } finally {
+    loginBtn.disabled = false;
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+});
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('userEmail').textContent = session.user.email;
+    initApp();
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+/* ---------------- TABS ---------------- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'whitelist') loadWhitelist();
+    if (btn.dataset.tab === 'danhSach') loadDanhSach();
+  });
+});
+
+let appInited = false;
+function initApp() {
+  if (appInited) return;
+  appInited = true;
+  loadWhitelist();
+  loadDanhSach();
+}
+
+/* ---------------- DANH SACH CAN NHAC ---------------- */
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('vi-VN');
+}
+function daysUntil(d) {
+  if (!d) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dt = new Date(d + 'T00:00:00');
+  return Math.round((dt - today) / 86400000);
+}
+
+async function loadDanhSach() {
+  const listEl = document.getElementById('danhSachList');
+  listEl.innerHTML = '<p style="color:var(--text-soft);font-size:13px;">Đang tải...</p>';
+
+  const statusFilter = document.getElementById('filterStatus').value;
+  let query = sb.from('margin_khoan_vay')
+    .select('id, group_id, ma_khoan_vay, ngay_den_han, ngay_import, trang_thai, ghi_chu, khach_hang:margin_khach_hang(id, ten_kh)')
+    .order('ngay_den_han', { ascending: true, nullsFirst: false });
+
+  if (statusFilter === 'open') query = query.neq('trang_thai', 'da_xu_ly');
+
+  const { data, error } = await query;
+  if (error) { listEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+
+  let rows = data || [];
+  const search = document.getElementById('searchKH').value.trim().toLowerCase();
+  const groupFilter = document.getElementById('filterGroup').value;
+  if (search) rows = rows.filter(r => r.khach_hang && r.khach_hang.ten_kh.toLowerCase().includes(search));
+  if (groupFilter) rows = rows.filter(r => r.group_id === groupFilter);
+
+  document.getElementById('statCount').textContent = rows.length + ' khoản';
+
+  if (rows.length === 0) {
+    listEl.innerHTML = `<div class="empty-state"><div class="big">✅</div>Không có khoản nào cần theo dõi.</div>`;
+    return;
+  }
+
+  // group by khach hang
+  const groups = {};
+  rows.forEach(r => {
+    const khId = r.khach_hang ? r.khach_hang.id : 'unknown';
+    if (!groups[khId]) groups[khId] = { ten: r.khach_hang ? r.khach_hang.ten_kh : '(không rõ)', loans: [] };
+    groups[khId].loans.push(r);
+  });
+
+  listEl.innerHTML = '';
+  Object.values(groups).forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'kh-group';
+    const head = document.createElement('div');
+    head.className = 'kh-group-head';
+    head.innerHTML = `<span class="kh-name">${escapeHtml(g.ten)}</span><span class="kh-meta">${g.loans.length} khoản</span>`;
+    div.appendChild(head);
+
+    g.loans.forEach(loan => {
+      const dLeft = daysUntil(loan.ngay_den_han);
+      let rowClass = 'ok';
+      if (dLeft !== null && dLeft < 0) rowClass = 'overdue';
+      else if (dLeft !== null && dLeft <= 2) rowClass = 'due-soon';
+
+      const row = document.createElement('div');
+      row.className = 'loan-row ' + rowClass;
+
+      const statusLabel = { chua_nhac: 'Chưa nhắc', da_nhac: 'Đã nhắc, chờ xử lý', da_xu_ly: 'Đã xử lý xong' }[loan.trang_thai];
+      let dueText = fmtDate(loan.ngay_den_han);
+      if (dLeft !== null) {
+        if (dLeft < 0) dueText += ` (quá hạn ${Math.abs(dLeft)} ngày)`;
+        else if (dLeft === 0) dueText += ` (hôm nay)`;
+        else dueText += ` (còn ${dLeft} ngày)`;
+      }
+
+      row.innerHTML = `
+        <div class="loan-info">
+          <span class="idtag mono" style="background:#eee9db;padding:2px 6px;border-radius:5px;font-size:11px;">${escapeHtml(loan.group_id)}</span>
+          ${loan.ma_khoan_vay ? `<span class="mono" style="font-size:11px;color:var(--text-soft);"> · ${escapeHtml(loan.ma_khoan_vay)}</span>` : ''}
+          <div class="date">${dueText}</div>
+          <span class="status-chip status-${loan.trang_thai}">${statusLabel}</span>
+          ${loan.ghi_chu ? `<div class="loan-note">📝 ${escapeHtml(loan.ghi_chu)}</div>` : ''}
+        </div>
+        <div class="loan-actions" data-id="${loan.id}">
+          ${loan.trang_thai !== 'da_nhac' && loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-ghost act-nhac">Đã nhắc</button>` : ''}
+          ${loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-primary act-xong">Đã xử lý xong</button>` : `<button class="btn btn-ghost act-mo">Mở lại</button>`}
+        </div>
+      `;
+      div.appendChild(row);
+    });
+    listEl.appendChild(div);
+  });
+
+  // bind actions
+  listEl.querySelectorAll('.act-nhac').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_da_nhac')));
+  listEl.querySelectorAll('.act-xong').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_xu_ly_xong')));
+  listEl.querySelectorAll('.act-mo').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_mo_lai')));
+}
+
+async function handleAction(e, rpcName) {
+  const id = e.target.closest('[data-id]').dataset.id;
+  let note = null;
+  if (rpcName !== 'margin_mo_lai') {
+    const raw = prompt('Ghi chú (không bắt buộc, để trống rồi bấm OK nếu không cần):', '');
+    if (raw === null) return; // người dùng bấm Hủy
+    note = raw.trim() === '' ? null : raw.trim();
+  }
+  e.target.disabled = true;
+  const { error } = await sb.rpc(rpcName, { p_khoan_vay_id: id, p_ghi_chu: note });
+  if (error) { alert('Lỗi: ' + error.message); e.target.disabled = false; return; }
+  loadDanhSach();
+}
+
+document.getElementById('searchKH').addEventListener('input', debounce(loadDanhSach, 250));
+document.getElementById('filterGroup').addEventListener('change', loadDanhSach);
+document.getElementById('filterStatus').addEventListener('change', loadDanhSach);
+
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------------- WHITELIST ---------------- */
+async function loadWhitelist() {
+  const { data, error } = await sb.from('margin_id_whitelist').select('*').order('created_at', { ascending: false });
+  const listEl = document.getElementById('whitelistList');
+  if (error) { listEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+  whitelistCache = data || [];
+
+  // update filter dropdown in tab 1 and mapping dropdowns won't need this
+  const filterGroup = document.getElementById('filterGroup');
+  const prevVal = filterGroup.value;
+  filterGroup.innerHTML = '<option value="">Tất cả ID</option>' + whitelistCache.map(w => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.id)}</option>`).join('');
+  filterGroup.value = prevVal;
+
+  if (whitelistCache.length === 0) {
+    listEl.innerHTML = `<div class="empty-state"><div class="big">📋</div>Chưa có ID nào. Thêm ID đầu tiên ở trên để bắt đầu import dữ liệu.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = whitelistCache.map(w => `
+    <div class="id-row ${w.active ? '' : 'inactive'}">
+      <span class="idtag">${escapeHtml(w.id)}</span>
+      <span class="note">${escapeHtml(w.ghi_chu || '')}</span>
+      <span class="${w.active ? 'badge-active' : 'badge-inactive'}">${w.active ? 'Đang bật' : 'Đã tắt'}</span>
+      <button class="btn btn-ghost toggle-active" data-id="${escapeHtml(w.id)}" data-active="${w.active}">${w.active ? 'Tắt' : 'Bật lại'}</button>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.toggle-active').forEach(b => b.addEventListener('click', async () => {
+    const id = b.dataset.id;
+    const newActive = b.dataset.active !== 'true';
+    b.disabled = true;
+    const { error } = await sb.from('margin_id_whitelist').update({ active: newActive }).eq('id', id);
+    if (error) alert('Lỗi: ' + error.message);
+    loadWhitelist();
+  }));
+}
+
+document.getElementById('addIdBtn').addEventListener('click', async () => {
+  const idInput = document.getElementById('newIdInput');
+  const noteInput = document.getElementById('newIdNote');
+  const id = idInput.value.trim();
+  if (!id) { alert('Nhập mã ID trước đã nhé.'); return; }
+  const { error } = await sb.from('margin_id_whitelist').insert({ id, ghi_chu: noteInput.value.trim() || null });
+  if (error) { alert('Lỗi: ' + error.message); return; }
+  idInput.value = ''; noteInput.value = '';
+  loadWhitelist();
+});
+
+/* ---------------- IMPORT ---------------- */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--teal)'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'var(--line)'; });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.style.borderColor = 'var(--line)';
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+    setParsedRows(rows);
+  };
+  reader.readAsBinaryString(file);
+}
+
+document.getElementById('parsePasteBtn').addEventListener('click', () => {
+  const text = document.getElementById('pasteArea').value;
+  if (!text.trim()) { alert('Dán dữ liệu vào ô trước đã.'); return; }
+  const rows = text.split(/\r?\n/).filter(l => l.length > 0).map(line => line.split('\t'));
+  setParsedRows(rows);
+});
+
+function setParsedRows(rows) {
+  if (!rows || rows.length < 1) { alert('Không đọc được dữ liệu.'); return; }
+  const headers = rows[0].map(h => String(h).trim());
+  const body = rows.slice(1).filter(r => r.some(c => String(c).trim() !== ''));
+  currentParsedRows = { headers, rows: body };
+
+  const opts = headers.map((h, i) => `<option value="${i}">${escapeHtml(h || '(cột ' + (i+1) + ')')}</option>`).join('');
+  const noneOpt = `<option value="-1">— Không có —</option>`;
+
+  document.getElementById('mapId').innerHTML = opts;
+  document.getElementById('mapTen').innerHTML = opts;
+  document.getElementById('mapNgay').innerHTML = noneOpt + opts;
+  document.getElementById('mapMa').innerHTML = noneOpt + opts;
+  document.getElementById('mapGhiChu').innerHTML = noneOpt + opts;
+
+  // best-effort auto-detect
+  autoSelect('mapId', headers, ['id', 'mã id', 'ma id', 'id mg', 'mã môi giới']);
+  autoSelect('mapTen', headers, ['ds kh', 'danh sách kh', 'tên kh', 'ten kh', 'khách hàng', 'khach hang', 'họ tên']);
+  autoSelect('mapNgay', headers, ['ngày đến hạn', 'ngay den han', 'hạn margin', 'due date']);
+  autoSelect('mapMa', headers, ['mã khoản vay', 'ma khoan vay']);
+  autoSelect('mapGhiChu', headers, ['ghi chú', 'ghi chu', 'note']);
+
+  document.getElementById('mapCard').style.display = 'block';
+  document.getElementById('previewCard').style.display = 'none';
+  document.getElementById('mapCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+function autoSelect(selectId, headers, keywords) {
+  const sel = document.getElementById(selectId);
+  const idx = headers.findIndex(h => keywords.some(k => h.toLowerCase().includes(k)));
+  if (idx >= 0) sel.value = String(idx);
+}
+
+document.getElementById('buildPreviewBtn').addEventListener('click', async () => {
+  if (!currentParsedRows) return;
+  const idCol = parseInt(document.getElementById('mapId').value);
+  const tenCol = parseInt(document.getElementById('mapTen').value);
+  const ngayCol = parseInt(document.getElementById('mapNgay').value);
+  const maCol = parseInt(document.getElementById('mapMa').value);
+  const ghiChuCol = parseInt(document.getElementById('mapGhiChu').value);
+
+  // ensure whitelist is fresh
+  await loadWhitelist();
+  const activeIds = new Set(whitelistCache.filter(w => w.active).map(w => w.id));
+
+  const parsedForImport = currentParsedRows.rows.map(r => {
+    const group_id = (r[idCol] || '').toString().trim();
+    const ten_kh = (r[tenCol] || '').toString().trim();
+    const ngay_den_han = ngayCol >= 0 ? normalizeDate(r[ngayCol]) : null;
+    const ma_khoan_vay = maCol >= 0 ? (r[maCol] || '').toString().trim() : null;
+    const ghi_chu = ghiChuCol >= 0 ? (r[ghiChuCol] || '').toString().trim() : null;
+    return { group_id, ten_kh, ngay_den_han, ma_khoan_vay, ghi_chu, willSkip: !group_id || !ten_kh || !activeIds.has(group_id) };
+  });
+
+  window.__parsedForImport = parsedForImport;
+
+  const skipCount = parsedForImport.filter(r => r.willSkip).length;
+  document.getElementById('previewSummary').textContent =
+    `${parsedForImport.length} dòng đọc được — ${parsedForImport.length - skipCount} sẽ được import, ${skipCount} sẽ bị bỏ qua (ID không nằm trong danh sách đang bật, hoặc thiếu dữ liệu).`;
+
+  const tbl = document.getElementById('previewTable');
+  tbl.innerHTML = `<tr><th>ID</th><th>Tên KH</th><th>Ngày đến hạn</th><th>Mã khoản vay</th><th>Ghi chú</th></tr>` +
+    parsedForImport.map(r => `<tr class="${r.willSkip ? 'skip' : ''}">
+      <td>${escapeHtml(r.group_id)}</td><td>${escapeHtml(r.ten_kh)}</td><td>${escapeHtml(r.ngay_den_han || '')}</td>
+      <td>${escapeHtml(r.ma_khoan_vay || '')}</td><td>${escapeHtml(r.ghi_chu || '')}</td>
+    </tr>`).join('');
+
+  document.getElementById('previewCard').style.display = 'block';
+  document.getElementById('previewCard').scrollIntoView({ behavior: 'smooth' });
+});
+
+function normalizeDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  const s = String(v).trim();
+  // dd/mm/yyyy
+  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  // yyyy-mm-dd already
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return null;
+}
+
+document.getElementById('confirmImportBtn').addEventListener('click', async () => {
+  const rows = window.__parsedForImport;
+  if (!rows) return;
+  const btn = document.getElementById('confirmImportBtn');
+  btn.disabled = true;
+  btn.textContent = 'Đang import...';
+  const { data, error } = await sb.rpc('margin_import_rows', { p_rows: rows.map(r => ({
+    group_id: r.group_id, ten_kh: r.ten_kh, ngay_den_han: r.ngay_den_han, ma_khoan_vay: r.ma_khoan_vay, ghi_chu: r.ghi_chu
+  })) });
+  btn.disabled = false;
+  btn.textContent = 'Import vào hệ thống';
+  const msgEl = document.getElementById('importResultMsg');
+  if (error) { msgEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+  const skippedGroups = (data.skipped_groups || []).join(', ');
+  msgEl.innerHTML = `<div class="ok-msg">Đã import ${data.inserted} khoản. Bỏ qua ${data.skipped_no_whitelist} khoản do ID chưa nằm trong danh sách theo dõi${skippedGroups ? ' (' + escapeHtml(skippedGroups) + ')' : ''}. Bỏ qua ${data.skipped_bad_row} dòng thiếu dữ liệu.</div>`;
+  loadDanhSach();
+});
+</script>
+</body>
+</html>
