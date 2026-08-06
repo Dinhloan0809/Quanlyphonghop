@@ -106,6 +106,9 @@
     background:var(--ink-soft);
     display:flex;gap:4px;padding:0 20px;
     overflow-x:auto;
+    position:sticky;
+    top:0; /* JS sẽ set đúng bằng chiều cao topbar */
+    z-index:9;
   }
   nav.tabs button{
     background:none;border:none;color:#a9bdc1;
@@ -515,6 +518,7 @@ function initApp() {
   loadWhitelist();
   loadDanhSach();
   updateStickyTop();
+  setTimeout(updateStickyTop, 400); // phòng trường hợp font Google Fonts tải xong làm đổi chiều cao header
   window.addEventListener('resize', updateStickyTop);
 }
 
@@ -522,6 +526,7 @@ function updateStickyTop() {
   const topbar = document.querySelector('header.topbar');
   const tabs = document.querySelector('nav.tabs');
   if (!topbar || !tabs) return;
+  tabs.style.top = topbar.offsetHeight + 'px';
   const h = topbar.offsetHeight + tabs.offsetHeight;
   document.querySelectorAll('.sticky-filters').forEach(el => { el.style.top = h + 'px'; });
 }
@@ -1203,20 +1208,18 @@ document.getElementById('buildPreviewBtn').addEventListener('click', async () =>
     const ma_khoan_vay = maCol >= 0 ? (r[maCol] || '').toString().trim() : null;
     const ghi_chu = ghiChuCol >= 0 ? (r[ghiChuCol] || '').toString().trim() : null;
     const so_tien = tienCol >= 0 ? (r[tienCol] || '').toString().replace(/[^\d.-]/g, '').trim() : null;
-    // 1 ô có thể chứa nhiều số tài khoản cách nhau bằng dấu phẩy/chấm phẩy -> đây là NHIỀU KHOẢN VAY của CÙNG 1 khách hàng,
-    // không phải nhiều khách hàng riêng. Lấy số tài khoản đầu tiên làm định danh khách hàng (để nhóm chung),
-    // mỗi số tài khoản trong ô vẫn là 1 khoản vay riêng (giữ được ngày đáo hạn riêng nếu sau này có).
+    // 1 ô có thể chứa nhiều số tài khoản cách nhau bằng dấu phẩy/chấm phẩy -> mỗi số là 1 KHÁCH HÀNG RIÊNG,
+    // chỉ bị gộp chung 1 ô trong file gốc. Tách thành từng khách hàng độc lập.
     const accList = rawTen ? rawTen.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [''];
-    const khachHangKey = accList[0] || '';
     accList.forEach(soTk => {
       parsedForImport.push({
         group_id,
-        ten_kh: khachHangKey,
+        ten_kh: soTk,
         ngay_den_han,
-        ma_khoan_vay: ma_khoan_vay || (accList.length > 1 ? soTk : null),
+        ma_khoan_vay,
         so_tien: so_tien || null,
         ghi_chu,
-        willSkip: !group_id || !khachHangKey,
+        willSkip: !group_id || !soTk,
         nhomDuKien: activeIds.has(group_id) ? 'Chi tiết' : 'Tổng hợp'
       });
     });
