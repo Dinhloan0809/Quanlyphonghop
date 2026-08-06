@@ -630,14 +630,22 @@ ocrInput.addEventListener('change', async () => {
   progressEl.style.display = 'block';
   progressEl.textContent = 'Đang đọc ảnh, chờ chút...';
   try {
-    const { data: { text } } = await Tesseract.recognize(file, 'eng', {
+    const worker = await Tesseract.createWorker('eng', 1, {
       logger: (m) => {
         if (m.status === 'recognizing text') {
           progressEl.textContent = `Đang đọc ảnh... ${Math.round(m.progress * 100)}%`;
         }
       }
     });
-    document.getElementById('pasteArea').value = text.trim();
+    await worker.setParameters({ tessedit_pageseg_mode: '6' }); // giả định 1 khối văn bản đồng nhất, hợp với dạng bảng
+    const { data: { text } } = await worker.recognize(file);
+    await worker.terminate();
+    const cleaned = (text || '').trim();
+    if (!cleaned) {
+      progressEl.innerHTML = '⚠️ Không đọc ra được chữ nào từ ảnh này (thường do ảnh có kẻ bảng/lưới làm rối công cụ đọc). Cách chắc ăn hơn: tải ảnh lên Google Drive → chuột phải "Mở bằng" → Google Docs (Google tự OCR rất tốt) → copy văn bản trong Docs → dán vào ô bên dưới.';
+      return;
+    }
+    document.getElementById('pasteArea').value = cleaned;
     lastInputWasOcr = true;
     progressEl.textContent = 'Đã đọc xong — kiểm tra kỹ text bên dưới trước khi bấm "Đọc dữ liệu đã dán" (đọc ảnh có thể sai vài ký tự).';
   } catch (err) {
