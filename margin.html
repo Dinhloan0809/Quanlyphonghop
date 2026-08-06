@@ -177,7 +177,7 @@
   }
   .drop-zone:hover{border-color:var(--teal);}
   table.preview{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:12px;}
-  table.preview th{background:#f0ede4;text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;color:var(--text-soft);}
+  table.preview th{background:#f0ede4;text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;color:var(--text-soft);position:sticky;top:0;z-index:2;}
   table.preview td{padding:6px 8px;border-bottom:1px solid var(--line);}
   table.preview tr.skip td{color:#b9a99a;text-decoration:line-through;background:#fbf8f2;}
   .map-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:6px;}
@@ -199,6 +199,11 @@
   .section-head.dac-biet{color:#8a6d1a;}
   .section-head.theo-doi{color:#1a5276;}
 
+  .section-zone{border-radius:14px;padding:16px;margin-bottom:8px;}
+  .section-zone.dac-biet{background:#fdf6e3;border:1px solid #eddca0;}
+  .section-zone.theo-doi{background:#eaf3fa;border:1px solid #c7dced;}
+  .section-zone .kh-card{border-color:rgba(0,0,0,.06);}
+
   /* KH card kieu bang */
   .kh-card{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden;}
   .kh-card-head{display:flex;align-items:center;gap:14px;padding:14px 18px;flex-wrap:wrap;border-bottom:1px solid var(--line);}
@@ -218,6 +223,32 @@
   table.loan-table td.due-upcoming{color:#c98a2c;font-weight:600;}
   .kh-card-foot{display:flex;justify-content:space-between;padding:10px 18px;background:#faf8f2;font-size:12.5px;color:var(--text-soft);border-top:1px solid var(--line);}
   .kh-card-foot b{color:var(--text);}
+
+  /* bảng tổng quan thu gọn/mở rộng */
+  table.summary-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;overflow:hidden;}
+  table.summary-table th{background:#faf8f2;text-transform:uppercase;font-size:10.5px;color:var(--text-soft);padding:9px 12px;text-align:left;font-weight:600;}
+  tr.summary-row td{padding:11px 12px;border-top:1px solid var(--line);cursor:pointer;background:#fff;}
+  tr.summary-row:hover td{background:#faf8f2;}
+  .chevron{display:inline-block;font-size:11px;color:var(--text-soft);transition:transform .15s;cursor:pointer;}
+  .chevron.open{transform:rotate(90deg);}
+  tr.detail-row td{padding:0;border-top:none;}
+  .detail-wrap{background:#faf8f2;padding:10px 12px 14px 40px;}
+  .detail-wrap table.loan-table{border-radius:8px;overflow:hidden;}
+
+  .overall-chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.02em;}
+  .overall-chip.due-overdue-chip{background:#f3e3dd;color:var(--red);}
+  .overall-chip.due-today-chip{background:#fbe9d0;color:#a5600e;}
+  .overall-chip.due-upcoming-chip{background:#f4e6cd;color:var(--amber);}
+  .overall-chip.status-chua_nhac{background:#eee9db;color:var(--text-soft);}
+  .overall-chip.status-da_xu_ly{background:#dcece2;color:var(--green);}
+
+  .kebab-menu{position:absolute;right:0;top:100%;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:20;min-width:190px;padding:4px;}
+  .kebab-item{display:block;width:100%;text-align:left;background:none;border:none;padding:8px 10px;font-size:12.5px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .kebab-item:hover{background:#f0ede4;}
+
+  .pagination{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--text-soft);flex-wrap:wrap;gap:8px;}
+  .pagination-btns{display:flex;gap:4px;}
+  .pagination-btns .btn{padding:5px 10px;font-size:12px;min-width:32px;}
 
   @media (max-width:600px){
     main{padding:14px;}
@@ -337,14 +368,36 @@
     <!-- TAB: WHITELIST -->
     <section class="panel" id="panel-whitelist">
       <div class="card">
-        <h2>Danh sách ID cần theo dõi chi tiết (đặc biệt)</h2>
-        <p class="desc">Chỉ cần thêm những ID cần quan tâm đặc biệt vào đây. Mọi ID <b>không</b> có trong danh sách này sẽ tự động rơi vào nhóm "Tổng hợp theo ID" ở tab Cần nhắc — không cần khai báo hết.</p>
-        <div class="toolbar">
-          <input type="text" id="newIdInput" placeholder="Mã ID mới, vd: MG012">
-          <input type="text" id="newIdNote" placeholder="Ghi chú (vd: tên môi giới)">
-          <button class="btn btn-primary" id="addIdBtn">+ Thêm ID cần theo dõi chi tiết</button>
+        <div class="sticky-filters" id="stickyFiltersWhitelist">
+          <h2>Danh sách ID cần theo dõi chi tiết (đặc biệt)</h2>
+          <p class="desc">Chỉ cần thêm những ID cần quan tâm đặc biệt vào đây. Mọi ID <b>không</b> có trong danh sách này sẽ tự động rơi vào nhóm "Tổng hợp theo ID" ở tab Cần nhắc — không cần khai báo hết.</p>
+          <div class="toolbar">
+            <input type="text" id="newIdInput" placeholder="Mã ID mới, vd: MG012">
+            <input type="text" id="newIdNote" placeholder="Ghi chú (vd: tên môi giới)">
+            <button class="btn btn-primary" id="addIdBtn">+ Thêm ID cần theo dõi chi tiết</button>
+          </div>
         </div>
         <div id="whitelistList"></div>
+      </div>
+
+      <div class="card">
+        <h2>📥 Import danh sách ID hàng loạt từ Excel</h2>
+        <p class="desc">File/dữ liệu cần có 1 cột ID (bắt buộc), cột Ghi chú thì tuỳ chọn. Tất cả ID trong danh sách sẽ được thêm vào nhóm "theo dõi chi tiết" ở trên — nếu ID đã có sẵn thì chỉ cập nhật ghi chú, không tạo trùng.</p>
+        <div class="drop-zone" id="wlDropZone">📄 Kéo thả file .xlsx / .csv vào đây, hoặc bấm để chọn file
+          <input type="file" id="wlFileInput" accept=".xlsx,.xls,.csv" style="display:none">
+        </div>
+        <label>Hoặc dán danh sách ID (mỗi dòng 1 ID, có thể kèm tab + ghi chú)</label>
+        <textarea id="wlPasteArea" rows="4" placeholder="Ví dụ dán từ Excel:&#10;ID&#10;MG012&#10;MG013	Tên môi giới B"></textarea>
+        <button class="btn btn-primary" id="wlParsePasteBtn" style="margin-top:10px;">Đọc dữ liệu</button>
+
+        <div id="wlPreviewWrap" style="display:none;margin-top:16px;">
+          <p class="desc" id="wlPreviewSummary"></p>
+          <div style="max-height:280px;overflow:auto;">
+            <table class="preview" id="wlPreviewTable"></table>
+          </div>
+          <button class="btn btn-primary" id="wlConfirmBtn" style="margin-top:12px;">Thêm tất cả vào danh sách theo dõi chi tiết</button>
+          <div id="wlImportResultMsg"></div>
+        </div>
       </div>
     </section>
   </main>
@@ -468,10 +521,9 @@ function initApp() {
 function updateStickyTop() {
   const topbar = document.querySelector('header.topbar');
   const tabs = document.querySelector('nav.tabs');
-  const stickyEl = document.getElementById('stickyFilters');
-  if (!topbar || !tabs || !stickyEl) return;
+  if (!topbar || !tabs) return;
   const h = topbar.offsetHeight + tabs.offsetHeight;
-  stickyEl.style.top = h + 'px';
+  document.querySelectorAll('.sticky-filters').forEach(el => { el.style.top = h + 'px'; });
 }
 
 /* ---------------- DANH SACH CAN NHAC ---------------- */
@@ -571,24 +623,52 @@ async function loadDanhSach() {
   const theoDoiEl = document.getElementById('theoDoiSection');
   dacBietEl.innerHTML = '';
   theoDoiEl.innerHTML = '';
+  dacBietEl.className = 'section-zone dac-biet';
+  theoDoiEl.className = 'section-zone theo-doi';
 
   if (dacBietRows.length > 0) {
     const h = document.createElement('div');
     h.className = 'section-head dac-biet';
     h.innerHTML = `⭐ ID cần quan tâm đặc biệt <span class="count-badge">${new Set(dacBietRows.map(r => r.khach_hang ? r.khach_hang.id : r.id)).size}</span>`;
     dacBietEl.appendChild(h);
-    renderKhCards(dacBietEl, dacBietRows, idInfo);
+    renderKhCards(dacBietEl, dacBietRows, idInfo, 'dacBiet');
+  } else {
+    dacBietEl.className = '';
   }
   if (theoDoiRows.length > 0) {
     const h = document.createElement('div');
     h.className = 'section-head theo-doi';
     h.innerHTML = `👁 ID theo dõi <span class="count-badge">${new Set(theoDoiRows.map(r => r.khach_hang ? r.khach_hang.id : r.id)).size}</span>`;
     theoDoiEl.appendChild(h);
-    renderKhCards(theoDoiEl, theoDoiRows, idInfo);
+    renderKhCards(theoDoiEl, theoDoiRows, idInfo, 'theoDoi');
+  } else {
+    theoDoiEl.className = '';
   }
 }
 
-function renderKhCards(containerEl, rows, idInfo) {
+const sectionPageState = {}; // { sectionKey: currentPage }
+const sectionOpenState = {}; // { sectionKey_khId: true/false }
+const PAGE_SIZE = 10;
+
+function overallStatus(loans) {
+  const openLoans = loans.filter(l => l.trang_thai !== 'da_xu_ly');
+  if (openLoans.length === 0) return { label: 'Đã xử lý xong', cls: 'status-da_xu_ly' };
+  const hasOverdue = openLoans.some(l => { const d = daysUntil(l.ngay_den_han); return d !== null && d < 0; });
+  if (hasOverdue) return { label: 'Có khoản quá hạn', cls: 'due-overdue-chip' };
+  const hasToday = openLoans.some(l => daysUntil(l.ngay_den_han) === 0);
+  if (hasToday) return { label: 'Có khoản đến hạn', cls: 'due-today-chip' };
+  const hasUpcoming = openLoans.some(l => { const d = daysUntil(l.ngay_den_han); return d !== null && d > 0 && d <= 3; });
+  if (hasUpcoming) return { label: 'Sắp đến hạn', cls: 'due-upcoming-chip' };
+  return { label: 'Đang theo dõi', cls: 'status-chua_nhac' };
+}
+
+function earliestOpenLoan(loans) {
+  const openLoans = loans.filter(l => l.trang_thai !== 'da_xu_ly' && l.ngay_den_han);
+  if (openLoans.length === 0) return null;
+  return openLoans.reduce((a, b) => (a.ngay_den_han < b.ngay_den_han ? a : b));
+}
+
+function renderKhCards(containerEl, rows, idInfo, sectionKey) {
   const groups = {};
   const order = [];
   rows.forEach(r => {
@@ -597,61 +677,147 @@ function renderKhCards(containerEl, rows, idInfo) {
     groups[khId].loans.push(r);
   });
 
-  order.forEach((khId, idx) => {
+  if (!(sectionKey in sectionPageState)) sectionPageState[sectionKey] = 1;
+  const totalPages = Math.max(1, Math.ceil(order.length / PAGE_SIZE));
+  if (sectionPageState[sectionKey] > totalPages) sectionPageState[sectionKey] = totalPages;
+  const page = sectionPageState[sectionKey];
+  const startIdx = (page - 1) * PAGE_SIZE;
+  const pageOrder = order.slice(startIdx, startIdx + PAGE_SIZE);
+
+  const totalLoans = rows.length;
+
+  let wrap = containerEl.querySelector('.kh-table-wrap');
+  if (!wrap) { wrap = document.createElement('div'); wrap.className = 'kh-table-wrap'; containerEl.appendChild(wrap); }
+  wrap.innerHTML = '';
+
+  const table = document.createElement('table');
+  table.className = 'summary-table';
+  table.innerHTML = `<tr>
+    <th></th><th>Khách hàng</th><th>ID phụ trách</th><th>Số khoản</th>
+    <th>Khoản sắp đến hạn nhất</th><th>Tổng dư nợ</th><th>Trạng thái chung</th><th></th>
+  </tr>`;
+
+  pageOrder.forEach((khId, i) => {
     const g = groups[khId];
-    const openCount = g.loans.filter(l => l.trang_thai !== 'da_xu_ly').length;
+    const idx = startIdx + i + 1;
     const tongDuNo = g.loans.reduce((s, l) => s + (Number(l.so_tien) || 0), 0);
     const idNote = idInfo[g.groupId] ? idInfo[g.groupId].ghi_chu : '';
+    const status = overallStatus(g.loans);
+    const earliest = earliestOpenLoan(g.loans);
+    const openCount = g.loans.filter(l => l.trang_thai !== 'da_xu_ly').length;
+    const stateKey = sectionKey + '_' + khId;
+    const isOpen = !!sectionOpenState[stateKey];
 
-    const card = document.createElement('div');
-    card.className = 'kh-card';
-    card.innerHTML = `
-      <div class="kh-card-head">
-        <span class="kh-index">${idx + 1}</span>
-        <div class="kh-titleblock">
-          <div class="kh-name2">${escapeHtml(g.ten)}</div>
-          <div class="kh-idphutrach">ID phụ trách: <span class="mono">${escapeHtml(g.groupId)}</span>${idNote ? ' · ' + escapeHtml(idNote) : ''}</div>
+    let earliestHtml = '—';
+    if (earliest) {
+      const dLeft = daysUntil(earliest.ngay_den_han);
+      const { cls, icon } = dueClassAndIcon(dLeft);
+      earliestHtml = `<span class="${cls}">${icon ? icon + ' ' : ''}${fmtDateWithDay(earliest.ngay_den_han)}</span>`;
+    }
+
+    const summaryRow = document.createElement('tr');
+    summaryRow.className = 'summary-row';
+    summaryRow.innerHTML = `
+      <td><span class="chevron ${isOpen ? 'open' : ''}">▶</span></td>
+      <td>${idx}&nbsp;&nbsp;<b>${escapeHtml(g.ten)}</b></td>
+      <td>ID ${escapeHtml(g.groupId)}${idNote ? `<div style="font-size:11px;color:var(--text-soft);">${escapeHtml(idNote)}</div>` : ''}</td>
+      <td>${g.loans.length} khoản</td>
+      <td>${earliestHtml}</td>
+      <td><b>${fmtTien(tongDuNo)}</b></td>
+      <td><span class="overall-chip ${status.cls}">${status.label}</span></td>
+      <td style="position:relative;">
+        <button class="btn btn-ghost kebab-btn" data-kh="${escapeHtml(khId)}" style="padding:4px 8px;">⋮</button>
+        <div class="kebab-menu" data-kh="${escapeHtml(khId)}" style="display:none;">
+          <button class="kebab-item btn-copy" data-kh="${escapeHtml(khId)}">📋 Copy danh sách</button>
+          <button class="kebab-item btn-export" data-kh="${escapeHtml(khId)}">⬇️ Xuất Excel</button>
+          ${openCount > 0 ? `<button class="kebab-item btn-thongbao" data-kh="${escapeHtml(khId)}">📣 Đã thông báo cho ID</button>` : ''}
         </div>
-        <span class="kh-count-badge">👥 ${g.loans.length} khoản vay</span>
-        <div class="kh-btns">
-          <button class="btn btn-ghost btn-copy" data-kh="${escapeHtml(khId)}">📋 Copy danh sách</button>
-          <button class="btn btn-ghost btn-export" data-kh="${escapeHtml(khId)}">⬇️ Xuất Excel</button>
-          ${openCount > 0 ? `<button class="btn btn-primary btn-thongbao" data-kh="${escapeHtml(khId)}">📣 Đã thông báo cho ID</button>` : ''}
+      </td>
+    `;
+    summaryRow.addEventListener('click', (e) => {
+      if (e.target.closest('.kebab-btn') || e.target.closest('.kebab-menu')) return;
+      sectionOpenState[stateKey] = !sectionOpenState[stateKey];
+      renderKhCards(containerEl, rows, idInfo, sectionKey);
+    });
+    table.appendChild(summaryRow);
+
+    if (isOpen) {
+      const detailRow = document.createElement('tr');
+      detailRow.className = 'detail-row';
+      const detailCell = document.createElement('td');
+      detailCell.colSpan = 8;
+      detailCell.innerHTML = `
+        <div class="detail-wrap">
+          <table class="loan-table">
+            <tr><th>Khoản vay</th><th>Ngày đến hạn</th><th>Tiền</th><th>Trạng thái</th><th>Hành động</th></tr>
+            ${g.loans.map((loan, li) => {
+              const dLeft = daysUntil(loan.ngay_den_han);
+              const { cls, icon } = dueClassAndIcon(dLeft);
+              const statusLabel = { chua_nhac: 'Chưa nhắc', da_nhac: 'Đã nhắc, chờ xử lý', da_xu_ly: 'Đã xử lý xong' }[loan.trang_thai];
+              return `<tr>
+                <td>Khoản vay ${li + 1}${loan.ma_khoan_vay ? ` <span class="mono" style="color:var(--text-soft);font-size:11px;">(${escapeHtml(loan.ma_khoan_vay)})</span>` : ''}</td>
+                <td class="${cls}">${icon ? icon + ' ' : ''}${fmtDateWithDay(loan.ngay_den_han)}</td>
+                <td>
+                  <span class="tien-val">${fmtTien(loan.so_tien)}</span>
+                  <button class="btn btn-ghost act-sua-tien" data-id="${loan.id}" data-current="${loan.so_tien ?? ''}" title="Sửa số tiền" style="padding:2px 6px;font-size:11px;margin-left:4px;">✏️</button>
+                </td>
+                <td><span class="status-chip status-${loan.trang_thai}">${statusLabel}</span></td>
+                <td data-id="${loan.id}">
+                  ${loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-primary act-xong" style="padding:5px 10px;font-size:12px;">Đã xử lý xong</button>` : `<button class="btn btn-ghost act-mo" style="padding:5px 10px;font-size:12px;">Mở lại</button>`}
+                  <button class="btn btn-danger act-xoa" style="padding:5px 10px;font-size:12px;">Xoá</button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </table>
+          <div class="kh-card-foot">
+            <span>Tổng số khoản: <b>${g.loans.length}</b></span>
+            <span>Tổng dư nợ: <b>${fmtTien(tongDuNo)}</b></span>
+          </div>
         </div>
-      </div>
-      <table class="loan-table">
-        <tr><th>Khoản vay</th><th>Ngày đến hạn</th><th>Tiền</th><th>Trạng thái</th><th>Hành động</th></tr>
-        ${g.loans.map((loan, i) => {
-          const dLeft = daysUntil(loan.ngay_den_han);
-          const { cls, icon } = dueClassAndIcon(dLeft);
-          const statusLabel = { chua_nhac: 'Chưa nhắc', da_nhac: 'Đã nhắc, chờ xử lý', da_xu_ly: 'Đã xử lý xong' }[loan.trang_thai];
-          return `<tr>
-            <td>Khoản vay ${i + 1}${loan.ma_khoan_vay ? ` <span class="mono" style="color:var(--text-soft);font-size:11px;">(${escapeHtml(loan.ma_khoan_vay)})</span>` : ''}</td>
-            <td class="${cls}">${icon ? icon + ' ' : ''}${fmtDateWithDay(loan.ngay_den_han)}</td>
-            <td>
-              <span class="tien-val">${fmtTien(loan.so_tien)}</span>
-              <button class="btn btn-ghost act-sua-tien" data-id="${loan.id}" data-current="${loan.so_tien ?? ''}" title="Sửa số tiền" style="padding:2px 6px;font-size:11px;margin-left:4px;">✏️</button>
-            </td>
-            <td><span class="status-chip status-${loan.trang_thai}">${statusLabel}</span></td>
-            <td data-id="${loan.id}">
-              ${loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-primary act-xong" style="padding:5px 10px;font-size:12px;">Đã xử lý xong</button>` : `<button class="btn btn-ghost act-mo" style="padding:5px 10px;font-size:12px;">Mở lại</button>`}
-              <button class="btn btn-danger act-xoa" style="padding:5px 10px;font-size:12px;">Xoá</button>
-            </td>
-          </tr>`;
-        }).join('')}
-      </table>
-      <div class="kh-card-foot">
-        <span>Tổng số khoản: <b>${g.loans.length}</b></span>
-        <span>Tổng dư nợ: <b>${fmtTien(tongDuNo)}</b></span>
+      `;
+      detailRow.appendChild(detailCell);
+      table.appendChild(detailRow);
+    }
+  });
+
+  wrap.appendChild(table);
+
+  // phân trang
+  if (order.length > PAGE_SIZE) {
+    const pag = document.createElement('div');
+    pag.className = 'pagination';
+    const from = startIdx + 1;
+    const to = Math.min(startIdx + PAGE_SIZE, order.length);
+    pag.innerHTML = `
+      <span>Hiển thị ${from} - ${to} trong tổng số ${order.length} khách hàng (${totalLoans} khoản)</span>
+      <div class="pagination-btns">
+        <button class="btn btn-ghost pg-prev" ${page <= 1 ? 'disabled' : ''}>‹</button>
+        ${Array.from({ length: totalPages }, (_, p) => p + 1).map(p => `<button class="btn ${p === page ? 'btn-primary' : 'btn-ghost'} pg-num" data-page="${p}">${p}</button>`).join('')}
+        <button class="btn btn-ghost pg-next" ${page >= totalPages ? 'disabled' : ''}>›</button>
       </div>
     `;
-    containerEl.appendChild(card);
-  });
+    pag.querySelector('.pg-prev').addEventListener('click', () => { sectionPageState[sectionKey]--; renderKhCards(containerEl, rows, idInfo, sectionKey); });
+    pag.querySelector('.pg-next').addEventListener('click', () => { sectionPageState[sectionKey]++; renderKhCards(containerEl, rows, idInfo, sectionKey); });
+    pag.querySelectorAll('.pg-num').forEach(b => b.addEventListener('click', () => { sectionPageState[sectionKey] = parseInt(b.dataset.page); renderKhCards(containerEl, rows, idInfo, sectionKey); }));
+    wrap.appendChild(pag);
+  }
 
   containerEl.querySelectorAll('.act-xong').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_xu_ly_xong')));
   containerEl.querySelectorAll('.act-mo').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_mo_lai')));
   containerEl.querySelectorAll('.act-xoa').forEach(b => b.addEventListener('click', handleDelete));
   containerEl.querySelectorAll('.act-sua-tien').forEach(b => b.addEventListener('click', handleSuaTien));
+
+  containerEl.querySelectorAll('.kebab-btn').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const menu = containerEl.querySelector(`.kebab-menu[data-kh="${CSS.escape(b.dataset.kh)}"]`);
+    const isShown = menu.style.display === 'block';
+    containerEl.querySelectorAll('.kebab-menu').forEach(m => m.style.display = 'none');
+    menu.style.display = isShown ? 'none' : 'block';
+  }));
+  if (!window.__kebabListenerAttached) {
+    window.__kebabListenerAttached = true;
+    document.addEventListener('click', () => { document.querySelectorAll('.kebab-menu').forEach(m => m.style.display = 'none'); });
+  }
 
   containerEl.querySelectorAll('.btn-thongbao').forEach(b => b.addEventListener('click', async () => {
     const khId = b.dataset.kh;
@@ -673,8 +839,7 @@ function renderKhCards(containerEl, rows, idInfo) {
       lines.push(`- ${fmtDateWithDay(l.ngay_den_han)}${l.so_tien ? ' — ' + fmtTien(l.so_tien) : ''}${l.ma_khoan_vay ? ' — TK ' + l.ma_khoan_vay : ''}`);
     });
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
-      b.textContent = '✅ Đã copy';
-      setTimeout(() => { b.textContent = '📋 Copy danh sách'; }, 2000);
+      alert('Đã copy danh sách của ' + g.ten);
     });
   }));
 
@@ -695,6 +860,7 @@ function renderKhCards(containerEl, rows, idInfo) {
     XLSX.writeFile(wbOut, `khoan-vay-${g.ten}.xlsx`);
   }));
 }
+
 
 async function handleAction(e, rpcName) {
   const id = e.target.closest('[data-id]').dataset.id;
@@ -778,14 +944,29 @@ async function loadWhitelist() {
     return;
   }
 
-  listEl.innerHTML = whitelistCache.map(w => `
+  // lấy số liệu khoản vay đã import theo từng ID (tổng + đang mở)
+  const { data: khoanVayData } = await sb.from('margin_khoan_vay').select('group_id, trang_thai');
+  const statsByGroup = {};
+  (khoanVayData || []).forEach(r => {
+    if (!statsByGroup[r.group_id]) statsByGroup[r.group_id] = { total: 0, open: 0 };
+    statsByGroup[r.group_id].total++;
+    if (r.trang_thai !== 'da_xu_ly') statsByGroup[r.group_id].open++;
+  });
+
+  listEl.innerHTML = whitelistCache.map(w => {
+    const s = statsByGroup[w.id];
+    const statText = s
+      ? `<span class="mono" style="font-size:12px;color:var(--text-soft);background:#faf8f2;padding:3px 9px;border-radius:999px;">📥 ${s.total} khoản đã import${s.open > 0 ? ` · ${s.open} đang mở` : ''}</span>`
+      : `<span style="font-size:12px;color:#b9a99a;">chưa có dữ liệu import</span>`;
+    return `
     <div class="id-row ${w.active ? '' : 'inactive'}">
       <span class="idtag">${escapeHtml(w.id)}</span>
       <span class="note">${escapeHtml(w.ghi_chu || '')}</span>
+      ${statText}
       <span class="${w.active ? 'badge-active' : 'badge-inactive'}">${w.active ? 'Đang theo dõi chi tiết' : 'Tạm chuyển về tổng hợp'}</span>
       <button class="btn btn-ghost toggle-active" data-id="${escapeHtml(w.id)}" data-active="${w.active}">${w.active ? 'Chuyển về tổng hợp' : 'Bật lại chi tiết'}</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   listEl.querySelectorAll('.toggle-active').forEach(b => b.addEventListener('click', async () => {
     const id = b.dataset.id;
@@ -805,6 +986,96 @@ document.getElementById('addIdBtn').addEventListener('click', async () => {
   const { error } = await sb.from('margin_id_whitelist').insert({ id, ghi_chu: noteInput.value.trim() || null, loai_theo_doi: 'chi_tiet' });
   if (error) { alert('Lỗi: ' + error.message); return; }
   idInput.value = ''; noteInput.value = '';
+  loadWhitelist();
+  loadDanhSach();
+});
+
+/* ---------------- IMPORT DANH SÁCH ID HÀNG LOẠT ---------------- */
+let wlParsedRows = null;
+
+function wlParseRawRows(rows) {
+  if (!rows || rows.length === 0) return [];
+  // dò xem dòng đầu có phải tiêu đề không (chứa chữ "id")
+  let startIdx = 0;
+  let idCol = 0, noteCol = 1;
+  const firstRow = rows[0].map(c => String(c).trim().toLowerCase());
+  const looksLikeHeader = firstRow.some(c => c.includes('id')) || firstRow.some(c => c.includes('ghi chú') || c.includes('ghi chu'));
+  if (looksLikeHeader) {
+    startIdx = 1;
+    const idIdx = firstRow.findIndex(c => c.includes('id'));
+    const noteIdx = firstRow.findIndex(c => c.includes('ghi chú') || c.includes('ghi chu') || c.includes('note') || c.includes('môi giới') || c.includes('moi gioi'));
+    if (idIdx >= 0) idCol = idIdx;
+    if (noteIdx >= 0) noteCol = noteIdx;
+  }
+  const out = [];
+  for (let i = startIdx; i < rows.length; i++) {
+    const r = rows[i];
+    const id = (r[idCol] || '').toString().trim();
+    const ghi_chu = (r[noteCol] || '').toString().trim() || null;
+    if (id) out.push({ id, ghi_chu });
+  }
+  return out;
+}
+
+function wlShowPreview(parsed) {
+  wlParsedRows = parsed;
+  const alreadyExisting = new Set(whitelistCache.map(w => w.id));
+  document.getElementById('wlPreviewSummary').textContent =
+    `${parsed.length} ID đọc được — ${parsed.filter(r => alreadyExisting.has(r.id)).length} ID đã có sẵn (sẽ chỉ cập nhật ghi chú), ${parsed.filter(r => !alreadyExisting.has(r.id)).length} ID mới sẽ được thêm.`;
+  const tbl = document.getElementById('wlPreviewTable');
+  tbl.innerHTML = `<tr><th>ID</th><th>Ghi chú</th><th>Trạng thái</th></tr>` +
+    parsed.map(r => `<tr><td class="mono">${escapeHtml(r.id)}</td><td>${escapeHtml(r.ghi_chu || '')}</td><td>${alreadyExisting.has(r.id) ? 'Đã có — cập nhật' : 'Mới'}</td></tr>`).join('');
+  document.getElementById('wlPreviewWrap').style.display = 'block';
+  document.getElementById('wlPreviewWrap').scrollIntoView({ behavior: 'smooth' });
+}
+
+const wlDropZone = document.getElementById('wlDropZone');
+const wlFileInput = document.getElementById('wlFileInput');
+wlDropZone.addEventListener('click', () => wlFileInput.click());
+wlDropZone.addEventListener('dragover', e => { e.preventDefault(); wlDropZone.style.borderColor = 'var(--teal)'; });
+wlDropZone.addEventListener('dragleave', () => { wlDropZone.style.borderColor = 'var(--line)'; });
+wlDropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  wlDropZone.style.borderColor = 'var(--line)';
+  if (e.dataTransfer.files.length) wlHandleFile(e.dataTransfer.files[0]);
+});
+wlFileInput.addEventListener('change', () => { if (wlFileInput.files.length) wlHandleFile(wlFileInput.files[0]); });
+
+function wlHandleFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const wb = XLSX.read(e.target.result, { type: 'binary' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+    wlShowPreview(wlParseRawRows(rows));
+  };
+  reader.readAsBinaryString(file);
+}
+
+document.getElementById('wlParsePasteBtn').addEventListener('click', async () => {
+  const text = document.getElementById('wlPasteArea').value;
+  if (!text.trim()) { alert('Dán danh sách ID vào ô trước đã.'); return; }
+  const rows = text.split(/\r?\n/).filter(l => l.trim().length > 0).map(line =>
+    line.includes('\t') ? line.split('\t') : line.trim().split(/ {2,}/)
+  );
+  await loadWhitelist(); // đảm bảo whitelistCache mới nhất trước khi so sánh trùng
+  wlShowPreview(wlParseRawRows(rows));
+});
+
+document.getElementById('wlConfirmBtn').addEventListener('click', async () => {
+  if (!wlParsedRows || wlParsedRows.length === 0) return;
+  const btn = document.getElementById('wlConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = 'Đang thêm...';
+  const payload = wlParsedRows.map(r => ({ id: r.id, ghi_chu: r.ghi_chu, loai_theo_doi: 'chi_tiet', active: true }));
+  const { error } = await sb.from('margin_id_whitelist').upsert(payload, { onConflict: 'id' });
+  btn.disabled = false;
+  btn.textContent = 'Thêm tất cả vào danh sách theo dõi chi tiết';
+  const msgEl = document.getElementById('wlImportResultMsg');
+  if (error) { msgEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+  msgEl.innerHTML = `<div class="ok-msg">Đã thêm/cập nhật ${wlParsedRows.length} ID vào danh sách theo dõi chi tiết.</div>`;
+  document.getElementById('wlPasteArea').value = '';
+  wlParsedRows = null;
   loadWhitelist();
   loadDanhSach();
 });
