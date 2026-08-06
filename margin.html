@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root{
     --ink:#12222b;
@@ -248,9 +249,16 @@
         <div class="drop-zone" id="dropZone">📄 Kéo thả file .xlsx / .csv vào đây, hoặc bấm để chọn file
           <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
         </div>
+        <label>Hoặc chụp/tải ảnh danh sách (tự động đọc chữ trong ảnh)</label>
+        <div class="drop-zone" id="ocrZone" style="padding:16px;">🖼️ Bấm để chọn ảnh chụp danh sách (.png/.jpg)
+          <input type="file" id="ocrInput" accept="image/*" style="display:none">
+        </div>
+        <div id="ocrProgress" style="display:none;font-size:12px;color:var(--text-soft);margin-top:6px;">Đang đọc ảnh, chờ chút...</div>
+
         <label>Hoặc dán dữ liệu đã copy từ Excel</label>
-        <textarea id="pasteArea" rows="5" placeholder="Dán dữ liệu (có dòng tiêu đề) từ Excel vào đây..."></textarea>
+        <textarea id="pasteArea" rows="5" placeholder="Dán dữ liệu (có dòng tiêu đề) từ Excel vào đây... Nếu vừa đọc từ ảnh, kiểm tra/sửa lại text ở đây trước khi bấm nút dưới, vì đọc ảnh có thể sai vài ký tự."></textarea>
         <button class="btn btn-primary" id="parsePasteBtn" style="margin-top:10px;">Đọc dữ liệu đã dán</button>
+        <p class="desc" style="margin-top:10px;">💡 Đọc ảnh tự động có thể nhầm lẫn ký tự (O/0, I/1, B/8...) với mã dạng chữ+số ngắn — luôn kiểm tra kỹ ở bước xem trước bên dưới. Nếu ảnh mờ/nhiều dòng, cách chính xác hơn: tải ảnh lên Google Drive → mở bằng Google Docs (tự OCR) → copy văn bản sạch hơn rồi dán vào đây.</p>
       </div>
 
       <div class="card" id="mapCard" style="display:none;">
@@ -258,7 +266,7 @@
         <p class="desc">Cho hệ thống biết cột nào là ID (để lọc theo danh sách theo dõi) và cột nào là tên khách hàng.</p>
         <div class="map-grid">
           <div><label>Cột chứa ID *</label><select id="mapId"></select></div>
-          <div><label>Cột chứa Tên KH *</label><select id="mapTen"></select></div>
+          <div><label>Cột chứa Mã KH / Số tài khoản * <span style="font-weight:400;color:var(--text-soft);">(nếu 1 ô có nhiều số cách nhau bởi dấu phẩy, hệ thống tự tách thành từng dòng)</span></label><select id="mapTen"></select></div>
           <div><label>Cột Ngày đến hạn (nếu có)</label><select id="mapNgay"></select></div>
           <div><label>Cột Mã khoản vay (nếu có)</label><select id="mapMa"></select></div>
           <div><label>Cột Ghi chú (nếu có)</label><select id="mapGhiChu"></select></div>
@@ -522,6 +530,20 @@ document.getElementById('searchKH').addEventListener('input', debounce(loadDanhS
 document.getElementById('filterGroup').addEventListener('change', loadDanhSach);
 document.getElementById('filterStatus').addEventListener('change', loadDanhSach);
 
+let lastInputWasOcr = false;
+
+// các ký tự hay bị OCR đọc nhầm lẫn nhau
+const RISKY_CHARS = new Set(['0','O','o','1','I','i','l','5','S','s','8','B','2','Z','z','6','G','g','9','q','D']);
+function highlightRisky(str) {
+  if (!str) return '';
+  return String(str).split('').map(ch =>
+    RISKY_CHARS.has(ch) ? `<span style="background:#fdf1c7;color:#8a5a00;font-weight:700;border-radius:2px;">${escapeHtml(ch)}</span>` : escapeHtml(ch)
+  ).join('');
+}
+function hasRiskyChar(str) {
+  if (!str) return false;
+  return String(str).split('').some(ch => RISKY_CHARS.has(ch));
+}
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -587,6 +609,7 @@ dropZone.addEventListener('drop', e => {
 fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
 
 function handleFile(file) {
+  lastInputWasOcr = false;
   const reader = new FileReader();
   reader.onload = (e) => {
     const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
@@ -597,10 +620,37 @@ function handleFile(file) {
   reader.readAsBinaryString(file);
 }
 
+const ocrZone = document.getElementById('ocrZone');
+const ocrInput = document.getElementById('ocrInput');
+ocrZone.addEventListener('click', () => ocrInput.click());
+ocrInput.addEventListener('change', async () => {
+  if (!ocrInput.files.length) return;
+  const file = ocrInput.files[0];
+  const progressEl = document.getElementById('ocrProgress');
+  progressEl.style.display = 'block';
+  progressEl.textContent = 'Đang đọc ảnh, chờ chút...';
+  try {
+    const { data: { text } } = await Tesseract.recognize(file, 'eng', {
+      logger: (m) => {
+        if (m.status === 'recognizing text') {
+          progressEl.textContent = `Đang đọc ảnh... ${Math.round(m.progress * 100)}%`;
+        }
+      }
+    });
+    document.getElementById('pasteArea').value = text.trim();
+    lastInputWasOcr = true;
+    progressEl.textContent = 'Đã đọc xong — kiểm tra kỹ text bên dưới trước khi bấm "Đọc dữ liệu đã dán" (đọc ảnh có thể sai vài ký tự).';
+  } catch (err) {
+    progressEl.textContent = 'Đọc ảnh lỗi: ' + err.message + ' — thử ảnh rõ nét hơn hoặc dùng cách Google Docs OCR.';
+  }
+});
+
 document.getElementById('parsePasteBtn').addEventListener('click', () => {
   const text = document.getElementById('pasteArea').value;
   if (!text.trim()) { alert('Dán dữ liệu vào ô trước đã.'); return; }
-  const rows = text.split(/\r?\n/).filter(l => l.length > 0).map(line => line.split('\t'));
+  const rows = text.split(/\r?\n/).filter(l => l.trim().length > 0).map(line =>
+    line.includes('\t') ? line.split('\t') : line.trim().split(/ {2,}|\t/)
+  );
   setParsedRows(rows);
 });
 
@@ -621,7 +671,7 @@ function setParsedRows(rows) {
 
   // best-effort auto-detect
   autoSelect('mapId', headers, ['id', 'mã id', 'ma id', 'id mg', 'mã môi giới']);
-  autoSelect('mapTen', headers, ['ds kh', 'danh sách kh', 'tên kh', 'ten kh', 'khách hàng', 'khach hang', 'họ tên']);
+  autoSelect('mapTen', headers, ['ds kh', 'danh sách kh', 'tên kh', 'ten kh', 'khách hàng', 'khach hang', 'họ tên', 'số tài khoản', 'so tai khoan', 'tài khoản', 'stk']);
   autoSelect('mapNgay', headers, ['ngày đến hạn', 'ngay den han', 'hạn margin', 'due date']);
   autoSelect('mapMa', headers, ['mã khoản vay', 'ma khoan vay']);
   autoSelect('mapGhiChu', headers, ['ghi chú', 'ghi chu', 'note']);
@@ -649,25 +699,36 @@ document.getElementById('buildPreviewBtn').addEventListener('click', async () =>
   await loadWhitelist();
   const activeIds = new Set(whitelistCache.filter(w => w.active).map(w => w.id));
 
-  const parsedForImport = currentParsedRows.rows.map(r => {
+  const parsedForImport = [];
+  currentParsedRows.rows.forEach(r => {
     const group_id = (r[idCol] || '').toString().trim();
-    const ten_kh = (r[tenCol] || '').toString().trim();
+    const rawTen = (r[tenCol] || '').toString().trim();
     const ngay_den_han = ngayCol >= 0 ? normalizeDate(r[ngayCol]) : null;
     const ma_khoan_vay = maCol >= 0 ? (r[maCol] || '').toString().trim() : null;
     const ghi_chu = ghiChuCol >= 0 ? (r[ghiChuCol] || '').toString().trim() : null;
-    return { group_id, ten_kh, ngay_den_han, ma_khoan_vay, ghi_chu, willSkip: !group_id || !ten_kh || !activeIds.has(group_id) };
+    // 1 ô có thể chứa nhiều số tài khoản/KH cách nhau bằng dấu phẩy hoặc chấm phẩy -> tách thành từng dòng
+    const tenList = rawTen ? rawTen.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [''];
+    tenList.forEach(ten_kh => {
+      parsedForImport.push({ group_id, ten_kh, ngay_den_han, ma_khoan_vay, ghi_chu, willSkip: !group_id || !ten_kh || !activeIds.has(group_id) });
+    });
   });
 
   window.__parsedForImport = parsedForImport;
 
   const skipCount = parsedForImport.filter(r => r.willSkip).length;
-  document.getElementById('previewSummary').textContent =
-    `${parsedForImport.length} dòng đọc được — ${parsedForImport.length - skipCount} sẽ được import, ${skipCount} sẽ bị bỏ qua (ID không nằm trong danh sách đang bật, hoặc thiếu dữ liệu).`;
+  const riskyCount = parsedForImport.filter(r => !r.willSkip && (hasRiskyChar(r.group_id) || hasRiskyChar(r.ten_kh))).length;
+  document.getElementById('previewSummary').innerHTML =
+    `${parsedForImport.length} dòng đọc được — ${parsedForImport.length - skipCount} sẽ được import, ${skipCount} sẽ bị bỏ qua (ID không nằm trong danh sách đang bật, hoặc thiếu dữ liệu).` +
+    (lastInputWasOcr
+      ? `<br><span style="color:#8a5a00;font-weight:600;">⚠️ Dữ liệu này đến từ đọc ảnh (OCR) — ${riskyCount} dòng có ký tự tô vàng dễ đọc nhầm (0/O, 1/I/l, 5/S, 8/B, 2/Z, 6/G, 9/g/q, D), hãy đối chiếu lại với ảnh gốc trước khi import.</span>`
+      : '');
 
   const tbl = document.getElementById('previewTable');
-  tbl.innerHTML = `<tr><th>ID</th><th>Tên KH</th><th>Ngày đến hạn</th><th>Mã khoản vay</th><th>Ghi chú</th></tr>` +
+  tbl.innerHTML = `<tr><th>ID</th><th>Mã KH / Số TK</th><th>Ngày đến hạn</th><th>Mã khoản vay</th><th>Ghi chú</th></tr>` +
     parsedForImport.map(r => `<tr class="${r.willSkip ? 'skip' : ''}">
-      <td>${escapeHtml(r.group_id)}</td><td>${escapeHtml(r.ten_kh)}</td><td>${escapeHtml(r.ngay_den_han || '')}</td>
+      <td>${r.willSkip ? escapeHtml(r.group_id) : highlightRisky(r.group_id)}</td>
+      <td>${r.willSkip ? escapeHtml(r.ten_kh) : highlightRisky(r.ten_kh)}</td>
+      <td>${escapeHtml(r.ngay_den_han || '')}</td>
       <td>${escapeHtml(r.ma_khoan_vay || '')}</td><td>${escapeHtml(r.ghi_chu || '')}</td>
     </tr>`).join('');
 
