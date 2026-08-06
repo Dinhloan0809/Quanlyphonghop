@@ -75,6 +75,8 @@
   .btn-primary:hover{background:var(--teal-dark);}
   .btn-ghost{background:transparent;color:var(--teal-dark);border:1px solid var(--line);}
   .btn-ghost:hover{background:#f0ede4;}
+  #dueTodayBtn.active{background:var(--red);color:#fff;border-color:var(--red);}
+  #dueTodayBtn.active:hover{background:#963a27;}
   .btn-danger{background:var(--red);color:#fff;}
   .btn-block{width:100%;margin-top:20px;}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -235,6 +237,7 @@
             <option value="open">Đang cần theo dõi (chưa xử lý xong)</option>
             <option value="all">Xem tất cả (kể cả đã xử lý)</option>
           </select>
+          <button class="btn btn-ghost" id="dueTodayBtn" style="border-color:var(--red);color:var(--red);">⚠️ Đến hạn hôm nay <span id="dueTodayCount" class="mono"></span></button>
           <span class="stat-pill" id="statCount">0 khoản</span>
         </div>
         <div id="danhSachList"></div>
@@ -288,12 +291,12 @@
     <!-- TAB: WHITELIST -->
     <section class="panel" id="panel-whitelist">
       <div class="card">
-        <h2>Danh sách ID được theo dõi</h2>
-        <p class="desc">Khi import, hệ thống chỉ giữ lại các dòng có ID nằm trong danh sách "Đang bật" dưới đây.</p>
+        <h2>Danh sách ID cần theo dõi chi tiết (đặc biệt)</h2>
+        <p class="desc">Chỉ cần thêm những ID cần quan tâm đặc biệt vào đây. Mọi ID <b>không</b> có trong danh sách này sẽ tự động rơi vào nhóm "Tổng hợp theo ID" ở tab Cần nhắc — không cần khai báo hết.</p>
         <div class="toolbar">
           <input type="text" id="newIdInput" placeholder="Mã ID mới, vd: MG012">
           <input type="text" id="newIdNote" placeholder="Ghi chú (vd: tên môi giới)">
-          <button class="btn btn-primary" id="addIdBtn">+ Thêm ID</button>
+          <button class="btn btn-primary" id="addIdBtn">+ Thêm ID cần theo dõi chi tiết</button>
         </div>
         <div id="whitelistList"></div>
       </div>
@@ -334,6 +337,7 @@ window.addEventListener('error', function(e){
 let isSignupMode = false;
 let currentParsedRows = null; // {headers:[], rows:[[...]]}
 let whitelistCache = [];
+let onlyDueToday = false;
 
 /* ---------------- AUTH ---------------- */
 const loginForm = document.getElementById('loginForm');
@@ -438,14 +442,36 @@ async function loadDanhSach() {
 
   if (statusFilter === 'open') query = query.neq('trang_thai', 'da_xu_ly');
 
-  const { data, error } = await query;
+  const [{ data, error }, { data: wl, error: wlErr }] = await Promise.all([
+    query,
+    sb.from('margin_id_whitelist').select('id, ghi_chu, loai_theo_doi')
+  ]);
   if (error) { listEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+  const idInfo = {};
+  (wl || []).forEach(w => { idInfo[w.id] = w; });
+
+  // cập nhật dropdown lọc theo ID dựa trên toàn bộ ID thực tế đã import (không chỉ ID đặc biệt)
+  const filterGroup = document.getElementById('filterGroup');
+  const prevVal = filterGroup.value;
+  const allGroupIds = [...new Set((data || []).map(r => r.group_id))].sort();
+  filterGroup.innerHTML = '<option value="">Tất cả ID</option>' + allGroupIds.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+  filterGroup.value = prevVal;
 
   let rows = data || [];
   const search = document.getElementById('searchKH').value.trim().toLowerCase();
   const groupFilter = document.getElementById('filterGroup').value;
   if (search) rows = rows.filter(r => r.khach_hang && r.khach_hang.ten_kh.toLowerCase().includes(search));
   if (groupFilter) rows = rows.filter(r => r.group_id === groupFilter);
+
+  // đếm số khoản đến hạn đúng hôm nay (chưa xử lý xong), hiện lên nút cảnh báo bất kể đang lọc gì
+  const dueTodayTotal = (data || []).filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) === 0).length;
+  const dueTodayCountEl = document.getElementById('dueTodayCount');
+  dueTodayCountEl.textContent = dueTodayTotal > 0 ? `(${dueTodayTotal})` : '';
+  document.getElementById('dueTodayBtn').style.opacity = dueTodayTotal > 0 ? '1' : '.5';
+
+  if (onlyDueToday) {
+    rows = rows.filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) === 0);
+  }
 
   document.getElementById('statCount').textContent = rows.length + ' khoản';
 
@@ -454,6 +480,29 @@ async function loadDanhSach() {
     return;
   }
 
+  const chiTietRows = rows.filter(r => idInfo[r.group_id] && idInfo[r.group_id].active);
+  const tongHopRows = rows.filter(r => !idInfo[r.group_id] || !idInfo[r.group_id].active);
+
+  listEl.innerHTML = '';
+
+  if (chiTietRows.length > 0) {
+    const secTitle = document.createElement('h3');
+    secTitle.style.cssText = 'font-size:14px;margin:0 0 10px;color:var(--text-soft);';
+    secTitle.textContent = `📋 Theo dõi chi tiết từng tài khoản (${chiTietRows.length})`;
+    listEl.appendChild(secTitle);
+    renderChiTiet(listEl, chiTietRows);
+  }
+
+  if (tongHopRows.length > 0) {
+    const secTitle = document.createElement('h3');
+    secTitle.style.cssText = 'font-size:14px;margin:24px 0 10px;color:var(--text-soft);';
+    secTitle.textContent = `📣 Tổng hợp theo ID — báo người phụ trách tự liên hệ (${tongHopRows.length})`;
+    listEl.appendChild(secTitle);
+    renderTongHop(listEl, tongHopRows, idInfo);
+  }
+}
+
+function renderChiTiet(listEl, rows) {
   // group by khach hang
   const groups = {};
   rows.forEach(r => {
@@ -462,7 +511,6 @@ async function loadDanhSach() {
     groups[khId].loans.push(r);
   });
 
-  listEl.innerHTML = '';
   Object.values(groups).forEach(g => {
     const div = document.createElement('div');
     div.className = 'kh-group';
@@ -499,6 +547,7 @@ async function loadDanhSach() {
         <div class="loan-actions" data-id="${loan.id}">
           ${loan.trang_thai !== 'da_nhac' && loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-ghost act-nhac">Đã nhắc</button>` : ''}
           ${loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-primary act-xong">Đã xử lý xong</button>` : `<button class="btn btn-ghost act-mo">Mở lại</button>`}
+          <button class="btn btn-danger act-xoa" title="Xoá khoản vay này">Xoá</button>
         </div>
       `;
       div.appendChild(row);
@@ -509,7 +558,88 @@ async function loadDanhSach() {
   // bind actions
   listEl.querySelectorAll('.act-nhac').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_da_nhac')));
   listEl.querySelectorAll('.act-xong').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_xu_ly_xong')));
+  listEl.querySelectorAll('.act-xoa').forEach(b => b.addEventListener('click', handleDelete));
   listEl.querySelectorAll('.act-mo').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_mo_lai')));
+}
+
+function renderTongHop(listEl, rows, idInfo) {
+  const groups = {};
+  rows.forEach(r => {
+    if (!groups[r.group_id]) groups[r.group_id] = { ghiChu: idInfo[r.group_id] ? idInfo[r.group_id].ghi_chu : '', loans: [] };
+    groups[r.group_id].loans.push(r);
+  });
+
+  Object.entries(groups).forEach(([groupId, g]) => {
+    const openCount = g.loans.filter(l => l.trang_thai !== 'da_xu_ly').length;
+    const div = document.createElement('div');
+    div.className = 'kh-group';
+    const head = document.createElement('div');
+    head.className = 'kh-group-head';
+    head.innerHTML = `
+      <span class="kh-name">ID ${escapeHtml(groupId)} ${g.ghiChu ? `<span style="font-weight:400;color:var(--text-soft);font-size:12px;">(${escapeHtml(g.ghiChu)})</span>` : ''}</span>
+      <span style="display:flex;gap:8px;align-items:center;">
+        <span class="kh-meta">${g.loans.length} tài khoản, ${openCount} chưa xử lý</span>
+        <button class="btn btn-ghost btn-copy" data-group="${escapeHtml(groupId)}">📋 Copy danh sách</button>
+        ${openCount > 0 ? `<button class="btn btn-primary btn-thongbao" data-group="${escapeHtml(groupId)}">📣 Đã thông báo cho ID</button>` : ''}
+      </span>
+    `;
+    div.appendChild(head);
+
+    g.loans.forEach(loan => {
+      const dLeft = daysUntil(loan.ngay_den_han);
+      let rowClass = 'ok';
+      if (dLeft !== null && dLeft < 0) rowClass = 'overdue';
+      else if (dLeft !== null && dLeft <= 2) rowClass = 'due-soon';
+      const row = document.createElement('div');
+      row.className = 'loan-row ' + rowClass;
+      const statusLabel = { chua_nhac: 'Chưa nhắc', da_nhac: 'Đã báo ID, chờ xử lý', da_xu_ly: 'Đã xử lý xong' }[loan.trang_thai];
+      let dueText = fmtDate(loan.ngay_den_han);
+      if (dLeft !== null) {
+        if (dLeft < 0) dueText += ` (quá hạn ${Math.abs(dLeft)} ngày)`;
+        else if (dLeft === 0) dueText += ` (hôm nay)`;
+        else dueText += ` (còn ${dLeft} ngày)`;
+      }
+      row.innerHTML = `
+        <div class="loan-info">
+          <span class="mono" style="font-size:12px;font-weight:600;">${escapeHtml(loan.khach_hang ? loan.khach_hang.ten_kh : '')}</span>
+          <div class="date">${dueText}</div>
+          <span class="status-chip status-${loan.trang_thai}">${statusLabel}</span>
+        </div>
+        <div class="loan-actions" data-id="${loan.id}">
+          ${loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-primary act-xong">Đã xử lý xong</button>` : `<button class="btn btn-ghost act-mo">Mở lại</button>`}
+          <button class="btn btn-danger act-xoa" title="Xoá khoản vay này">Xoá</button>
+        </div>
+      `;
+      div.appendChild(row);
+    });
+    listEl.appendChild(div);
+  });
+
+  listEl.querySelectorAll('.act-xong').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_xu_ly_xong')));
+  listEl.querySelectorAll('.act-mo').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_mo_lai')));
+  listEl.querySelectorAll('.act-xoa').forEach(b => b.addEventListener('click', handleDelete));
+
+  listEl.querySelectorAll('.btn-thongbao').forEach(b => b.addEventListener('click', async () => {
+    b.disabled = true;
+    const { error } = await sb.rpc('margin_thong_bao_theo_id', { p_group_id: b.dataset.group, p_ghi_chu: null });
+    if (error) { alert('Lỗi: ' + error.message); b.disabled = false; return; }
+    loadDanhSach();
+  }));
+
+  listEl.querySelectorAll('.btn-copy').forEach(b => b.addEventListener('click', () => {
+    const groupId = b.dataset.group;
+    const g = groups[groupId];
+    const openLoans = g.loans.filter(l => l.trang_thai !== 'da_xu_ly');
+    const lines = [`Danh sách tài khoản cần xử lý margin — ID ${groupId}${g.ghiChu ? ' (' + g.ghiChu + ')' : ''}:`];
+    openLoans.forEach(l => {
+      const ten = l.khach_hang ? l.khach_hang.ten_kh : '';
+      lines.push(`- ${ten}${l.ngay_den_han ? ' — hạn ' + fmtDate(l.ngay_den_han) : ''}`);
+    });
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      b.textContent = '✅ Đã copy';
+      setTimeout(() => { b.textContent = '📋 Copy danh sách'; }, 2000);
+    });
+  }));
 }
 
 async function handleAction(e, rpcName) {
@@ -526,9 +656,23 @@ async function handleAction(e, rpcName) {
   loadDanhSach();
 }
 
+async function handleDelete(e) {
+  const id = e.target.closest('[data-id]').dataset.id;
+  if (!confirm('Xoá hẳn khoản vay này? Không thể khôi phục lại được.')) return;
+  e.target.disabled = true;
+  const { error } = await sb.from('margin_khoan_vay').delete().eq('id', id);
+  if (error) { alert('Lỗi: ' + error.message); e.target.disabled = false; return; }
+  loadDanhSach();
+}
+
 document.getElementById('searchKH').addEventListener('input', debounce(loadDanhSach, 250));
 document.getElementById('filterGroup').addEventListener('change', loadDanhSach);
 document.getElementById('filterStatus').addEventListener('change', loadDanhSach);
+document.getElementById('dueTodayBtn').addEventListener('click', () => {
+  onlyDueToday = !onlyDueToday;
+  document.getElementById('dueTodayBtn').classList.toggle('active', onlyDueToday);
+  loadDanhSach();
+});
 
 let lastInputWasOcr = false;
 
@@ -555,13 +699,10 @@ async function loadWhitelist() {
   whitelistCache = data || [];
 
   // update filter dropdown in tab 1 and mapping dropdowns won't need this
-  const filterGroup = document.getElementById('filterGroup');
-  const prevVal = filterGroup.value;
-  filterGroup.innerHTML = '<option value="">Tất cả ID</option>' + whitelistCache.map(w => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.id)}</option>`).join('');
-  filterGroup.value = prevVal;
+  // filterGroup dropdown được cập nhật trong loadDanhSach (dựa trên toàn bộ ID thực tế đã import)
 
   if (whitelistCache.length === 0) {
-    listEl.innerHTML = `<div class="empty-state"><div class="big">📋</div>Chưa có ID nào. Thêm ID đầu tiên ở trên để bắt đầu import dữ liệu.</div>`;
+    listEl.innerHTML = `<div class="empty-state"><div class="big">📋</div>Chưa có ID đặc biệt nào — mọi ID import vào đều đang rơi vào nhóm "Tổng hợp theo ID".</div>`;
     return;
   }
 
@@ -569,8 +710,8 @@ async function loadWhitelist() {
     <div class="id-row ${w.active ? '' : 'inactive'}">
       <span class="idtag">${escapeHtml(w.id)}</span>
       <span class="note">${escapeHtml(w.ghi_chu || '')}</span>
-      <span class="${w.active ? 'badge-active' : 'badge-inactive'}">${w.active ? 'Đang bật' : 'Đã tắt'}</span>
-      <button class="btn btn-ghost toggle-active" data-id="${escapeHtml(w.id)}" data-active="${w.active}">${w.active ? 'Tắt' : 'Bật lại'}</button>
+      <span class="${w.active ? 'badge-active' : 'badge-inactive'}">${w.active ? 'Đang theo dõi chi tiết' : 'Tạm chuyển về tổng hợp'}</span>
+      <button class="btn btn-ghost toggle-active" data-id="${escapeHtml(w.id)}" data-active="${w.active}">${w.active ? 'Chuyển về tổng hợp' : 'Bật lại chi tiết'}</button>
     </div>
   `).join('');
 
@@ -589,10 +730,11 @@ document.getElementById('addIdBtn').addEventListener('click', async () => {
   const noteInput = document.getElementById('newIdNote');
   const id = idInput.value.trim();
   if (!id) { alert('Nhập mã ID trước đã nhé.'); return; }
-  const { error } = await sb.from('margin_id_whitelist').insert({ id, ghi_chu: noteInput.value.trim() || null });
+  const { error } = await sb.from('margin_id_whitelist').insert({ id, ghi_chu: noteInput.value.trim() || null, loai_theo_doi: 'chi_tiet' });
   if (error) { alert('Lỗi: ' + error.message); return; }
   idInput.value = ''; noteInput.value = '';
   loadWhitelist();
+  loadDanhSach();
 });
 
 /* ---------------- IMPORT ---------------- */
@@ -703,7 +845,7 @@ document.getElementById('buildPreviewBtn').addEventListener('click', async () =>
   const maCol = parseInt(document.getElementById('mapMa').value);
   const ghiChuCol = parseInt(document.getElementById('mapGhiChu').value);
 
-  // ensure whitelist is fresh
+  // ensure whitelist is fresh (để hiện trước nhóm dự kiến ở bảng xem trước)
   await loadWhitelist();
   const activeIds = new Set(whitelistCache.filter(w => w.active).map(w => w.id));
 
@@ -714,10 +856,21 @@ document.getElementById('buildPreviewBtn').addEventListener('click', async () =>
     const ngay_den_han = ngayCol >= 0 ? normalizeDate(r[ngayCol]) : null;
     const ma_khoan_vay = maCol >= 0 ? (r[maCol] || '').toString().trim() : null;
     const ghi_chu = ghiChuCol >= 0 ? (r[ghiChuCol] || '').toString().trim() : null;
-    // 1 ô có thể chứa nhiều số tài khoản/KH cách nhau bằng dấu phẩy hoặc chấm phẩy -> tách thành từng dòng
-    const tenList = rawTen ? rawTen.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [''];
-    tenList.forEach(ten_kh => {
-      parsedForImport.push({ group_id, ten_kh, ngay_den_han, ma_khoan_vay, ghi_chu, willSkip: !group_id || !ten_kh || !activeIds.has(group_id) });
+    // 1 ô có thể chứa nhiều số tài khoản cách nhau bằng dấu phẩy/chấm phẩy -> đây là NHIỀU KHOẢN VAY của CÙNG 1 khách hàng,
+    // không phải nhiều khách hàng riêng. Lấy số tài khoản đầu tiên làm định danh khách hàng (để nhóm chung),
+    // mỗi số tài khoản trong ô vẫn là 1 khoản vay riêng (giữ được ngày đáo hạn riêng nếu sau này có).
+    const accList = rawTen ? rawTen.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [''];
+    const khachHangKey = accList[0] || '';
+    accList.forEach(soTk => {
+      parsedForImport.push({
+        group_id,
+        ten_kh: khachHangKey,
+        ngay_den_han,
+        ma_khoan_vay: ma_khoan_vay || (accList.length > 1 ? soTk : null),
+        ghi_chu,
+        willSkip: !group_id || !khachHangKey,
+        nhomDuKien: activeIds.has(group_id) ? 'Chi tiết' : 'Tổng hợp'
+      });
     });
   });
 
@@ -726,18 +879,19 @@ document.getElementById('buildPreviewBtn').addEventListener('click', async () =>
   const skipCount = parsedForImport.filter(r => r.willSkip).length;
   const riskyCount = parsedForImport.filter(r => !r.willSkip && (hasRiskyChar(r.group_id) || hasRiskyChar(r.ten_kh))).length;
   document.getElementById('previewSummary').innerHTML =
-    `${parsedForImport.length} dòng đọc được — ${parsedForImport.length - skipCount} sẽ được import, ${skipCount} sẽ bị bỏ qua (ID không nằm trong danh sách đang bật, hoặc thiếu dữ liệu).` +
+    `${parsedForImport.length} dòng đọc được — ${parsedForImport.length - skipCount} sẽ được import, ${skipCount} sẽ bị bỏ qua (thiếu ID hoặc thiếu Mã KH/Số TK).` +
     (lastInputWasOcr
       ? `<br><span style="color:#8a5a00;font-weight:600;">⚠️ Dữ liệu này đến từ đọc ảnh (OCR) — ${riskyCount} dòng có ký tự tô vàng dễ đọc nhầm (0/O, 1/I/l, 5/S, 8/B, 2/Z, 6/G, 9/g/q, D), hãy đối chiếu lại với ảnh gốc trước khi import.</span>`
       : '');
 
   const tbl = document.getElementById('previewTable');
-  tbl.innerHTML = `<tr><th>ID</th><th>Mã KH / Số TK</th><th>Ngày đến hạn</th><th>Mã khoản vay</th><th>Ghi chú</th></tr>` +
+  tbl.innerHTML = `<tr><th>ID</th><th>Mã KH / Số TK</th><th>Ngày đến hạn</th><th>Mã khoản vay</th><th>Ghi chú</th><th>Nhóm dự kiến</th></tr>` +
     parsedForImport.map(r => `<tr class="${r.willSkip ? 'skip' : ''}">
       <td>${r.willSkip ? escapeHtml(r.group_id) : highlightRisky(r.group_id)}</td>
       <td>${r.willSkip ? escapeHtml(r.ten_kh) : highlightRisky(r.ten_kh)}</td>
       <td>${escapeHtml(r.ngay_den_han || '')}</td>
       <td>${escapeHtml(r.ma_khoan_vay || '')}</td><td>${escapeHtml(r.ghi_chu || '')}</td>
+      <td>${r.willSkip ? '' : escapeHtml(r.nhomDuKien)}</td>
     </tr>`).join('');
 
   document.getElementById('previewCard').style.display = 'block';
@@ -769,8 +923,7 @@ document.getElementById('confirmImportBtn').addEventListener('click', async () =
   btn.textContent = 'Import vào hệ thống';
   const msgEl = document.getElementById('importResultMsg');
   if (error) { msgEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
-  const skippedGroups = (data.skipped_groups || []).join(', ');
-  msgEl.innerHTML = `<div class="ok-msg">Đã import ${data.inserted} khoản. Bỏ qua ${data.skipped_no_whitelist} khoản do ID chưa nằm trong danh sách theo dõi${skippedGroups ? ' (' + escapeHtml(skippedGroups) + ')' : ''}. Bỏ qua ${data.skipped_bad_row} dòng thiếu dữ liệu.</div>`;
+  msgEl.innerHTML = `<div class="ok-msg">Đã import: ${data.inserted} khoản mới, ${data.updated} khoản đã có từ trước được cập nhật ngày (không tạo trùng). Bỏ qua ${data.skipped_bad_row} dòng thiếu dữ liệu.</div>`;
   loadDanhSach();
 });
 </script>
