@@ -295,6 +295,7 @@
     <button class="tab-btn active" data-tab="danhSach">Cần nhắc</button>
     <button class="tab-btn" data-tab="import">Import dữ liệu</button>
     <button class="tab-btn" data-tab="whitelist">Danh sách ID theo dõi</button>
+    <button class="tab-btn" data-tab="template">Mẫu tin nhắn</button>
   </nav>
 
   <main>
@@ -403,6 +404,25 @@
         </div>
       </div>
     </section>
+
+    <!-- TAB: MẪU TIN NHẮN -->
+    <section class="panel" id="panel-template">
+      <div class="card">
+        <h2>✏️ Tuỳ biến nội dung tin nhắn nhắc KH</h2>
+        <p class="desc">Đây là mẫu dùng khi bấm "Soạn tin nhắn" trong menu ⋮ của mỗi khách hàng. Dùng các placeholder dưới đây, hệ thống sẽ tự thay bằng dữ liệu thật. Lưu lại là áp dụng ngay cho cả nhóm (không cần cập nhật file).</p>
+        <div style="background:#faf8f2;border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px;">
+          <b>{KH}</b> — cách gọi KH (Anh/Chị/Ông/Bà, chọn lúc soạn tin) &nbsp;·&nbsp;
+          <b>{TU}</b> — cách tự xưng (Em/Cháu, chọn lúc soạn tin) &nbsp;·&nbsp;
+          <b>{NGAY}</b> — ngày đến hạn của tối đa 3 khoản gần nhất, tự gộp gọn (vd 10-11/8)
+        </div>
+        <textarea id="templateArea" rows="14" style="font-family:'Inter',sans-serif;"></textarea>
+        <div style="display:flex;gap:10px;margin-top:12px;">
+          <button class="btn btn-primary" id="saveTemplateBtn">Lưu mẫu tin nhắn</button>
+          <button class="btn btn-ghost" id="resetTemplateBtn">Khôi phục mẫu mặc định</button>
+        </div>
+        <div id="templateMsg"></div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -508,6 +528,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'whitelist') loadWhitelist();
     if (btn.dataset.tab === 'danhSach') loadDanhSach();
+    if (btn.dataset.tab === 'template') loadTemplateIntoTextarea();
   });
 });
 
@@ -517,6 +538,7 @@ function initApp() {
   appInited = true;
   loadWhitelist();
   loadDanhSach();
+  loadTinNhanTemplate();
   updateStickyTop();
   setTimeout(updateStickyTop, 400); // phòng trường hợp font Google Fonts tải xong làm đổi chiều cao header
   window.addEventListener('resize', updateStickyTop);
@@ -563,8 +585,7 @@ function fmtTien(v) {
 function fmtDateWithDay(d) {
   if (!d) return '—';
   const dt = new Date(d + 'T00:00:00');
-  const days = ['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
-  return `${dt.toLocaleDateString('vi-VN')} (${days[dt.getDay()]})`;
+  return dt.toLocaleDateString('vi-VN');
 }
 
 async function loadDanhSach() {
@@ -673,13 +694,81 @@ function earliestOpenLoan(loans) {
   return openLoans.reduce((a, b) => (a.ngay_den_han < b.ngay_den_han ? a : b));
 }
 
+function formatNgayGop(dateStrs) {
+  if (!dateStrs || dateStrs.length === 0) return null;
+  const parsed = dateStrs.map(d => { const dt = new Date(d + 'T00:00:00'); return { day: dt.getDate(), month: dt.getMonth() + 1, year: dt.getFullYear() }; });
+  const sameMonth = parsed.every(p => p.month === parsed[0].month && p.year === parsed[0].year);
+  if (sameMonth) {
+    const days = [...new Set(parsed.map(p => p.day))].sort((a, b) => a - b);
+    return `${days.join('-')}/${parsed[0].month}`;
+  }
+  return parsed.map(p => `${p.day}/${p.month}`).join(', ');
+}
+
+let tinNhanTemplate = null; // load từ margin_settings, có fallback mặc định nếu chưa tải xong
+
+const DEFAULT_TEMPLATE = `Hi {KH}, {TU} thấy khoản vay margin trên tài khoản của {KH} sẽ đến hạn vào ({NGAY})
+{KH} có thể: • Bán chứng khoán hoặc nộp thêm tiền để tất toán khoản vay; • Hoặc gia hạn khoản vay nếu vẫn có nhu cầu sử dụng (có phát sinh phí gia hạn). {TU} gửi {KH} hướng dẫn gia hạn để {KH} tham khảo thêm nhé ạ. Lưu ý: Trường hợp khoản vay bị quá hạn, Công ty có quyền bán chứng khoán trên tài khoản để thu hồi nợ theo quy định. Đồng thời, kể từ ngày khoản vay chuyển quá hạn, dư nợ sẽ bị áp dụng lãi xuất quá hạn bằng 150% lãi suất trong hạn. Khoản lãi quá hạn này sẽ tiếp tục phát sinh cho đến ngày khoản vay được Công ty bán chứng khoán để thu hồi nợ hoặc khách hàng hoàn tất việc xử lý khoản vay. Vì vậy, {KH} chủ động xử lý sớm nhé, cần hỗ trợ thêm thì mình nhắn {TU} ạ.`;
+
+async function loadTinNhanTemplate() {
+  const { data, error } = await sb.from('margin_settings').select('value').eq('key', 'tin_nhan_template').maybeSingle();
+  tinNhanTemplate = (!error && data && data.value) ? data.value : DEFAULT_TEMPLATE;
+}
+
+async function loadTemplateIntoTextarea() {
+  await loadTinNhanTemplate();
+  document.getElementById('templateArea').value = tinNhanTemplate;
+  document.getElementById('templateMsg').innerHTML = '';
+}
+
+document.getElementById('saveTemplateBtn').addEventListener('click', async () => {
+  const value = document.getElementById('templateArea').value;
+  const msgEl = document.getElementById('templateMsg');
+  if (!value.includes('{KH}') || !value.includes('{TU}')) {
+    msgEl.innerHTML = `<div class="error-msg">Mẫu cần có ít nhất {KH} và {TU} để tin nhắn còn xưng hô đúng.</div>`;
+    return;
+  }
+  const { error } = await sb.from('margin_settings').upsert({ key: 'tin_nhan_template', value, updated_at: new Date().toISOString() });
+  if (error) { msgEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+  tinNhanTemplate = value;
+  msgEl.innerHTML = `<div class="ok-msg">Đã lưu — áp dụng ngay cho lần soạn tin nhắn tiếp theo.</div>`;
+});
+
+document.getElementById('resetTemplateBtn').addEventListener('click', () => {
+  if (!confirm('Khôi phục về mẫu mặc định? Nội dung đang sửa sẽ mất nếu chưa lưu.')) return;
+  document.getElementById('templateArea').value = DEFAULT_TEMPLATE;
+});
+
+function generateTinNhan(g, khTu, tuXung) {
+  const openLoans = g.loans.filter(l => l.trang_thai !== 'da_xu_ly' && l.ngay_den_han).sort((a, b) => a.ngay_den_han < b.ngay_den_han ? -1 : 1);
+  const nearest3 = openLoans.slice(0, 3).map(l => l.ngay_den_han);
+  const ngayText = formatNgayGop(nearest3) || 'sắp tới';
+  const template = tinNhanTemplate || DEFAULT_TEMPLATE;
+
+  return template
+    .split('{KH}').join(khTu)
+    .split('{TU}').join(tuXung)
+    .split('{NGAY}').join(ngayText);
+}
+
+function generateTinNhanForLoan(loan, khTu, tuXung) {
+  const ngayText = loan.ngay_den_han ? formatNgayGop([loan.ngay_den_han]) : 'sắp tới';
+  const template = tinNhanTemplate || DEFAULT_TEMPLATE;
+  return template
+    .split('{KH}').join(khTu)
+    .split('{TU}').join(tuXung)
+    .split('{NGAY}').join(ngayText);
+}
+
 function renderKhCards(containerEl, rows, idInfo, sectionKey) {
   const groups = {};
   const order = [];
+  const loanById = {};
   rows.forEach(r => {
     const khId = r.khach_hang ? r.khach_hang.id : 'unknown-' + r.id;
     if (!groups[khId]) { groups[khId] = { ten: r.khach_hang ? r.khach_hang.ten_kh : '(không rõ)', groupId: r.group_id, loans: [] }; order.push(khId); }
     groups[khId].loans.push(r);
+    loanById[r.id] = r;
   });
 
   if (!(sectionKey in sectionPageState)) sectionPageState[sectionKey] = 1;
@@ -724,8 +813,8 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     summaryRow.className = 'summary-row';
     summaryRow.innerHTML = `
       <td><span class="chevron ${isOpen ? 'open' : ''}">▶</span></td>
-      <td>${idx}&nbsp;&nbsp;<b>${escapeHtml(g.ten)}</b></td>
-      <td>ID ${escapeHtml(g.groupId)}${idNote ? `<div style="font-size:11px;color:var(--text-soft);">${escapeHtml(idNote)}</div>` : ''}</td>
+      <td>${idx}&nbsp;&nbsp;<b>${escapeHtml(g.ten)}</b> <button class="btn btn-ghost btn-copy-kh" data-copy="${escapeHtml(g.ten)}" title="Copy số tài khoản" style="padding:2px 6px;font-size:11px;">📋</button></td>
+      <td>${escapeHtml(g.groupId)}</td>
       <td>${g.loans.length} khoản</td>
       <td>${earliestHtml}</td>
       <td><b>${fmtTien(tongDuNo)}</b></td>
@@ -736,11 +825,16 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
           <button class="kebab-item btn-copy" data-kh="${escapeHtml(khId)}">📋 Copy danh sách</button>
           <button class="kebab-item btn-export" data-kh="${escapeHtml(khId)}">⬇️ Xuất Excel</button>
           ${openCount > 0 ? `<button class="kebab-item btn-thongbao" data-kh="${escapeHtml(khId)}">📣 Đã thông báo cho ID</button>` : ''}
+          <div style="border-top:1px solid var(--line);margin:4px 0;padding-top:4px;font-size:10.5px;color:var(--text-soft);padding-left:10px;">💬 Soạn tin nhắn — xưng hô:</div>
+          <button class="kebab-item tn-opt" data-kh="${escapeHtml(khId)}" data-kh-tu="Anh" data-tu-xung="Em">Anh (em xưng Em)</button>
+          <button class="kebab-item tn-opt" data-kh="${escapeHtml(khId)}" data-kh-tu="Chị" data-tu-xung="Em">Chị (em xưng Em)</button>
+          <button class="kebab-item tn-opt" data-kh="${escapeHtml(khId)}" data-kh-tu="Ông" data-tu-xung="Cháu">Ông (em xưng Cháu)</button>
+          <button class="kebab-item tn-opt" data-kh="${escapeHtml(khId)}" data-kh-tu="Bà" data-tu-xung="Cháu">Bà (em xưng Cháu)</button>
         </div>
       </td>
     `;
     summaryRow.addEventListener('click', (e) => {
-      if (e.target.closest('.kebab-btn') || e.target.closest('.kebab-menu')) return;
+      if (e.target.closest('.kebab-btn') || e.target.closest('.kebab-menu') || e.target.closest('.btn-copy-kh')) return;
       sectionOpenState[stateKey] = !sectionOpenState[stateKey];
       renderKhCards(containerEl, rows, idInfo, sectionKey);
     });
@@ -754,22 +848,37 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       detailCell.innerHTML = `
         <div class="detail-wrap">
           <table class="loan-table">
-            <tr><th>Khoản vay</th><th>Ngày đến hạn</th><th>Tiền</th><th>Trạng thái</th><th>Hành động</th></tr>
+            <tr><th>Khoản vay</th><th>Ngày đến hạn</th><th>Tiền</th><th>Trạng thái / Hành động</th><th>Tin nhắn</th></tr>
             ${g.loans.map((loan, li) => {
               const dLeft = daysUntil(loan.ngay_den_han);
               const { cls, icon } = dueClassAndIcon(dLeft);
-              const statusLabel = { chua_nhac: 'Chưa nhắc', da_nhac: 'Đã nhắc, chờ xử lý', da_xu_ly: 'Đã xử lý xong' }[loan.trang_thai];
               return `<tr>
                 <td>Khoản vay ${li + 1}${loan.ma_khoan_vay ? ` <span class="mono" style="color:var(--text-soft);font-size:11px;">(${escapeHtml(loan.ma_khoan_vay)})</span>` : ''}</td>
-                <td class="${cls}">${icon ? icon + ' ' : ''}${fmtDateWithDay(loan.ngay_den_han)}</td>
+                <td class="${cls}">
+                  <span class="ngay-val">${icon ? icon + ' ' : ''}${fmtDateWithDay(loan.ngay_den_han)}</span>
+                  <button class="btn btn-ghost act-sua-ngay" data-id="${loan.id}" data-current="${loan.ngay_den_han ?? ''}" title="Sửa ngày đến hạn" style="padding:2px 6px;font-size:11px;margin-left:4px;">✏️</button>
+                </td>
                 <td>
                   <span class="tien-val">${fmtTien(loan.so_tien)}</span>
                   <button class="btn btn-ghost act-sua-tien" data-id="${loan.id}" data-current="${loan.so_tien ?? ''}" title="Sửa số tiền" style="padding:2px 6px;font-size:11px;margin-left:4px;">✏️</button>
                 </td>
-                <td><span class="status-chip status-${loan.trang_thai}">${statusLabel}</span></td>
-                <td data-id="${loan.id}">
-                  ${loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-primary act-xong" style="padding:5px 10px;font-size:12px;">Đã xử lý xong</button>` : `<button class="btn btn-ghost act-mo" style="padding:5px 10px;font-size:12px;">Mở lại</button>`}
-                  <button class="btn btn-danger act-xoa" style="padding:5px 10px;font-size:12px;">Xoá</button>
+                <td>
+                  <select class="status-select" data-id="${loan.id}" style="font-size:12.5px;padding:5px 7px;">
+                    <option value="chua_nhac" ${loan.trang_thai === 'chua_nhac' ? 'selected' : ''}>Chưa xử lý</option>
+                    <option value="da_nhac" ${loan.trang_thai === 'da_nhac' ? 'selected' : ''}>Đã liên hệ</option>
+                    <option value="da_xu_ly" ${loan.trang_thai === 'da_xu_ly' ? 'selected' : ''}>KH xử lý xong</option>
+                  </select>
+                  <button class="btn btn-danger act-xoa" data-id="${loan.id}" style="padding:5px 10px;font-size:12px;">Xoá</button>
+                </td>
+                <td style="position:relative;">
+                  <button class="btn btn-ghost loan-msg-btn" data-loan="${loan.id}" style="padding:5px 8px;font-size:12px;">💬</button>
+                  <div class="kebab-menu loan-msg-menu" data-loan="${loan.id}" style="display:none;">
+                    <div style="padding:6px 10px;font-size:10.5px;color:var(--text-soft);">Soạn tin cho khoản này — xưng hô:</div>
+                    <button class="kebab-item loan-tn-opt" data-loan="${loan.id}" data-kh-tu="Anh" data-tu-xung="Em">Anh (em xưng Em)</button>
+                    <button class="kebab-item loan-tn-opt" data-loan="${loan.id}" data-kh-tu="Chị" data-tu-xung="Em">Chị (em xưng Em)</button>
+                    <button class="kebab-item loan-tn-opt" data-loan="${loan.id}" data-kh-tu="Ông" data-tu-xung="Cháu">Ông (em xưng Cháu)</button>
+                    <button class="kebab-item loan-tn-opt" data-loan="${loan.id}" data-kh-tu="Bà" data-tu-xung="Cháu">Bà (em xưng Cháu)</button>
+                  </div>
                 </td>
               </tr>`;
             }).join('')}
@@ -807,10 +916,18 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     wrap.appendChild(pag);
   }
 
-  containerEl.querySelectorAll('.act-xong').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_xu_ly_xong')));
-  containerEl.querySelectorAll('.act-mo').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_mo_lai')));
+  containerEl.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', handleStatusChange));
   containerEl.querySelectorAll('.act-xoa').forEach(b => b.addEventListener('click', handleDelete));
+  containerEl.querySelectorAll('.act-sua-ngay').forEach(b => b.addEventListener('click', handleSuaNgay));
   containerEl.querySelectorAll('.act-sua-tien').forEach(b => b.addEventListener('click', handleSuaTien));
+  containerEl.querySelectorAll('.btn-copy-kh').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(b.dataset.copy).then(() => {
+      const old = b.textContent;
+      b.textContent = '✅';
+      setTimeout(() => { b.textContent = old; }, 1200);
+    });
+  }));
 
   containerEl.querySelectorAll('.kebab-btn').forEach(b => b.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -818,6 +935,22 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     const isShown = menu.style.display === 'block';
     containerEl.querySelectorAll('.kebab-menu').forEach(m => m.style.display = 'none');
     menu.style.display = isShown ? 'none' : 'block';
+  }));
+  containerEl.querySelectorAll('.loan-msg-btn').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const menu = containerEl.querySelector(`.loan-msg-menu[data-loan="${CSS.escape(b.dataset.loan)}"]`);
+    const isShown = menu.style.display === 'block';
+    containerEl.querySelectorAll('.kebab-menu').forEach(m => m.style.display = 'none');
+    menu.style.display = isShown ? 'none' : 'block';
+  }));
+  containerEl.querySelectorAll('.loan-tn-opt').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const loan = loanById[b.dataset.loan];
+    if (!loan) return;
+    const msg = generateTinNhanForLoan(loan, b.dataset.khTu, b.dataset.tuXung);
+    navigator.clipboard.writeText(msg).then(() => {
+      alert(`Đã copy tin nhắn cho khoản vay này (xưng hô: ${b.dataset.khTu} — em xưng ${b.dataset.tuXung}).`);
+    });
   }));
   if (!window.__kebabListenerAttached) {
     window.__kebabListenerAttached = true;
@@ -834,6 +967,15 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       if (error) { alert('Lỗi: ' + error.message); break; }
     }
     loadDanhSach();
+  }));
+
+  containerEl.querySelectorAll('.tn-opt').forEach(b => b.addEventListener('click', () => {
+    const khId = b.dataset.kh;
+    const g = groups[khId];
+    const msg = generateTinNhan(g, b.dataset.khTu, b.dataset.tuXung);
+    navigator.clipboard.writeText(msg).then(() => {
+      alert(`Đã copy tin nhắn (xưng hô: ${b.dataset.khTu} — em xưng ${b.dataset.tuXung}). Dán qua Zalo/SMS cho KH.`);
+    });
   }));
 
   containerEl.querySelectorAll('.btn-copy').forEach(b => b.addEventListener('click', () => {
@@ -902,6 +1044,35 @@ async function handleSuaTien(e) {
   btn.disabled = true;
   const { error } = await sb.from('margin_khoan_vay').update({ so_tien }).eq('id', id);
   if (error) { alert('Lỗi: ' + error.message); btn.disabled = false; return; }
+  loadDanhSach();
+}
+
+async function handleSuaNgay(e) {
+  const btn = e.currentTarget;
+  const id = btn.dataset.id;
+  const current = btn.dataset.current || '';
+  const raw = prompt('Nhập ngày đến hạn mới (dd/mm/yyyy), để trống nếu muốn xoá ngày:', current ? fmtDateWithDay(current) : '');
+  if (raw === null) return; // bấm Huỷ
+  let ngay_den_han = null;
+  if (raw.trim() !== '') {
+    ngay_den_han = normalizeDate(raw.trim());
+    if (!ngay_den_han) { alert('Ngày không hợp lệ, nhập theo dạng dd/mm/yyyy.'); return; }
+  }
+  btn.disabled = true;
+  const { error } = await sb.from('margin_khoan_vay').update({ ngay_den_han }).eq('id', id);
+  if (error) { alert('Lỗi: ' + error.message); btn.disabled = false; return; }
+  loadDanhSach();
+}
+
+async function handleStatusChange(e) {
+  const sel = e.currentTarget;
+  const id = sel.dataset.id;
+  const value = sel.value;
+  const rpcMap = { chua_nhac: 'margin_mo_lai', da_nhac: 'margin_danh_dau_da_nhac', da_xu_ly: 'margin_danh_dau_xu_ly_xong' };
+  sel.disabled = true;
+  const { error } = await sb.rpc(rpcMap[value], { p_khoan_vay_id: id, p_ghi_chu: null });
+  sel.disabled = false;
+  if (error) { alert('Lỗi: ' + error.message); return; }
   loadDanhSach();
 }
 
