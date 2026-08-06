@@ -75,8 +75,10 @@
   .btn-primary:hover{background:var(--teal-dark);}
   .btn-ghost{background:transparent;color:var(--teal-dark);border:1px solid var(--line);}
   .btn-ghost:hover{background:#f0ede4;}
-  #dueTodayBtn.active{background:var(--red);color:#fff;border-color:var(--red);}
-  #dueTodayBtn.active:hover{background:#963a27;}
+  .quick-filter.active{color:#fff !important;}
+  #qfDueToday.active{background:var(--amber);}
+  #qfOverdue.active{background:var(--red);}
+  #qfUpcoming.active{background:#c98a2c;}
   .btn-danger{background:var(--red);color:#fff;}
   .btn-block{width:100%;margin-top:20px;}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -120,6 +122,17 @@
   .card{background:var(--paper-card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:18px;}
   .card h2{margin:0 0 4px;font-size:17px;}
   .card p.desc{color:var(--text-soft);font-size:13px;margin:0 0 16px;}
+
+  .sticky-filters{
+    position:sticky;
+    top:100px; /* JS sẽ chỉnh chính xác theo chiều cao header+tabs thật */
+    background:var(--paper-card);
+    z-index:5;
+    margin:-20px -20px 0;
+    padding:20px 20px 14px;
+    border-radius:12px 12px 0 0;
+  }
+  .sticky-filters.is-stuck{box-shadow:0 4px 10px rgba(0,0,0,.06);border-bottom:1px solid var(--line);}
 
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
   .toolbar input,.toolbar select{width:auto;min-width:160px;}
@@ -180,6 +193,32 @@
   .empty-state{text-align:center;padding:40px 20px;color:var(--text-soft);}
   .empty-state .big{font-size:32px;margin-bottom:8px;}
 
+  /* section headers */
+  .section-head{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:16px;font-weight:700;}
+  .section-head .count-badge{background:#eee9db;color:var(--text-soft);font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;}
+  .section-head.dac-biet{color:#8a6d1a;}
+  .section-head.theo-doi{color:#1a5276;}
+
+  /* KH card kieu bang */
+  .kh-card{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden;}
+  .kh-card-head{display:flex;align-items:center;gap:14px;padding:14px 18px;flex-wrap:wrap;border-bottom:1px solid var(--line);}
+  .kh-card-head .kh-index{width:26px;height:26px;border-radius:50%;background:#eee9db;color:var(--text-soft);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .kh-card-head .kh-titleblock{flex:1;min-width:160px;}
+  .kh-card-head .kh-name2{font-weight:700;font-size:15.5px;}
+  .kh-card-head .kh-idphutrach{font-size:12px;color:var(--text-soft);margin-top:2px;}
+  .kh-card-head .kh-count-badge{font-size:12px;color:var(--text-soft);display:flex;align-items:center;gap:4px;background:#faf8f2;padding:4px 10px;border-radius:999px;}
+  .kh-card-head .kh-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  .kh-card-head .kh-btns .btn{font-size:12.5px;padding:7px 12px;}
+
+  table.loan-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.loan-table th{text-align:left;padding:8px 18px;font-size:11px;text-transform:uppercase;color:var(--text-soft);background:#faf8f2;font-weight:600;}
+  table.loan-table td{padding:9px 18px;border-top:1px solid var(--line);}
+  table.loan-table td.due-overdue{color:var(--red);font-weight:600;}
+  table.loan-table td.due-today{color:var(--amber);font-weight:600;}
+  table.loan-table td.due-upcoming{color:#c98a2c;font-weight:600;}
+  .kh-card-foot{display:flex;justify-content:space-between;padding:10px 18px;background:#faf8f2;font-size:12.5px;color:var(--text-soft);border-top:1px solid var(--line);}
+  .kh-card-foot b{color:var(--text);}
+
   @media (max-width:600px){
     main{padding:14px;}
     header.topbar{padding:12px 14px;}
@@ -228,19 +267,25 @@
     <!-- TAB: DANH SACH -->
     <section class="panel active" id="panel-danhSach">
       <div class="card">
-        <h2>Khách hàng cần nhắc</h2>
-        <p class="desc">Khoản vay còn hiển thị ở đây cho tới khi được đánh dấu "Đã xử lý xong".</p>
-        <div class="toolbar">
-          <input type="text" id="searchKH" placeholder="Tìm theo tên khách hàng...">
-          <select id="filterGroup"><option value="">Tất cả ID</option></select>
-          <select id="filterStatus">
-            <option value="open">Đang cần theo dõi (chưa xử lý xong)</option>
-            <option value="all">Xem tất cả (kể cả đã xử lý)</option>
-          </select>
-          <button class="btn btn-ghost" id="dueTodayBtn" style="border-color:var(--red);color:var(--red);">⚠️ Đến hạn hôm nay <span id="dueTodayCount" class="mono"></span></button>
-          <span class="stat-pill" id="statCount">0 khoản</span>
+        <div class="sticky-filters" id="stickyFilters">
+          <h2>Khách hàng cần nhắc</h2>
+          <p class="desc">Khoản vay còn hiển thị ở đây cho tới khi được đánh dấu "Đã xử lý xong".</p>
+          <div class="toolbar">
+            <input type="text" id="searchKH" placeholder="Tìm theo tên khách hàng...">
+            <select id="filterGroup"><option value="">Tất cả ID</option></select>
+            <select id="filterStatus">
+              <option value="open">Đang cần theo dõi (chưa xử lý xong)</option>
+              <option value="all">Xem tất cả (kể cả đã xử lý)</option>
+            </select>
+            <button class="btn btn-ghost quick-filter" id="qfDueToday" data-mode="today" style="border-color:var(--amber);color:var(--amber);">📅 Đến hạn hôm nay <span class="mono qf-count"></span></button>
+            <button class="btn btn-ghost quick-filter" id="qfOverdue" data-mode="overdue" style="border-color:var(--red);color:var(--red);">⚠️ Quá hạn <span class="mono qf-count"></span></button>
+            <button class="btn btn-ghost quick-filter" id="qfUpcoming" data-mode="upcoming" style="border-color:#c98a2c;color:#c98a2c;">🕐 Sắp đến hạn <span class="mono qf-count"></span></button>
+            <span class="stat-pill" id="statCount">0 khoản</span>
+          </div>
         </div>
-        <div id="danhSachList"></div>
+        <div id="dacBietSection"></div>
+        <div id="theoDoiSection" style="margin-top:24px;"></div>
+        <div id="danhSachEmpty"></div>
       </div>
     </section>
 
@@ -272,6 +317,7 @@
           <div><label>Cột chứa Mã KH / Số tài khoản * <span style="font-weight:400;color:var(--text-soft);">(nếu 1 ô có nhiều số cách nhau bởi dấu phẩy, hệ thống tự tách thành từng dòng)</span></label><select id="mapTen"></select></div>
           <div><label>Cột Ngày đến hạn (nếu có)</label><select id="mapNgay"></select></div>
           <div><label>Cột Mã khoản vay (nếu có)</label><select id="mapMa"></select></div>
+          <div><label>Cột Số tiền (nếu có)</label><select id="mapTien"></select></div>
           <div><label>Cột Ghi chú (nếu có)</label><select id="mapGhiChu"></select></div>
         </div>
         <button class="btn btn-ghost" id="buildPreviewBtn">Xem trước</button>
@@ -337,7 +383,6 @@ window.addEventListener('error', function(e){
 let isSignupMode = false;
 let currentParsedRows = null; // {headers:[], rows:[[...]]}
 let whitelistCache = [];
-let onlyDueToday = false;
 
 /* ---------------- AUTH ---------------- */
 const loginForm = document.getElementById('loginForm');
@@ -416,6 +461,17 @@ function initApp() {
   appInited = true;
   loadWhitelist();
   loadDanhSach();
+  updateStickyTop();
+  window.addEventListener('resize', updateStickyTop);
+}
+
+function updateStickyTop() {
+  const topbar = document.querySelector('header.topbar');
+  const tabs = document.querySelector('nav.tabs');
+  const stickyEl = document.getElementById('stickyFilters');
+  if (!topbar || !tabs || !stickyEl) return;
+  const h = topbar.offsetHeight + tabs.offsetHeight;
+  stickyEl.style.top = h + 'px';
 }
 
 /* ---------------- DANH SACH CAN NHAC ---------------- */
@@ -431,26 +487,50 @@ function daysUntil(d) {
   return Math.round((dt - today) / 86400000);
 }
 
+let onlyDueToday = false;
+let quickFilterMode = null; // null | 'today' | 'overdue' | 'upcoming'
+
+function dueClassAndIcon(dLeft) {
+  if (dLeft === null) return { cls: '', icon: '' };
+  if (dLeft < 0) return { cls: 'due-overdue', icon: '⚠️' };
+  if (dLeft === 0) return { cls: 'due-today', icon: '📅' };
+  if (dLeft <= 3) return { cls: 'due-upcoming', icon: '🕐' };
+  return { cls: '', icon: '' };
+}
+function fmtTien(v) {
+  if (v === null || v === undefined || v === '') return '—';
+  const n = Number(v);
+  if (isNaN(n)) return escapeHtml(String(v));
+  return n.toLocaleString('vi-VN') + ' đ';
+}
+function fmtDateWithDay(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  const days = ['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+  return `${dt.toLocaleDateString('vi-VN')} (${days[dt.getDay()]})`;
+}
+
 async function loadDanhSach() {
-  const listEl = document.getElementById('danhSachList');
-  listEl.innerHTML = '<p style="color:var(--text-soft);font-size:13px;">Đang tải...</p>';
+  document.getElementById('dacBietSection').innerHTML = '<p style="color:var(--text-soft);font-size:13px;">Đang tải...</p>';
+  document.getElementById('theoDoiSection').innerHTML = '';
+  document.getElementById('danhSachEmpty').innerHTML = '';
 
   const statusFilter = document.getElementById('filterStatus').value;
   let query = sb.from('margin_khoan_vay')
-    .select('id, group_id, ma_khoan_vay, ngay_den_han, ngay_import, trang_thai, ghi_chu, khach_hang:margin_khach_hang(id, ten_kh)')
+    .select('id, group_id, ma_khoan_vay, ngay_den_han, ngay_import, trang_thai, ghi_chu, so_tien, khach_hang:margin_khach_hang(id, ten_kh)')
     .order('ngay_den_han', { ascending: true, nullsFirst: false });
 
   if (statusFilter === 'open') query = query.neq('trang_thai', 'da_xu_ly');
 
   const [{ data, error }, { data: wl, error: wlErr }] = await Promise.all([
     query,
-    sb.from('margin_id_whitelist').select('id, ghi_chu, loai_theo_doi')
+    sb.from('margin_id_whitelist').select('id, ghi_chu, loai_theo_doi, active')
   ]);
-  if (error) { listEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+  if (error) { document.getElementById('dacBietSection').innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
   const idInfo = {};
   (wl || []).forEach(w => { idInfo[w.id] = w; });
 
-  // cập nhật dropdown lọc theo ID dựa trên toàn bộ ID thực tế đã import (không chỉ ID đặc biệt)
+  // dropdown lọc theo ID: toàn bộ ID thực tế đã import
   const filterGroup = document.getElementById('filterGroup');
   const prevVal = filterGroup.value;
   const allGroupIds = [...new Set((data || []).map(r => r.group_id))].sort();
@@ -463,182 +543,156 @@ async function loadDanhSach() {
   if (search) rows = rows.filter(r => r.khach_hang && r.khach_hang.ten_kh.toLowerCase().includes(search));
   if (groupFilter) rows = rows.filter(r => r.group_id === groupFilter);
 
-  // đếm số khoản đến hạn đúng hôm nay (chưa xử lý xong), hiện lên nút cảnh báo bất kể đang lọc gì
-  const dueTodayTotal = (data || []).filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) === 0).length;
-  const dueTodayCountEl = document.getElementById('dueTodayCount');
-  dueTodayCountEl.textContent = dueTodayTotal > 0 ? `(${dueTodayTotal})` : '';
-  document.getElementById('dueTodayBtn').style.opacity = dueTodayTotal > 0 ? '1' : '.5';
+  // đếm cho 3 nút lọc nhanh (trên toàn bộ dữ liệu đang mở, không phụ thuộc lọc khác)
+  const openAll = (data || []).filter(r => r.trang_thai !== 'da_xu_ly');
+  const cntToday = openAll.filter(r => daysUntil(r.ngay_den_han) === 0).length;
+  const cntOverdue = openAll.filter(r => daysUntil(r.ngay_den_han) !== null && daysUntil(r.ngay_den_han) < 0).length;
+  const cntUpcoming = openAll.filter(r => { const d = daysUntil(r.ngay_den_han); return d !== null && d > 0 && d <= 3; }).length;
+  document.querySelector('#qfDueToday .qf-count').textContent = cntToday > 0 ? `(${cntToday})` : '';
+  document.querySelector('#qfOverdue .qf-count').textContent = cntOverdue > 0 ? `(${cntOverdue})` : '';
+  document.querySelector('#qfUpcoming .qf-count').textContent = cntUpcoming > 0 ? `(${cntUpcoming})` : '';
 
-  if (onlyDueToday) {
-    rows = rows.filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) === 0);
-  }
+  if (quickFilterMode === 'today') rows = rows.filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) === 0);
+  if (quickFilterMode === 'overdue') rows = rows.filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) !== null && daysUntil(r.ngay_den_han) < 0);
+  if (quickFilterMode === 'upcoming') rows = rows.filter(r => { const d = daysUntil(r.ngay_den_han); return r.trang_thai !== 'da_xu_ly' && d !== null && d > 0 && d <= 3; });
 
   document.getElementById('statCount').textContent = rows.length + ' khoản';
 
   if (rows.length === 0) {
-    listEl.innerHTML = `<div class="empty-state"><div class="big">✅</div>Không có khoản nào cần theo dõi.</div>`;
+    document.getElementById('dacBietSection').innerHTML = '';
+    document.getElementById('danhSachEmpty').innerHTML = `<div class="empty-state"><div class="big">✅</div>Không có khoản nào cần theo dõi.</div>`;
     return;
   }
 
-  const chiTietRows = rows.filter(r => idInfo[r.group_id] && idInfo[r.group_id].active);
-  const tongHopRows = rows.filter(r => !idInfo[r.group_id] || !idInfo[r.group_id].active);
+  const dacBietRows = rows.filter(r => idInfo[r.group_id] && idInfo[r.group_id].active);
+  const theoDoiRows = rows.filter(r => !idInfo[r.group_id] || !idInfo[r.group_id].active);
 
-  listEl.innerHTML = '';
+  const dacBietEl = document.getElementById('dacBietSection');
+  const theoDoiEl = document.getElementById('theoDoiSection');
+  dacBietEl.innerHTML = '';
+  theoDoiEl.innerHTML = '';
 
-  if (chiTietRows.length > 0) {
-    const secTitle = document.createElement('h3');
-    secTitle.style.cssText = 'font-size:14px;margin:0 0 10px;color:var(--text-soft);';
-    secTitle.textContent = `📋 Theo dõi chi tiết từng tài khoản (${chiTietRows.length})`;
-    listEl.appendChild(secTitle);
-    renderChiTiet(listEl, chiTietRows);
+  if (dacBietRows.length > 0) {
+    const h = document.createElement('div');
+    h.className = 'section-head dac-biet';
+    h.innerHTML = `⭐ ID cần quan tâm đặc biệt <span class="count-badge">${new Set(dacBietRows.map(r => r.khach_hang ? r.khach_hang.id : r.id)).size}</span>`;
+    dacBietEl.appendChild(h);
+    renderKhCards(dacBietEl, dacBietRows, idInfo);
   }
-
-  if (tongHopRows.length > 0) {
-    const secTitle = document.createElement('h3');
-    secTitle.style.cssText = 'font-size:14px;margin:24px 0 10px;color:var(--text-soft);';
-    secTitle.textContent = `📣 Tổng hợp theo ID — báo người phụ trách tự liên hệ (${tongHopRows.length})`;
-    listEl.appendChild(secTitle);
-    renderTongHop(listEl, tongHopRows, idInfo);
+  if (theoDoiRows.length > 0) {
+    const h = document.createElement('div');
+    h.className = 'section-head theo-doi';
+    h.innerHTML = `👁 ID theo dõi <span class="count-badge">${new Set(theoDoiRows.map(r => r.khach_hang ? r.khach_hang.id : r.id)).size}</span>`;
+    theoDoiEl.appendChild(h);
+    renderKhCards(theoDoiEl, theoDoiRows, idInfo);
   }
 }
 
-function renderChiTiet(listEl, rows) {
-  // group by khach hang
+function renderKhCards(containerEl, rows, idInfo) {
   const groups = {};
+  const order = [];
   rows.forEach(r => {
-    const khId = r.khach_hang ? r.khach_hang.id : 'unknown';
-    if (!groups[khId]) groups[khId] = { ten: r.khach_hang ? r.khach_hang.ten_kh : '(không rõ)', loans: [] };
+    const khId = r.khach_hang ? r.khach_hang.id : 'unknown-' + r.id;
+    if (!groups[khId]) { groups[khId] = { ten: r.khach_hang ? r.khach_hang.ten_kh : '(không rõ)', groupId: r.group_id, loans: [] }; order.push(khId); }
     groups[khId].loans.push(r);
   });
 
-  Object.values(groups).forEach(g => {
-    const div = document.createElement('div');
-    div.className = 'kh-group';
-    const head = document.createElement('div');
-    head.className = 'kh-group-head';
-    head.innerHTML = `<span class="kh-name">${escapeHtml(g.ten)}</span><span class="kh-meta">${g.loans.length} khoản</span>`;
-    div.appendChild(head);
-
-    g.loans.forEach(loan => {
-      const dLeft = daysUntil(loan.ngay_den_han);
-      let rowClass = 'ok';
-      if (dLeft !== null && dLeft < 0) rowClass = 'overdue';
-      else if (dLeft !== null && dLeft <= 2) rowClass = 'due-soon';
-
-      const row = document.createElement('div');
-      row.className = 'loan-row ' + rowClass;
-
-      const statusLabel = { chua_nhac: 'Chưa nhắc', da_nhac: 'Đã nhắc, chờ xử lý', da_xu_ly: 'Đã xử lý xong' }[loan.trang_thai];
-      let dueText = fmtDate(loan.ngay_den_han);
-      if (dLeft !== null) {
-        if (dLeft < 0) dueText += ` (quá hạn ${Math.abs(dLeft)} ngày)`;
-        else if (dLeft === 0) dueText += ` (hôm nay)`;
-        else dueText += ` (còn ${dLeft} ngày)`;
-      }
-
-      row.innerHTML = `
-        <div class="loan-info">
-          <span class="idtag mono" style="background:#eee9db;padding:2px 6px;border-radius:5px;font-size:11px;">${escapeHtml(loan.group_id)}</span>
-          ${loan.ma_khoan_vay ? `<span class="mono" style="font-size:11px;color:var(--text-soft);"> · ${escapeHtml(loan.ma_khoan_vay)}</span>` : ''}
-          <div class="date">${dueText}</div>
-          <span class="status-chip status-${loan.trang_thai}">${statusLabel}</span>
-          ${loan.ghi_chu ? `<div class="loan-note">📝 ${escapeHtml(loan.ghi_chu)}</div>` : ''}
-        </div>
-        <div class="loan-actions" data-id="${loan.id}">
-          ${loan.trang_thai !== 'da_nhac' && loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-ghost act-nhac">Đã nhắc</button>` : ''}
-          ${loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-primary act-xong">Đã xử lý xong</button>` : `<button class="btn btn-ghost act-mo">Mở lại</button>`}
-          <button class="btn btn-danger act-xoa" title="Xoá khoản vay này">Xoá</button>
-        </div>
-      `;
-      div.appendChild(row);
-    });
-    listEl.appendChild(div);
-  });
-
-  // bind actions
-  listEl.querySelectorAll('.act-nhac').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_da_nhac')));
-  listEl.querySelectorAll('.act-xong').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_xu_ly_xong')));
-  listEl.querySelectorAll('.act-xoa').forEach(b => b.addEventListener('click', handleDelete));
-  listEl.querySelectorAll('.act-mo').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_mo_lai')));
-}
-
-function renderTongHop(listEl, rows, idInfo) {
-  const groups = {};
-  rows.forEach(r => {
-    if (!groups[r.group_id]) groups[r.group_id] = { ghiChu: idInfo[r.group_id] ? idInfo[r.group_id].ghi_chu : '', loans: [] };
-    groups[r.group_id].loans.push(r);
-  });
-
-  Object.entries(groups).forEach(([groupId, g]) => {
+  order.forEach((khId, idx) => {
+    const g = groups[khId];
     const openCount = g.loans.filter(l => l.trang_thai !== 'da_xu_ly').length;
-    const div = document.createElement('div');
-    div.className = 'kh-group';
-    const head = document.createElement('div');
-    head.className = 'kh-group-head';
-    head.innerHTML = `
-      <span class="kh-name">ID ${escapeHtml(groupId)} ${g.ghiChu ? `<span style="font-weight:400;color:var(--text-soft);font-size:12px;">(${escapeHtml(g.ghiChu)})</span>` : ''}</span>
-      <span style="display:flex;gap:8px;align-items:center;">
-        <span class="kh-meta">${g.loans.length} tài khoản, ${openCount} chưa xử lý</span>
-        <button class="btn btn-ghost btn-copy" data-group="${escapeHtml(groupId)}">📋 Copy danh sách</button>
-        ${openCount > 0 ? `<button class="btn btn-primary btn-thongbao" data-group="${escapeHtml(groupId)}">📣 Đã thông báo cho ID</button>` : ''}
-      </span>
-    `;
-    div.appendChild(head);
+    const tongDuNo = g.loans.reduce((s, l) => s + (Number(l.so_tien) || 0), 0);
+    const idNote = idInfo[g.groupId] ? idInfo[g.groupId].ghi_chu : '';
 
-    g.loans.forEach(loan => {
-      const dLeft = daysUntil(loan.ngay_den_han);
-      let rowClass = 'ok';
-      if (dLeft !== null && dLeft < 0) rowClass = 'overdue';
-      else if (dLeft !== null && dLeft <= 2) rowClass = 'due-soon';
-      const row = document.createElement('div');
-      row.className = 'loan-row ' + rowClass;
-      const statusLabel = { chua_nhac: 'Chưa nhắc', da_nhac: 'Đã báo ID, chờ xử lý', da_xu_ly: 'Đã xử lý xong' }[loan.trang_thai];
-      let dueText = fmtDate(loan.ngay_den_han);
-      if (dLeft !== null) {
-        if (dLeft < 0) dueText += ` (quá hạn ${Math.abs(dLeft)} ngày)`;
-        else if (dLeft === 0) dueText += ` (hôm nay)`;
-        else dueText += ` (còn ${dLeft} ngày)`;
-      }
-      row.innerHTML = `
-        <div class="loan-info">
-          <span class="mono" style="font-size:12px;font-weight:600;">${escapeHtml(loan.khach_hang ? loan.khach_hang.ten_kh : '')}</span>
-          <div class="date">${dueText}</div>
-          <span class="status-chip status-${loan.trang_thai}">${statusLabel}</span>
+    const card = document.createElement('div');
+    card.className = 'kh-card';
+    card.innerHTML = `
+      <div class="kh-card-head">
+        <span class="kh-index">${idx + 1}</span>
+        <div class="kh-titleblock">
+          <div class="kh-name2">${escapeHtml(g.ten)}</div>
+          <div class="kh-idphutrach">ID phụ trách: <span class="mono">${escapeHtml(g.groupId)}</span>${idNote ? ' · ' + escapeHtml(idNote) : ''}</div>
         </div>
-        <div class="loan-actions" data-id="${loan.id}">
-          ${loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-primary act-xong">Đã xử lý xong</button>` : `<button class="btn btn-ghost act-mo">Mở lại</button>`}
-          <button class="btn btn-danger act-xoa" title="Xoá khoản vay này">Xoá</button>
+        <span class="kh-count-badge">👥 ${g.loans.length} khoản vay</span>
+        <div class="kh-btns">
+          <button class="btn btn-ghost btn-copy" data-kh="${escapeHtml(khId)}">📋 Copy danh sách</button>
+          <button class="btn btn-ghost btn-export" data-kh="${escapeHtml(khId)}">⬇️ Xuất Excel</button>
+          ${openCount > 0 ? `<button class="btn btn-primary btn-thongbao" data-kh="${escapeHtml(khId)}">📣 Đã thông báo cho ID</button>` : ''}
         </div>
-      `;
-      div.appendChild(row);
-    });
-    listEl.appendChild(div);
+      </div>
+      <table class="loan-table">
+        <tr><th>Khoản vay</th><th>Ngày đến hạn</th><th>Tiền</th><th>Trạng thái</th><th>Hành động</th></tr>
+        ${g.loans.map((loan, i) => {
+          const dLeft = daysUntil(loan.ngay_den_han);
+          const { cls, icon } = dueClassAndIcon(dLeft);
+          const statusLabel = { chua_nhac: 'Chưa nhắc', da_nhac: 'Đã nhắc, chờ xử lý', da_xu_ly: 'Đã xử lý xong' }[loan.trang_thai];
+          return `<tr>
+            <td>Khoản vay ${i + 1}${loan.ma_khoan_vay ? ` <span class="mono" style="color:var(--text-soft);font-size:11px;">(${escapeHtml(loan.ma_khoan_vay)})</span>` : ''}</td>
+            <td class="${cls}">${icon ? icon + ' ' : ''}${fmtDateWithDay(loan.ngay_den_han)}</td>
+            <td>
+              <span class="tien-val">${fmtTien(loan.so_tien)}</span>
+              <button class="btn btn-ghost act-sua-tien" data-id="${loan.id}" data-current="${loan.so_tien ?? ''}" title="Sửa số tiền" style="padding:2px 6px;font-size:11px;margin-left:4px;">✏️</button>
+            </td>
+            <td><span class="status-chip status-${loan.trang_thai}">${statusLabel}</span></td>
+            <td data-id="${loan.id}">
+              ${loan.trang_thai !== 'da_xu_ly' ? `<button class="btn btn-primary act-xong" style="padding:5px 10px;font-size:12px;">Đã xử lý xong</button>` : `<button class="btn btn-ghost act-mo" style="padding:5px 10px;font-size:12px;">Mở lại</button>`}
+              <button class="btn btn-danger act-xoa" style="padding:5px 10px;font-size:12px;">Xoá</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </table>
+      <div class="kh-card-foot">
+        <span>Tổng số khoản: <b>${g.loans.length}</b></span>
+        <span>Tổng dư nợ: <b>${fmtTien(tongDuNo)}</b></span>
+      </div>
+    `;
+    containerEl.appendChild(card);
   });
 
-  listEl.querySelectorAll('.act-xong').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_xu_ly_xong')));
-  listEl.querySelectorAll('.act-mo').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_mo_lai')));
-  listEl.querySelectorAll('.act-xoa').forEach(b => b.addEventListener('click', handleDelete));
+  containerEl.querySelectorAll('.act-xong').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_danh_dau_xu_ly_xong')));
+  containerEl.querySelectorAll('.act-mo').forEach(b => b.addEventListener('click', (e) => handleAction(e, 'margin_mo_lai')));
+  containerEl.querySelectorAll('.act-xoa').forEach(b => b.addEventListener('click', handleDelete));
+  containerEl.querySelectorAll('.act-sua-tien').forEach(b => b.addEventListener('click', handleSuaTien));
 
-  listEl.querySelectorAll('.btn-thongbao').forEach(b => b.addEventListener('click', async () => {
+  containerEl.querySelectorAll('.btn-thongbao').forEach(b => b.addEventListener('click', async () => {
+    const khId = b.dataset.kh;
+    const g = groups[khId];
+    const openIds = g.loans.filter(l => l.trang_thai !== 'da_xu_ly').map(l => l.id);
     b.disabled = true;
-    const { error } = await sb.rpc('margin_thong_bao_theo_id', { p_group_id: b.dataset.group, p_ghi_chu: null });
-    if (error) { alert('Lỗi: ' + error.message); b.disabled = false; return; }
+    for (const id of openIds) {
+      const { error } = await sb.rpc('margin_danh_dau_da_nhac', { p_khoan_vay_id: id, p_ghi_chu: null });
+      if (error) { alert('Lỗi: ' + error.message); break; }
+    }
     loadDanhSach();
   }));
 
-  listEl.querySelectorAll('.btn-copy').forEach(b => b.addEventListener('click', () => {
-    const groupId = b.dataset.group;
-    const g = groups[groupId];
-    const openLoans = g.loans.filter(l => l.trang_thai !== 'da_xu_ly');
-    const lines = [`Danh sách tài khoản cần xử lý margin — ID ${groupId}${g.ghiChu ? ' (' + g.ghiChu + ')' : ''}:`];
-    openLoans.forEach(l => {
-      const ten = l.khach_hang ? l.khach_hang.ten_kh : '';
-      lines.push(`- ${ten}${l.ngay_den_han ? ' — hạn ' + fmtDate(l.ngay_den_han) : ''}`);
+  containerEl.querySelectorAll('.btn-copy').forEach(b => b.addEventListener('click', () => {
+    const khId = b.dataset.kh;
+    const g = groups[khId];
+    const lines = [`Danh sách khoản vay cần xử lý — ${g.ten} (ID: ${g.groupId}):`];
+    g.loans.filter(l => l.trang_thai !== 'da_xu_ly').forEach(l => {
+      lines.push(`- ${fmtDateWithDay(l.ngay_den_han)}${l.so_tien ? ' — ' + fmtTien(l.so_tien) : ''}${l.ma_khoan_vay ? ' — TK ' + l.ma_khoan_vay : ''}`);
     });
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
       b.textContent = '✅ Đã copy';
       setTimeout(() => { b.textContent = '📋 Copy danh sách'; }, 2000);
     });
+  }));
+
+  containerEl.querySelectorAll('.btn-export').forEach(b => b.addEventListener('click', () => {
+    const khId = b.dataset.kh;
+    const g = groups[khId];
+    const sheetData = g.loans.map((l, i) => ({
+      'Khoản vay': `Khoản vay ${i + 1}`,
+      'Số TK / Mã khoản vay': l.ma_khoan_vay || '',
+      'Ngày đến hạn': l.ngay_den_han || '',
+      'Tiền': l.so_tien || '',
+      'Trạng thái': { chua_nhac: 'Chưa nhắc', da_nhac: 'Đã nhắc, chờ xử lý', da_xu_ly: 'Đã xử lý xong' }[l.trang_thai],
+      'ID phụ trách': l.group_id
+    }));
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const wbOut = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wbOut, ws, 'Khoản vay');
+    XLSX.writeFile(wbOut, `khoan-vay-${g.ten}.xlsx`);
   }));
 }
 
@@ -647,7 +701,7 @@ async function handleAction(e, rpcName) {
   let note = null;
   if (rpcName !== 'margin_mo_lai') {
     const raw = prompt('Ghi chú (không bắt buộc, để trống rồi bấm OK nếu không cần):', '');
-    if (raw === null) return; // người dùng bấm Hủy
+    if (raw === null) return;
     note = raw.trim() === '' ? null : raw.trim();
   }
   e.target.disabled = true;
@@ -665,13 +719,31 @@ async function handleDelete(e) {
   loadDanhSach();
 }
 
+async function handleSuaTien(e) {
+  const btn = e.currentTarget;
+  const id = btn.dataset.id;
+  const current = btn.dataset.current || '';
+  const raw = prompt('Nhập số tiền mới (VNĐ), để trống nếu muốn xoá số tiền:', current);
+  if (raw === null) return; // bấm Huỷ
+  const cleaned = raw.replace(/[^\d.-]/g, '').trim();
+  const so_tien = cleaned === '' ? null : Number(cleaned);
+  if (cleaned !== '' && isNaN(so_tien)) { alert('Số tiền không hợp lệ.'); return; }
+  btn.disabled = true;
+  const { error } = await sb.from('margin_khoan_vay').update({ so_tien }).eq('id', id);
+  if (error) { alert('Lỗi: ' + error.message); btn.disabled = false; return; }
+  loadDanhSach();
+}
+
 document.getElementById('searchKH').addEventListener('input', debounce(loadDanhSach, 250));
 document.getElementById('filterGroup').addEventListener('change', loadDanhSach);
 document.getElementById('filterStatus').addEventListener('change', loadDanhSach);
-document.getElementById('dueTodayBtn').addEventListener('click', () => {
-  onlyDueToday = !onlyDueToday;
-  document.getElementById('dueTodayBtn').classList.toggle('active', onlyDueToday);
-  loadDanhSach();
+document.querySelectorAll('.quick-filter').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const mode = btn.dataset.mode;
+    quickFilterMode = quickFilterMode === mode ? null : mode;
+    document.querySelectorAll('.quick-filter').forEach(b => b.classList.toggle('active', b.dataset.mode === quickFilterMode));
+    loadDanhSach();
+  });
 });
 
 let lastInputWasOcr = false;
@@ -818,6 +890,7 @@ function setParsedRows(rows) {
   document.getElementById('mapNgay').innerHTML = noneOpt + opts;
   document.getElementById('mapMa').innerHTML = noneOpt + opts;
   document.getElementById('mapGhiChu').innerHTML = noneOpt + opts;
+  document.getElementById('mapTien').innerHTML = noneOpt + opts;
 
   // best-effort auto-detect
   autoSelect('mapId', headers, ['id', 'mã id', 'ma id', 'id mg', 'mã môi giới']);
@@ -825,6 +898,7 @@ function setParsedRows(rows) {
   autoSelect('mapNgay', headers, ['ngày đến hạn', 'ngay den han', 'hạn margin', 'due date']);
   autoSelect('mapMa', headers, ['mã khoản vay', 'ma khoan vay']);
   autoSelect('mapGhiChu', headers, ['ghi chú', 'ghi chu', 'note']);
+  autoSelect('mapTien', headers, ['số tiền', 'so tien', 'dư nợ', 'du no', 'tiền', 'tien']);
 
   document.getElementById('mapCard').style.display = 'block';
   document.getElementById('previewCard').style.display = 'none';
@@ -844,6 +918,7 @@ document.getElementById('buildPreviewBtn').addEventListener('click', async () =>
   const ngayCol = parseInt(document.getElementById('mapNgay').value);
   const maCol = parseInt(document.getElementById('mapMa').value);
   const ghiChuCol = parseInt(document.getElementById('mapGhiChu').value);
+  const tienCol = parseInt(document.getElementById('mapTien').value);
 
   // ensure whitelist is fresh (để hiện trước nhóm dự kiến ở bảng xem trước)
   await loadWhitelist();
@@ -856,6 +931,7 @@ document.getElementById('buildPreviewBtn').addEventListener('click', async () =>
     const ngay_den_han = ngayCol >= 0 ? normalizeDate(r[ngayCol]) : null;
     const ma_khoan_vay = maCol >= 0 ? (r[maCol] || '').toString().trim() : null;
     const ghi_chu = ghiChuCol >= 0 ? (r[ghiChuCol] || '').toString().trim() : null;
+    const so_tien = tienCol >= 0 ? (r[tienCol] || '').toString().replace(/[^\d.-]/g, '').trim() : null;
     // 1 ô có thể chứa nhiều số tài khoản cách nhau bằng dấu phẩy/chấm phẩy -> đây là NHIỀU KHOẢN VAY của CÙNG 1 khách hàng,
     // không phải nhiều khách hàng riêng. Lấy số tài khoản đầu tiên làm định danh khách hàng (để nhóm chung),
     // mỗi số tài khoản trong ô vẫn là 1 khoản vay riêng (giữ được ngày đáo hạn riêng nếu sau này có).
@@ -867,6 +943,7 @@ document.getElementById('buildPreviewBtn').addEventListener('click', async () =>
         ten_kh: khachHangKey,
         ngay_den_han,
         ma_khoan_vay: ma_khoan_vay || (accList.length > 1 ? soTk : null),
+        so_tien: so_tien || null,
         ghi_chu,
         willSkip: !group_id || !khachHangKey,
         nhomDuKien: activeIds.has(group_id) ? 'Chi tiết' : 'Tổng hợp'
@@ -885,12 +962,14 @@ document.getElementById('buildPreviewBtn').addEventListener('click', async () =>
       : '');
 
   const tbl = document.getElementById('previewTable');
-  tbl.innerHTML = `<tr><th>ID</th><th>Mã KH / Số TK</th><th>Ngày đến hạn</th><th>Mã khoản vay</th><th>Ghi chú</th><th>Nhóm dự kiến</th></tr>` +
+  tbl.innerHTML = `<tr><th>ID</th><th>Mã KH / Số TK</th><th>Ngày đến hạn</th><th>Mã khoản vay</th><th>Số tiền</th><th>Ghi chú</th><th>Nhóm dự kiến</th></tr>` +
     parsedForImport.map(r => `<tr class="${r.willSkip ? 'skip' : ''}">
       <td>${r.willSkip ? escapeHtml(r.group_id) : highlightRisky(r.group_id)}</td>
       <td>${r.willSkip ? escapeHtml(r.ten_kh) : highlightRisky(r.ten_kh)}</td>
       <td>${escapeHtml(r.ngay_den_han || '')}</td>
-      <td>${escapeHtml(r.ma_khoan_vay || '')}</td><td>${escapeHtml(r.ghi_chu || '')}</td>
+      <td>${escapeHtml(r.ma_khoan_vay || '')}</td>
+      <td>${escapeHtml(r.so_tien || '')}</td>
+      <td>${escapeHtml(r.ghi_chu || '')}</td>
       <td>${r.willSkip ? '' : escapeHtml(r.nhomDuKien)}</td>
     </tr>`).join('');
 
@@ -917,7 +996,7 @@ document.getElementById('confirmImportBtn').addEventListener('click', async () =
   btn.disabled = true;
   btn.textContent = 'Đang import...';
   const { data, error } = await sb.rpc('margin_import_rows', { p_rows: rows.map(r => ({
-    group_id: r.group_id, ten_kh: r.ten_kh, ngay_den_han: r.ngay_den_han, ma_khoan_vay: r.ma_khoan_vay, ghi_chu: r.ghi_chu
+    group_id: r.group_id, ten_kh: r.ten_kh, ngay_den_han: r.ngay_den_han, ma_khoan_vay: r.ma_khoan_vay, so_tien: r.so_tien, ghi_chu: r.ghi_chu
   })) });
   btn.disabled = false;
   btn.textContent = 'Import vào hệ thống';
