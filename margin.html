@@ -328,6 +328,7 @@
             <button class="btn btn-ghost quick-filter" id="qfDueToday" data-mode="today" style="border-color:var(--amber);color:var(--amber);">📅 Đến hạn hôm nay <span class="mono qf-count"></span></button>
             <button class="btn btn-ghost quick-filter" id="qfOverdue" data-mode="overdue" style="border-color:var(--red);color:var(--red);">⚠️ Quá hạn <span class="mono qf-count"></span></button>
             <button class="btn btn-ghost quick-filter" id="qfUpcoming" data-mode="upcoming" style="border-color:#c98a2c;color:#c98a2c;">🕐 Sắp đến hạn <span class="mono qf-count"></span></button>
+            <button class="btn btn-primary" id="manualRefreshBtn" style="margin-left:auto;">🔄 Làm mới danh sách</button>
             <span class="stat-pill" id="statCount">0 khoản</span>
           </div>
         </div>
@@ -580,6 +581,7 @@ function daysUntil(d) {
 }
 
 let onlyDueToday = false;
+let pendingFocusKh = null; // KH vừa sửa ngày/trạng thái — dùng để tự nhảy đúng trang chứa nó sau khi tải lại
 let theoDoiCollapsed = true; // mặc định thu gọn khu vực ID theo dõi, bấm nút mới hiện chi tiết
 let quickFilterMode = null; // null | 'today' | 'overdue' | 'upcoming'
 
@@ -947,6 +949,11 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
   });
 
   if (!(sectionKey in sectionPageState)) sectionPageState[sectionKey] = 1;
+  if (pendingFocusKh && order.includes(pendingFocusKh)) {
+    const idx = order.indexOf(pendingFocusKh);
+    sectionPageState[sectionKey] = Math.floor(idx / PAGE_SIZE) + 1;
+    pendingFocusKh = null;
+  }
   const totalPages = Math.max(1, Math.ceil(order.length / PAGE_SIZE));
   if (sectionPageState[sectionKey] > totalPages) sectionPageState[sectionKey] = totalPages;
   const page = sectionPageState[sectionKey];
@@ -1031,7 +1038,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
                 <td>Khoản vay ${li + 1}${loan.ma_khoan_vay ? ` <span class="mono" style="color:var(--text-soft);font-size:11px;">(${escapeHtml(loan.ma_khoan_vay)})</span>` : ''}</td>
                 <td class="${cls}">
                   <span class="ngay-val">${icon ? icon + ' ' : ''}${fmtDateWithDay(loan.ngay_den_han)}</span>
-                  <button class="btn btn-ghost act-sua-ngay" data-id="${loan.id}" data-current="${loan.ngay_den_han ?? ''}" title="Sửa ngày đến hạn" style="padding:2px 6px;font-size:11px;margin-left:4px;">✏️</button>
+                  <button class="btn btn-ghost act-sua-ngay" data-id="${loan.id}" data-kh="${escapeHtml(khId)}" data-current="${loan.ngay_den_han ?? ''}" title="Sửa ngày đến hạn" style="padding:2px 6px;font-size:11px;margin-left:4px;">✏️</button>
                 </td>
                 <td>
                   <span class="tien-val">${fmtTien(loan.so_tien)}</span>
@@ -1039,12 +1046,12 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
                 </td>
                 <td>
                   <div style="display:flex;align-items:center;gap:6px;">
-                    <select class="status-select" data-id="${loan.id}" style="font-size:12.5px;padding:5px 7px;">
+                    <select class="status-select" data-id="${loan.id}" data-kh="${escapeHtml(khId)}" style="font-size:12.5px;padding:5px 7px;">
                       <option value="chua_nhac" ${loan.trang_thai === 'chua_nhac' ? 'selected' : ''}>Chưa xử lý</option>
                       <option value="da_nhac" ${loan.trang_thai === 'da_nhac' ? 'selected' : ''}>Đã liên hệ</option>
                       <option value="da_xu_ly" ${loan.trang_thai === 'da_xu_ly' ? 'selected' : ''}>KH xử lý xong</option>
                     </select>
-                    <button class="btn btn-ghost act-xoa" data-id="${loan.id}" title="Xoá khoản vay này" style="padding:5px 8px;font-size:13px;color:var(--red);border-color:#f0c9bd;">🗑️</button>
+                    <button class="btn btn-ghost act-xoa" data-id="${loan.id}" data-kh="${escapeHtml(khId)}" title="Xoá khoản vay này" style="padding:5px 8px;font-size:13px;color:var(--red);border-color:#f0c9bd;">🗑️</button>
                   </div>
                 </td>
                 <td>
@@ -1191,12 +1198,16 @@ async function handleAction(e, rpcName) {
 }
 
 async function handleDelete(e) {
-  const id = e.target.closest('[data-id]').dataset.id;
+  const btn = e.target.closest('[data-id]');
+  const id = btn.dataset.id;
   if (!confirm('Xoá hẳn khoản vay này? Không thể khôi phục lại được.')) return;
   e.target.disabled = true;
   const { error } = await sb.from('margin_khoan_vay').delete().eq('id', id);
   if (error) { alert('Lỗi: ' + error.message); e.target.disabled = false; return; }
-  loadDanhSach();
+  // xoá luôn dòng đó khỏi giao diện tại chỗ, không tải lại cả danh sách (tránh xáo trộn khi đang thao tác nhiều dòng)
+  const row = btn.closest('tr');
+  if (row) row.remove();
+  showToast('Đã xoá khoản vay. Bấm "Làm mới danh sách" để cập nhật lại tổng số/thứ tự.');
 }
 
 async function handleSuaTien(e) {
@@ -1210,8 +1221,13 @@ async function handleSuaTien(e) {
   if (cleaned !== '' && isNaN(so_tien)) { alert('Số tiền không hợp lệ.'); return; }
   btn.disabled = true;
   const { error } = await sb.from('margin_khoan_vay').update({ so_tien }).eq('id', id);
-  if (error) { alert('Lỗi: ' + error.message); btn.disabled = false; return; }
-  loadDanhSach();
+  btn.disabled = false;
+  if (error) { alert('Lỗi: ' + error.message); return; }
+  // cập nhật ngay tại chỗ, không tải lại cả danh sách
+  btn.dataset.current = so_tien ?? '';
+  const valEl = btn.parentElement.querySelector('.tien-val');
+  if (valEl) valEl.textContent = fmtTien(so_tien);
+  showToast('Đã lưu số tiền.');
 }
 
 async function handleSuaNgay(e) {
@@ -1227,8 +1243,19 @@ async function handleSuaNgay(e) {
   }
   btn.disabled = true;
   const { error } = await sb.from('margin_khoan_vay').update({ ngay_den_han }).eq('id', id);
-  if (error) { alert('Lỗi: ' + error.message); btn.disabled = false; return; }
-  loadDanhSach();
+  btn.disabled = false;
+  if (error) { alert('Lỗi: ' + error.message); return; }
+  // cập nhật ngay tại chỗ, không tải lại/sắp xếp lại cả danh sách
+  btn.dataset.current = ngay_den_han ?? '';
+  const td = btn.closest('td');
+  const valEl = td ? td.querySelector('.ngay-val') : null;
+  if (td && valEl) {
+    const dLeft = daysUntil(ngay_den_han);
+    const { cls, icon } = dueClassAndIcon(dLeft);
+    td.className = cls;
+    valEl.textContent = (icon ? icon + ' ' : '') + fmtDateWithDay(ngay_den_han);
+  }
+  showToast('Đã lưu ngày đến hạn. Bấm "Làm mới danh sách" nếu muốn cập nhật lại thứ tự/trạng thái tổng quan.');
 }
 
 async function handleGhiChuChange(e) {
@@ -1251,7 +1278,8 @@ async function handleStatusChange(e) {
   const { error } = await sb.rpc(rpcMap[value], { p_khoan_vay_id: id, p_ghi_chu: null });
   sel.disabled = false;
   if (error) { alert('Lỗi: ' + error.message); return; }
-  loadDanhSach();
+  // không tải lại cả danh sách — dropdown đã tự phản ánh lựa chọn mới, bấm "Làm mới danh sách" khi xong để cập nhật tổng quan
+  showToast('Đã cập nhật trạng thái.');
 }
 
 document.getElementById('searchKH').addEventListener('input', debounce(loadDanhSach, 250));
@@ -1264,6 +1292,17 @@ document.querySelectorAll('.quick-filter').forEach(btn => {
     document.querySelectorAll('.quick-filter').forEach(b => b.classList.toggle('active', b.dataset.mode === quickFilterMode));
     loadDanhSach();
   });
+});
+
+document.getElementById('manualRefreshBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('manualRefreshBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = '🔄 Đang làm mới...';
+  await loadDanhSach();
+  btn.textContent = oldText;
+  btn.disabled = false;
+  showToast('Đã làm mới danh sách.');
 });
 
 let lastInputWasOcr = false;
