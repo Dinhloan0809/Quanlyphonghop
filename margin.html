@@ -231,7 +231,7 @@
   .kh-card-foot b{color:var(--text);}
 
   /* bảng tổng quan thu gọn/mở rộng */
-  table.summary-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;overflow:hidden;}
+  table.summary-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;}
   table.summary-table th{background:#faf8f2;text-transform:uppercase;font-size:10.5px;color:var(--text-soft);padding:9px 12px;text-align:left;font-weight:600;}
   tr.summary-row td{padding:11px 12px;border-top:1px solid var(--line);cursor:pointer;background:#fff;}
   tr.summary-row:hover td{background:#faf8f2;}
@@ -248,7 +248,7 @@
   .overall-chip.status-chua_nhac{background:#eee9db;color:var(--text-soft);}
   .overall-chip.status-da_xu_ly{background:#dcece2;color:var(--green);}
 
-  .kebab-menu{position:absolute;right:0;top:100%;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:20;min-width:190px;padding:4px;}
+  .kebab-menu{position:absolute;right:0;top:100%;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:20;min-width:190px;padding:4px;max-height:min(360px, 70vh);overflow-y:auto;}
   .kebab-item{display:block;width:100%;text-align:left;background:none;border:none;padding:8px 10px;font-size:12.5px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;}
   .kebab-item:hover{background:#f0ede4;}
 
