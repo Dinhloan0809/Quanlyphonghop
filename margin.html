@@ -603,6 +603,13 @@ function fmtDateWithDay(d) {
 }
 
 async function loadDanhSach() {
+  const scrollY = window.scrollY;
+  await loadDanhSachInner();
+  // giữ nguyên vị trí đang cuộn, tránh nhảy lên đầu trang sau khi cập nhật 1 dòng
+  requestAnimationFrame(() => window.scrollTo(0, scrollY));
+}
+
+async function loadDanhSachInner() {
   document.getElementById('dacBietSection').innerHTML = '<p style="color:var(--text-soft);font-size:13px;">Đang tải...</p>';
   document.getElementById('theoDoiSection').innerHTML = '';
   document.getElementById('danhSachEmpty').innerHTML = '';
@@ -926,6 +933,17 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     if (!groups[khId]) { groups[khId] = { ten: r.khach_hang ? r.khach_hang.ten_kh : '(không rõ)', groupId: r.group_id, loans: [] }; order.push(khId); }
     groups[khId].loans.push(r);
     loanById[r.id] = r;
+  });
+
+  // sắp xếp theo đúng ngày đến hạn của khoản ĐANG MỞ sớm nhất (khớp với cột "Khoản sắp đến hạn nhất" hiển thị),
+  // không dựa vào thứ tự thô từ query vì có thể lẫn khoản đã xử lý xong khi đang xem "Tất cả"
+  order.sort((a, b) => {
+    const ea = earliestOpenLoan(groups[a].loans);
+    const eb = earliestOpenLoan(groups[b].loans);
+    if (!ea && !eb) return 0;
+    if (!ea) return 1;
+    if (!eb) return -1;
+    return ea.ngay_den_han < eb.ngay_den_han ? -1 : ea.ngay_den_han > eb.ngay_den_han ? 1 : 0;
   });
 
   if (!(sectionKey in sectionPageState)) sectionPageState[sectionKey] = 1;
