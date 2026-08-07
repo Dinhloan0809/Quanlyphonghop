@@ -318,6 +318,10 @@
         <div class="sticky-filters" id="stickyFilters">
           <h2>Khách hàng cần nhắc</h2>
           <p class="desc">Khoản vay còn hiển thị ở đây cho tới khi được đánh dấu "Đã xử lý xong".</p>
+          <div id="remoteUpdateBanner" style="display:none;background:#fff3cd;border:1px solid #ffe08a;color:#8a6d1a;padding:8px 14px;border-radius:8px;font-size:13px;margin-bottom:10px;align-items:center;justify-content:space-between;gap:10px;">
+            <span>🔔 Có người khác vừa cập nhật dữ liệu.</span>
+            <button class="btn btn-primary" id="remoteUpdateRefreshBtn" style="padding:6px 12px;font-size:12px;">Làm mới ngay</button>
+          </div>
           <div class="toolbar">
             <input type="text" id="searchKH" placeholder="Tìm theo tên khách hàng...">
             <select id="filterGroup"><option value="">Tất cả ID</option></select>
@@ -556,7 +560,30 @@ function initApp() {
   updateStickyTop();
   setTimeout(updateStickyTop, 400); // phòng trường hợp font Google Fonts tải xong làm đổi chiều cao header
   window.addEventListener('resize', updateStickyTop);
+  subscribeRealtimeUpdates();
 }
+
+function markSelfEdit(id) {
+  if (!window.__justEditedIds) window.__justEditedIds = new Set();
+  window.__justEditedIds.add(id);
+  setTimeout(() => window.__justEditedIds.delete(id), 4000);
+}
+
+function subscribeRealtimeUpdates() {
+  sb.channel('margin_khoan_vay_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'margin_khoan_vay' }, (payload) => {
+      // bỏ qua thay đổi do chính mình vừa gây ra (đã tự cập nhật tại chỗ rồi, không cần báo lại)
+      if (window.__justEditedIds && window.__justEditedIds.has(payload.new?.id || payload.old?.id)) return;
+      document.getElementById('remoteUpdateBanner').style.display = 'flex';
+    })
+    .subscribe();
+}
+
+document.getElementById('remoteUpdateRefreshBtn').addEventListener('click', async () => {
+  document.getElementById('remoteUpdateBanner').style.display = 'none';
+  await loadDanhSach();
+  showToast('Đã cập nhật dữ liệu mới nhất.');
+});
 
 function updateStickyTop() {
   const topbar = document.querySelector('header.topbar');
@@ -581,6 +608,7 @@ function daysUntil(d) {
 }
 
 let onlyDueToday = false;
+let currentLoanById = {}; // map id -> object khoản vay đang hiển thị, dùng để sửa tại chỗ không bị mất khi vẽ lại bảng
 let pendingFocusKh = null; // KH vừa sửa ngày/trạng thái — dùng để tự nhảy đúng trang chứa nó sau khi tải lại
 let theoDoiCollapsed = true; // mặc định thu gọn khu vực ID theo dõi, bấm nút mới hiện chi tiết
 let quickFilterMode = null; // null | 'today' | 'overdue' | 'upcoming'
@@ -630,6 +658,10 @@ async function loadDanhSachInner() {
   if (error) { document.getElementById('dacBietSection').innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
   const idInfo = {};
   (wl || []).forEach(w => { idInfo[w.id] = w; });
+
+  // cập nhật map tra cứu khoản vay theo id — các chỗ sửa tại chỗ sẽ mutate thẳng vào đây
+  currentLoanById = {};
+  (data || []).forEach(r => { currentLoanById[r.id] = r; });
 
   // dropdown lọc: chỉ 2 lựa chọn theo loại (không liệt kê từng ID cụ thể)
   const filterGroup = document.getElementById('filterGroup');
@@ -1113,6 +1145,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     if (!confirm(`Xoá hẳn toàn bộ ${g.loans.length} khoản vay của "${g.ten}"? Không thể khôi phục lại được.`)) return;
     b.disabled = true;
     const ids = g.loans.map(l => l.id);
+    ids.forEach(markSelfEdit);
     const { error } = await sb.from('margin_khoan_vay').delete().in('id', ids);
     if (error) { alert('Lỗi: ' + error.message); b.disabled = false; return; }
     loadDanhSach();
@@ -1202,8 +1235,10 @@ async function handleDelete(e) {
   const id = btn.dataset.id;
   if (!confirm('Xoá hẳn khoản vay này? Không thể khôi phục lại được.')) return;
   e.target.disabled = true;
+  markSelfEdit(id);
   const { error } = await sb.from('margin_khoan_vay').delete().eq('id', id);
   if (error) { alert('Lỗi: ' + error.message); e.target.disabled = false; return; }
+  delete currentLoanById[id];
   // xoá luôn dòng đó khỏi giao diện tại chỗ, không tải lại cả danh sách (tránh xáo trộn khi đang thao tác nhiều dòng)
   const row = btn.closest('tr');
   if (row) row.remove();
@@ -1220,9 +1255,11 @@ async function handleSuaTien(e) {
   const so_tien = cleaned === '' ? null : Number(cleaned);
   if (cleaned !== '' && isNaN(so_tien)) { alert('Số tiền không hợp lệ.'); return; }
   btn.disabled = true;
+  markSelfEdit(id);
   const { error } = await sb.from('margin_khoan_vay').update({ so_tien }).eq('id', id);
   btn.disabled = false;
   if (error) { alert('Lỗi: ' + error.message); return; }
+  if (currentLoanById[id]) currentLoanById[id].so_tien = so_tien;
   // cập nhật ngay tại chỗ, không tải lại cả danh sách
   btn.dataset.current = so_tien ?? '';
   const valEl = btn.parentElement.querySelector('.tien-val');
@@ -1242,9 +1279,11 @@ async function handleSuaNgay(e) {
     if (!ngay_den_han) { alert('Ngày không hợp lệ, nhập theo dạng dd/mm/yyyy.'); return; }
   }
   btn.disabled = true;
+  markSelfEdit(id);
   const { error } = await sb.from('margin_khoan_vay').update({ ngay_den_han }).eq('id', id);
   btn.disabled = false;
   if (error) { alert('Lỗi: ' + error.message); return; }
+  if (currentLoanById[id]) currentLoanById[id].ngay_den_han = ngay_den_han;
   // cập nhật ngay tại chỗ, không tải lại/sắp xếp lại cả danh sách
   btn.dataset.current = ngay_den_han ?? '';
   const td = btn.closest('td');
@@ -1263,9 +1302,11 @@ async function handleGhiChuChange(e) {
   const id = inp.dataset.id;
   const ghi_chu = inp.value.trim() || null;
   inp.disabled = true;
+  markSelfEdit(id);
   const { error } = await sb.from('margin_khoan_vay').update({ ghi_chu }).eq('id', id);
   inp.disabled = false;
   if (error) { alert('Lỗi: ' + error.message); return; }
+  if (currentLoanById[id]) currentLoanById[id].ghi_chu = ghi_chu;
   showToast('Đã lưu ghi chú.');
 }
 
@@ -1275,9 +1316,11 @@ async function handleStatusChange(e) {
   const value = sel.value;
   const rpcMap = { chua_nhac: 'margin_mo_lai', da_nhac: 'margin_danh_dau_da_nhac', da_xu_ly: 'margin_danh_dau_xu_ly_xong' };
   sel.disabled = true;
+  markSelfEdit(id);
   const { error } = await sb.rpc(rpcMap[value], { p_khoan_vay_id: id, p_ghi_chu: null });
   sel.disabled = false;
   if (error) { alert('Lỗi: ' + error.message); return; }
+  if (currentLoanById[id]) currentLoanById[id].trang_thai = value;
   // không tải lại cả danh sách — dropdown đã tự phản ánh lựa chọn mới, bấm "Làm mới danh sách" khi xong để cập nhật tổng quan
   showToast('Đã cập nhật trạng thái.');
 }
