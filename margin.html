@@ -256,6 +256,16 @@
   .pagination-btns{display:flex;gap:4px;}
   .pagination-btns .btn{padding:5px 10px;font-size:12px;min-width:32px;}
 
+  #appToast{
+    position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;
+    padding:12px 18px;border-radius:10px;font-size:13px;max-width:340px;
+    box-shadow:0 10px 28px rgba(0,0,0,.28);
+    opacity:0;transform:translateY(10px);
+    transition:opacity .2s ease,transform .2s ease;
+    pointer-events:none;z-index:999;
+  }
+  #appToast.show{opacity:1;transform:translateY(0);}
+
   @media (max-width:600px){
     main{padding:14px;}
     header.topbar{padding:12px 14px;}
@@ -611,11 +621,15 @@ async function loadDanhSach() {
   const idInfo = {};
   (wl || []).forEach(w => { idInfo[w.id] = w; });
 
-  // dropdown lọc theo ID: toàn bộ ID thực tế đã import
+  // dropdown lọc theo ID: toàn bộ ID thực tế đã import, chia 2 nhóm
   const filterGroup = document.getElementById('filterGroup');
   const prevVal = filterGroup.value;
   const allGroupIds = [...new Set((data || []).map(r => r.group_id))].sort();
-  filterGroup.innerHTML = '<option value="">Tất cả ID</option>' + allGroupIds.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+  const dacBietIds = allGroupIds.filter(g => idInfo[g] && idInfo[g].active);
+  const theoDoiIds = allGroupIds.filter(g => !idInfo[g] || !idInfo[g].active);
+  filterGroup.innerHTML = '<option value="">Tất cả ID</option>'
+    + (dacBietIds.length ? `<optgroup label="⭐ ID cần quan tâm đặc biệt">${dacBietIds.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('')}</optgroup>` : '')
+    + (theoDoiIds.length ? `<optgroup label="👁 ID theo dõi">${theoDoiIds.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('')}</optgroup>` : '');
   filterGroup.value = prevVal;
 
   let rows = data || [];
@@ -865,7 +879,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
     g.loans.filter(l => l.trang_thai !== 'da_xu_ly').forEach(l => {
       lines.push(`- ${l.khach_hang ? l.khach_hang.ten_kh : ''} — hạn ${fmtDateWithDay(l.ngay_den_han)}`);
     });
-    navigator.clipboard.writeText(lines.join('\n')).then(() => alert('Đã copy danh sách ID ' + b.dataset.group));
+    navigator.clipboard.writeText(lines.join('\n')).then(() => showToast('Đã copy danh sách ID ' + b.dataset.group));
   }));
 
   wrap.querySelectorAll('.btn-export-id').forEach(b => b.addEventListener('click', () => {
@@ -970,7 +984,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       detailCell.innerHTML = `
         <div class="detail-wrap">
           <table class="loan-table">
-            <tr><th>Khoản vay</th><th>Ngày đến hạn</th><th>Tiền</th><th>Trạng thái / Hành động</th><th>Tin nhắn</th></tr>
+            <tr><th>Khoản vay</th><th>Ngày đến hạn</th><th>Tiền</th><th>Trạng thái / Hành động</th><th>Ghi chú</th></tr>
             ${g.loans.map((loan, li) => {
               const dLeft = daysUntil(loan.ngay_den_han);
               const { cls, icon } = dueClassAndIcon(dLeft);
@@ -994,12 +1008,8 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
                     <button class="btn btn-ghost act-xoa" data-id="${loan.id}" title="Xoá khoản vay này" style="padding:5px 8px;font-size:13px;color:var(--red);border-color:#f0c9bd;">🗑️</button>
                   </div>
                 </td>
-                <td style="position:relative;">
-                  <button class="btn btn-ghost loan-msg-btn" data-loan="${loan.id}" style="padding:5px 8px;font-size:12px;">💬</button>
-                  <div class="kebab-menu loan-msg-menu" data-loan="${loan.id}" style="display:none;">
-                    <div style="padding:6px 10px;font-size:10.5px;color:var(--text-soft);">Soạn tin cho khoản này — xưng hô:</div>
-                    ${pronounButtonsHtml('loan-tn-opt', 'loan', loan.id)}
-                  </div>
+                <td>
+                  <input type="text" class="ghi-chu-input" data-id="${loan.id}" value="${escapeHtml(loan.ghi_chu || '')}" placeholder="Ghi chú..." style="width:100%;min-width:120px;padding:6px 8px;font-size:12.5px;">
                 </td>
               </tr>`;
             }).join('')}
@@ -1057,26 +1067,11 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     containerEl.querySelectorAll('.kebab-menu').forEach(m => m.style.display = 'none');
     menu.style.display = isShown ? 'none' : 'block';
   }));
-  containerEl.querySelectorAll('.loan-msg-btn').forEach(b => b.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const menu = containerEl.querySelector(`.loan-msg-menu[data-loan="${CSS.escape(b.dataset.loan)}"]`);
-    const isShown = menu.style.display === 'block';
-    containerEl.querySelectorAll('.kebab-menu').forEach(m => m.style.display = 'none');
-    menu.style.display = isShown ? 'none' : 'block';
-  }));
-  containerEl.querySelectorAll('.loan-tn-opt').forEach(b => b.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const loan = loanById[b.dataset.loan];
-    if (!loan) return;
-    const msg = generateTinNhanForLoan(loan, b.dataset.khTu, b.dataset.tuXung);
-    navigator.clipboard.writeText(msg).then(() => {
-      alert(`Đã copy tin nhắn cho khoản vay này (xưng hô: ${b.dataset.khTu} — em xưng ${b.dataset.tuXung}).`);
-    });
-  }));
   if (!window.__kebabListenerAttached) {
     window.__kebabListenerAttached = true;
     document.addEventListener('click', () => { document.querySelectorAll('.kebab-menu').forEach(m => m.style.display = 'none'); });
   }
+  containerEl.querySelectorAll('.ghi-chu-input').forEach(inp => inp.addEventListener('change', handleGhiChuChange));
 
   containerEl.querySelectorAll('.btn-thongbao').forEach(b => b.addEventListener('click', async () => {
     const khId = b.dataset.kh;
@@ -1095,7 +1090,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     const g = groups[khId];
     const msg = generateTinNhan(g, b.dataset.khTu, b.dataset.tuXung);
     navigator.clipboard.writeText(msg).then(() => {
-      alert(`Đã copy tin nhắn (xưng hô: ${b.dataset.khTu} — em xưng ${b.dataset.tuXung}). Dán qua Zalo/SMS cho KH.`);
+      showToast(`Đã copy tin nhắn (xưng hô: ${b.dataset.khTu} — em xưng ${b.dataset.tuXung}). Dán qua Zalo/SMS cho KH.`);
     });
   }));
 
@@ -1107,7 +1102,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       lines.push(`- ${fmtDateWithDay(l.ngay_den_han)}${l.so_tien ? ' — ' + fmtTien(l.so_tien) : ''}${l.ma_khoan_vay ? ' — TK ' + l.ma_khoan_vay : ''}`);
     });
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
-      alert('Đã copy danh sách của ' + g.ten);
+      showToast('Đã copy danh sách của ' + g.ten);
     });
   }));
 
@@ -1185,6 +1180,17 @@ async function handleSuaNgay(e) {
   loadDanhSach();
 }
 
+async function handleGhiChuChange(e) {
+  const inp = e.currentTarget;
+  const id = inp.dataset.id;
+  const ghi_chu = inp.value.trim() || null;
+  inp.disabled = true;
+  const { error } = await sb.from('margin_khoan_vay').update({ ghi_chu }).eq('id', id);
+  inp.disabled = false;
+  if (error) { alert('Lỗi: ' + error.message); return; }
+  showToast('Đã lưu ghi chú.');
+}
+
 async function handleStatusChange(e) {
   const sel = e.currentTarget;
   const id = sel.dataset.id;
@@ -1225,6 +1231,19 @@ function hasRiskyChar(str) {
 }
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function showToast(msg) {
+  let toast = document.getElementById('appToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'appToast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3200);
+}
 
 /* ---------------- WHITELIST ---------------- */
 async function loadWhitelist() {
