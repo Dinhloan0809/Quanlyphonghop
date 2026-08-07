@@ -580,6 +580,7 @@ function daysUntil(d) {
 }
 
 let onlyDueToday = false;
+let theoDoiCollapsed = true; // mặc định thu gọn khu vực ID theo dõi, bấm nút mới hiện chi tiết
 let quickFilterMode = null; // null | 'today' | 'overdue' | 'upcoming'
 
 function dueClassAndIcon(dLeft) {
@@ -621,22 +622,22 @@ async function loadDanhSach() {
   const idInfo = {};
   (wl || []).forEach(w => { idInfo[w.id] = w; });
 
-  // dropdown lọc theo ID: toàn bộ ID thực tế đã import, chia 2 nhóm
+  // dropdown lọc: chỉ 2 lựa chọn theo loại (không liệt kê từng ID cụ thể)
   const filterGroup = document.getElementById('filterGroup');
   const prevVal = filterGroup.value;
-  const allGroupIds = [...new Set((data || []).map(r => r.group_id))].sort();
-  const dacBietIds = allGroupIds.filter(g => idInfo[g] && idInfo[g].active);
-  const theoDoiIds = allGroupIds.filter(g => !idInfo[g] || !idInfo[g].active);
+  const hasDacBiet = (data || []).some(r => idInfo[r.group_id] && idInfo[r.group_id].active);
+  const hasTheoDoi = (data || []).some(r => !idInfo[r.group_id] || !idInfo[r.group_id].active);
   filterGroup.innerHTML = '<option value="">Tất cả ID</option>'
-    + (dacBietIds.length ? `<optgroup label="⭐ ID cần quan tâm đặc biệt">${dacBietIds.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('')}</optgroup>` : '')
-    + (theoDoiIds.length ? `<optgroup label="👁 ID theo dõi">${theoDoiIds.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('')}</optgroup>` : '');
+    + (hasDacBiet ? `<option value="dac_biet">⭐ ID cần quan tâm đặc biệt</option>` : '')
+    + (hasTheoDoi ? `<option value="theo_doi">👁 ID theo dõi</option>` : '');
   filterGroup.value = prevVal;
 
   let rows = data || [];
   const search = document.getElementById('searchKH').value.trim().toLowerCase();
   const groupFilter = document.getElementById('filterGroup').value;
   if (search) rows = rows.filter(r => r.khach_hang && r.khach_hang.ten_kh.toLowerCase().includes(search));
-  if (groupFilter) rows = rows.filter(r => r.group_id === groupFilter);
+  if (groupFilter === 'dac_biet') rows = rows.filter(r => idInfo[r.group_id] && idInfo[r.group_id].active);
+  if (groupFilter === 'theo_doi') rows = rows.filter(r => !idInfo[r.group_id] || !idInfo[r.group_id].active);
 
   // đếm cho 3 nút lọc nhanh (trên toàn bộ dữ liệu đang mở, không phụ thuộc lọc khác)
   const openAll = (data || []).filter(r => r.trang_thai !== 'da_xu_ly');
@@ -681,9 +682,19 @@ async function loadDanhSach() {
   if (theoDoiRows.length > 0) {
     const h = document.createElement('div');
     h.className = 'section-head theo-doi';
-    h.innerHTML = `👁 ID theo dõi <span class="count-badge">${new Set(theoDoiRows.map(r => r.group_id)).size}</span>`;
+    h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+    h.innerHTML = `
+      <span>👁 ID theo dõi <span class="count-badge">${new Set(theoDoiRows.map(r => r.group_id)).size}</span></span>
+      <button class="btn btn-ghost" id="toggleTheoDoiBtn">${theoDoiCollapsed ? '▶ Xem danh sách chi tiết' : '▲ Ẩn danh sách chi tiết'}</button>
+    `;
     theoDoiEl.appendChild(h);
-    renderTongHopByID(theoDoiEl, theoDoiRows, idInfo);
+    if (!theoDoiCollapsed) {
+      renderTongHopByID(theoDoiEl, theoDoiRows, idInfo);
+    }
+    document.getElementById('toggleTheoDoiBtn').addEventListener('click', () => {
+      theoDoiCollapsed = !theoDoiCollapsed;
+      loadDanhSach();
+    });
   } else {
     theoDoiEl.className = '';
   }
@@ -757,19 +768,24 @@ document.getElementById('resetTemplateBtn').addEventListener('click', () => {
 });
 
 const PRONOUN_OPTIONS = [
-  { kh: 'Anh', tu: 'Em' },
-  { kh: 'Chị', tu: 'Em' },
-  { kh: 'Em', tu: 'Chị' },
-  { kh: 'Ông', tu: 'Cháu' },
-  { kh: 'Bà', tu: 'Cháu' },
-  { kh: 'Chú', tu: 'Cháu' },
-  { kh: 'Cô', tu: 'Cháu' },
-  { kh: 'Bác', tu: 'Cháu' },
-  { kh: 'Bạn', tu: 'Mình' }
+  { kh: 'anh', tu: 'em' },
+  { kh: 'chị', tu: 'em' },
+  { kh: 'em', tu: 'chị' },
+  { kh: 'ông', tu: 'cháu' },
+  { kh: 'bà', tu: 'cháu' },
+  { kh: 'chú', tu: 'cháu' },
+  { kh: 'cô', tu: 'cháu' },
+  { kh: 'bác', tu: 'cháu' },
+  { kh: 'bạn', tu: 'mình' }
 ];
+function capitalizeFirst(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+// chỉ viết hoa chữ cái đầu dòng và chữ cái đầu sau dấu chấm/chấm than/chấm hỏi, không đụng vào phần còn lại
+function capitalizeSentences(text) {
+  return text.replace(/(^|[.!?]\s+|\n\s*)(\p{Ll})/gu, (m, sep, letter) => sep + letter.toUpperCase());
+}
 function pronounButtonsHtml(cssClass, dataAttrName, dataAttrValue) {
   return PRONOUN_OPTIONS.map(p =>
-    `<button class="kebab-item ${cssClass}" data-${dataAttrName}="${escapeHtml(dataAttrValue)}" data-kh-tu="${p.kh}" data-tu-xung="${p.tu}">${p.kh} (xưng: ${p.tu})</button>`
+    `<button class="kebab-item ${cssClass}" data-${dataAttrName}="${escapeHtml(dataAttrValue)}" data-kh-tu="${p.kh}" data-tu-xung="${p.tu}">${capitalizeFirst(p.kh)} (xưng: ${capitalizeFirst(p.tu)})</button>`
   ).join('');
 }
 
@@ -779,19 +795,23 @@ function generateTinNhan(g, khTu, tuXung) {
   const ngayText = formatNgayGop(nearest3) || 'sắp tới';
   const template = tinNhanTemplate || DEFAULT_TEMPLATE;
 
-  return template
-    .split('{KH}').join(khTu)
-    .split('{TU}').join(tuXung)
-    .split('{NGAY}').join(ngayText);
+  return capitalizeSentences(
+    template
+      .split('{KH}').join(khTu)
+      .split('{TU}').join(tuXung)
+      .split('{NGAY}').join(ngayText)
+  );
 }
 
 function generateTinNhanForLoan(loan, khTu, tuXung) {
   const ngayText = loan.ngay_den_han ? formatNgayGop([loan.ngay_den_han]) : 'sắp tới';
   const template = tinNhanTemplate || DEFAULT_TEMPLATE;
-  return template
-    .split('{KH}').join(khTu)
-    .split('{TU}').join(tuXung)
-    .split('{NGAY}').join(ngayText);
+  return capitalizeSentences(
+    template
+      .split('{KH}').join(khTu)
+      .split('{TU}').join(tuXung)
+      .split('{NGAY}').join(ngayText)
+  );
 }
 
 function renderTongHopByID(containerEl, rows, idInfo) {
@@ -957,6 +977,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       <td><b>${fmtTien(tongDuNo)}</b></td>
       <td><span class="overall-chip ${status.cls}">${status.label}</span></td>
       <td style="position:relative;">
+        <button class="btn btn-ghost del-kh-btn" data-kh="${escapeHtml(khId)}" title="Xoá toàn bộ khách hàng này" style="padding:4px 8px;color:var(--red);">🗑️</button>
         <button class="btn btn-ghost kebab-btn" data-kh="${escapeHtml(khId)}" style="padding:4px 8px;">⋮</button>
         <div class="kebab-menu" data-kh="${escapeHtml(khId)}" style="display:none;">
           ${showBulkActions ? `
@@ -970,7 +991,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       </td>
     `;
     summaryRow.addEventListener('click', (e) => {
-      if (e.target.closest('.kebab-btn') || e.target.closest('.kebab-menu') || e.target.closest('.btn-copy-kh')) return;
+      if (e.target.closest('.kebab-btn') || e.target.closest('.kebab-menu') || e.target.closest('.btn-copy-kh') || e.target.closest('.del-kh-btn')) return;
       sectionOpenState[stateKey] = !sectionOpenState[stateKey];
       renderKhCards(containerEl, rows, idInfo, sectionKey);
     });
@@ -1060,6 +1081,18 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     });
   }));
 
+  containerEl.querySelectorAll('.del-kh-btn').forEach(b => b.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const khId = b.dataset.kh;
+    const g = groups[khId];
+    if (!confirm(`Xoá hẳn toàn bộ ${g.loans.length} khoản vay của "${g.ten}"? Không thể khôi phục lại được.`)) return;
+    b.disabled = true;
+    const ids = g.loans.map(l => l.id);
+    const { error } = await sb.from('margin_khoan_vay').delete().in('id', ids);
+    if (error) { alert('Lỗi: ' + error.message); b.disabled = false; return; }
+    loadDanhSach();
+  }));
+
   containerEl.querySelectorAll('.kebab-btn').forEach(b => b.addEventListener('click', (e) => {
     e.stopPropagation();
     const menu = containerEl.querySelector(`.kebab-menu[data-kh="${CSS.escape(b.dataset.kh)}"]`);
@@ -1090,7 +1123,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     const g = groups[khId];
     const msg = generateTinNhan(g, b.dataset.khTu, b.dataset.tuXung);
     navigator.clipboard.writeText(msg).then(() => {
-      showToast(`Đã copy tin nhắn (xưng hô: ${b.dataset.khTu} — em xưng ${b.dataset.tuXung}). Dán qua Zalo/SMS cho KH.`);
+      showToast(`Đã copy tin nhắn (xưng hô: ${capitalizeFirst(b.dataset.khTu)} — xưng ${capitalizeFirst(b.dataset.tuXung)}). Dán qua Zalo/SMS cho KH.`);
     });
   }));
 
