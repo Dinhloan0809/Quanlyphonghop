@@ -79,6 +79,7 @@
   #qfDueToday.active{background:var(--amber);}
   #qfOverdue.active{background:var(--red);}
   #qfUpcoming.active{background:#c98a2c;}
+  #qfChuaXuLy.active{background:#8a6d1a;}
   .btn-danger{background:var(--red);color:#fff;}
   .btn-block{width:100%;margin-top:20px;}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -175,7 +176,7 @@
   .loan-info{flex:1;min-width:180px;font-size:13px;}
   .loan-info .date{font-weight:600;}
   .status-chip{
-    font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;
+    font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;
   }
   .status-chua_nhac{background:#f3e3dd;color:var(--red);}
   .status-da_nhac{background:#f4e6cd;color:var(--amber);}
@@ -240,6 +241,7 @@
   table.loan-table{width:100%;border-collapse:collapse;font-size:13px;}
   table.loan-table th{text-align:left;padding:8px 18px;font-size:11px;text-transform:uppercase;color:var(--text-soft);background:#faf8f2;font-weight:600;}
   table.loan-table td{padding:9px 18px;border-top:1px solid var(--line);}
+  table.loan-table td.due-overdue,table.loan-table td.due-today,table.loan-table td.due-upcoming{white-space:nowrap;}
   table.loan-table td.due-overdue{color:var(--red);font-weight:600;}
   table.loan-table td.due-today{color:var(--amber);font-weight:600;}
   table.loan-table td.due-upcoming{color:#c98a2c;font-weight:600;}
@@ -247,14 +249,14 @@
   .kh-card-foot b{color:var(--text);}
 
   /* bảng tổng quan thu gọn/mở rộng */
-  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .table-scroll{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;}
   table.summary-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;min-width:640px;}
   @media (max-width:760px){
     table.summary-table{min-width:0;}
     table.summary-table .col-optional{display:none;} /* ẩn ID phụ trách + Tổng dư nợ, ưu tiên xem ngày đến hạn khi màn hình hẹp (vd chia đôi laptop) */
   }
   table.summary-table th{background:#faf8f2;text-transform:uppercase;font-size:10.5px;color:var(--text-soft);padding:9px 12px;text-align:left;font-weight:600;}
-  tr.summary-row td{padding:11px 12px;border-top:1px solid var(--line);cursor:pointer;background:#fff;}
+  tr.summary-row td{padding:8px 10px;border-top:1px solid var(--line);cursor:pointer;background:#fff;}
   tr.summary-row:hover td{background:#faf8f2;}
   .chevron{display:inline-block;font-size:11px;color:var(--text-soft);transition:transform .15s;cursor:pointer;}
   .chevron.open{transform:rotate(90deg);}
@@ -265,7 +267,7 @@
   @media (max-width:760px){ .detail-wrap{padding:10px 8px 14px 24px;} }
   .detail-wrap table.loan-table{border-radius:8px;overflow:hidden;}
 
-  .overall-chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.02em;}
+  .overall-chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;display:inline-block;}
   .overall-chip.due-overdue-chip{background:#f3e3dd;color:var(--red);}
   .overall-chip.due-today-chip{background:#fbe9d0;color:#a5600e;}
   .overall-chip.due-upcoming-chip{background:#f4e6cd;color:var(--amber);}
@@ -356,6 +358,7 @@
             <button class="btn btn-ghost quick-filter" id="qfDueToday" data-mode="today" style="border-color:var(--amber);color:var(--amber);">📅 Đến hạn hôm nay <span class="mono qf-count"></span></button>
             <button class="btn btn-ghost quick-filter" id="qfOverdue" data-mode="overdue" style="border-color:var(--red);color:var(--red);">⚠️ Quá hạn <span class="mono qf-count"></span></button>
             <button class="btn btn-ghost quick-filter" id="qfUpcoming" data-mode="upcoming" style="border-color:#c98a2c;color:#c98a2c;">🕐 Sắp đến hạn <span class="mono qf-count"></span></button>
+            <button class="btn btn-ghost quick-filter" id="qfChuaXuLy" data-mode="chuaxuly" style="border-color:#8a6d1a;color:#8a6d1a;">📋 Chưa xử lý <span class="mono qf-count"></span></button>
             <span class="stat-pill" id="statCount" style="text-align:center;">0 khoản</span>
             <button class="btn btn-primary" id="manualRefreshBtn">🔄 Làm mới danh sách</button>
           </div>
@@ -707,18 +710,21 @@ async function loadDanhSachInner() {
   if (groupFilter === 'dac_biet') rows = rows.filter(r => idInfo[r.group_id] && idInfo[r.group_id].active);
   if (groupFilter === 'theo_doi') rows = rows.filter(r => !idInfo[r.group_id] || !idInfo[r.group_id].active);
 
-  // đếm cho 3 nút lọc nhanh (trên toàn bộ dữ liệu đang mở, không phụ thuộc lọc khác)
+  // đếm cho 4 nút lọc nhanh (trên toàn bộ dữ liệu đang mở, không phụ thuộc lọc khác)
   const openAll = (data || []).filter(r => r.trang_thai !== 'da_xu_ly');
   const cntToday = openAll.filter(r => daysUntil(r.ngay_den_han) === 0).length;
   const cntOverdue = openAll.filter(r => daysUntil(r.ngay_den_han) !== null && daysUntil(r.ngay_den_han) < 0).length;
   const cntUpcoming = openAll.filter(r => { const d = daysUntil(r.ngay_den_han); return d !== null && d > 0 && d <= 3; }).length;
+  const cntChuaXuLy = (data || []).filter(r => r.trang_thai === 'chua_nhac').length;
   document.querySelector('#qfDueToday .qf-count').textContent = cntToday > 0 ? `(${cntToday})` : '';
   document.querySelector('#qfOverdue .qf-count').textContent = cntOverdue > 0 ? `(${cntOverdue})` : '';
   document.querySelector('#qfUpcoming .qf-count').textContent = cntUpcoming > 0 ? `(${cntUpcoming})` : '';
+  document.querySelector('#qfChuaXuLy .qf-count').textContent = cntChuaXuLy > 0 ? `(${cntChuaXuLy})` : '';
 
   if (quickFilterMode === 'today') rows = rows.filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) === 0);
   if (quickFilterMode === 'overdue') rows = rows.filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) !== null && daysUntil(r.ngay_den_han) < 0);
   if (quickFilterMode === 'upcoming') rows = rows.filter(r => { const d = daysUntil(r.ngay_den_han); return r.trang_thai !== 'da_xu_ly' && d !== null && d > 0 && d <= 3; });
+  if (quickFilterMode === 'chuaxuly') rows = rows.filter(r => r.trang_thai === 'chua_nhac');
 
   document.getElementById('statCount').textContent = rows.length + ' khoản';
 
@@ -776,12 +782,12 @@ function overallStatus(loans) {
   const openLoans = loans.filter(l => l.trang_thai !== 'da_xu_ly');
   if (openLoans.length === 0) return { label: 'Đã xử lý xong', cls: 'status-da_xu_ly' };
   const hasOverdue = openLoans.some(l => { const d = daysUntil(l.ngay_den_han); return d !== null && d < 0; });
-  if (hasOverdue) return { label: 'Có khoản quá hạn', cls: 'due-overdue-chip' };
+  if (hasOverdue) return { label: 'Quá hạn', cls: 'due-overdue-chip' };
   const hasToday = openLoans.some(l => daysUntil(l.ngay_den_han) === 0);
-  if (hasToday) return { label: 'Có khoản đến hạn', cls: 'due-today-chip' };
+  if (hasToday) return { label: 'Đến hạn', cls: 'due-today-chip' };
   const hasUpcoming = openLoans.some(l => { const d = daysUntil(l.ngay_den_han); return d !== null && d > 0 && d <= 3; });
   if (hasUpcoming) return { label: 'Sắp đến hạn', cls: 'due-upcoming-chip' };
-  return { label: 'Đang theo dõi', cls: 'status-chua_nhac' };
+  return { label: 'Theo dõi', cls: 'status-chua_nhac' };
 }
 
 function earliestOpenLoan(loans) {
@@ -1024,10 +1030,11 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
 
   const table = document.createElement('table');
   table.className = 'summary-table';
-  table.innerHTML = `<tr>
+  table.innerHTML = `<thead><tr>
     <th></th><th>Khách hàng</th><th class="col-optional">ID phụ trách</th><th>Số khoản</th>
     <th>Khoản sắp đến hạn nhất</th><th class="col-optional">Tổng dư nợ</th><th>Trạng thái chung</th><th></th>
-  </tr>`;
+  </tr></thead><tbody></tbody>`;
+  const tbody = table.querySelector('tbody');
 
   pageOrder.forEach((khId, i) => {
     const g = groups[khId];
@@ -1044,23 +1051,30 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     if (earliest) {
       const dLeft = daysUntil(earliest.ngay_den_han);
       const { cls, icon } = dueClassAndIcon(dLeft);
-      earliestHtml = `<span class="${cls}">${icon ? icon + ' ' : ''}${fmtDateWithDay(earliest.ngay_den_han)}</span>`;
+      earliestHtml = `<span class="${cls}" style="white-space:nowrap;">${icon ? icon + ' ' : ''}${fmtDateWithDay(earliest.ngay_den_han)}</span>`;
     }
 
     const summaryRow = document.createElement('tr');
     summaryRow.className = 'summary-row';
     summaryRow.innerHTML = `
       <td><span class="chevron ${isOpen ? 'open' : ''}">▶</span></td>
-      <td>${idx}&nbsp;&nbsp;<b>${escapeHtml(g.ten)}</b> <button class="btn btn-ghost btn-copy-kh" data-copy="${escapeHtml(g.ten)}" title="Copy số tài khoản" style="padding:2px 6px;font-size:11px;">📋</button></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap;white-space:nowrap;">
+          <span>${idx}</span><b>${escapeHtml(g.ten)}</b>
+          <button class="btn btn-ghost btn-copy-kh" data-copy="${escapeHtml(g.ten)}" title="Copy số tài khoản" style="padding:2px 5px;font-size:10px;flex-shrink:0;">📋</button>
+        </div>
+      </td>
       <td class="col-optional">${escapeHtml(g.groupId)}</td>
       <td>${g.loans.length}</td>
       <td>${earliestHtml}</td>
       <td class="col-optional"><b>${fmtTien(tongDuNo)}</b></td>
       <td><span class="overall-chip ${status.cls}">${status.label}</span></td>
       <td style="position:relative;">
-        <button class="btn btn-ghost them-khoan-btn" data-kh="${escapeHtml(khId)}" data-group="${escapeHtml(g.groupId)}" data-ten="${escapeHtml(g.ten)}" title="Thêm khoản vay mới cho KH này" style="padding:4px 8px;color:var(--teal-dark);">➕</button>
-        <button class="btn btn-ghost del-kh-btn" data-kh="${escapeHtml(khId)}" title="Xoá toàn bộ khách hàng này" style="padding:4px 8px;color:var(--red);">🗑️</button>
-        <button class="btn btn-ghost kebab-btn" data-kh="${escapeHtml(khId)}" style="padding:4px 8px;">⋮</button>
+        <div style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap;">
+        <button class="btn btn-ghost them-khoan-btn" data-kh="${escapeHtml(khId)}" data-group="${escapeHtml(g.groupId)}" data-ten="${escapeHtml(g.ten)}" title="Thêm khoản vay mới cho KH này" style="padding:3px 6px;font-size:11px;color:var(--teal-dark);">➕</button>
+        <button class="btn btn-ghost del-kh-btn" data-kh="${escapeHtml(khId)}" title="Xoá toàn bộ khách hàng này" style="padding:3px 6px;font-size:11px;color:var(--red);">🗑️</button>
+        <button class="btn btn-ghost kebab-btn" data-kh="${escapeHtml(khId)}" style="padding:3px 6px;font-size:11px;">⋮</button>
+        </div>
         <div class="kebab-menu" data-kh="${escapeHtml(khId)}" style="display:none;">
           ${showBulkActions ? `
           <button class="kebab-item btn-copy" data-kh="${escapeHtml(khId)}">📋 Copy danh sách</button>
@@ -1077,7 +1091,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       sectionOpenState[stateKey] = !sectionOpenState[stateKey];
       renderKhCards(containerEl, rows, idInfo, sectionKey);
     });
-    table.appendChild(summaryRow);
+    tbody.appendChild(summaryRow);
 
     if (isOpen) {
       const detailRow = document.createElement('tr');
@@ -1125,7 +1139,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
         </div>
       `;
       detailRow.appendChild(detailCell);
-      table.appendChild(detailRow);
+      tbody.appendChild(detailRow);
     }
   });
 
