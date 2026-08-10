@@ -137,6 +137,22 @@
   }
   .sticky-filters.is-stuck{box-shadow:0 4px 10px rgba(0,0,0,.06);border-bottom:1px solid var(--line);}
 
+  /* bố cục sidebar trái (tab Cần nhắc) */
+  .danhsach-layout{display:flex;align-items:flex-start;gap:20px;}
+  .danhsach-sidebar{
+    width:280px;flex-shrink:0;
+    background:var(--paper-card);border:1px solid var(--line);border-radius:12px;padding:20px;
+    margin:0; /* ghi đè kiểu -20px của .sticky-filters vì giờ nó không còn nằm trong .card nữa */
+    max-height:calc(100vh - 120px);overflow-y:auto;
+  }
+  .danhsach-main{flex:1;min-width:0;}
+  .toolbar-vertical{flex-direction:column;align-items:stretch;}
+  .toolbar-vertical input,.toolbar-vertical select,.toolbar-vertical button{width:100%;min-width:0;}
+  @media (max-width:900px){
+    .danhsach-layout{flex-direction:column;}
+    .danhsach-sidebar{width:100%;position:static !important;}
+  }
+
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
   .toolbar input,.toolbar select{width:auto;min-width:160px;}
   .stat-pill{
@@ -231,7 +247,12 @@
   .kh-card-foot b{color:var(--text);}
 
   /* bảng tổng quan thu gọn/mở rộng */
-  table.summary-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table.summary-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;min-width:640px;}
+  @media (max-width:760px){
+    table.summary-table{min-width:0;}
+    table.summary-table .col-optional{display:none;} /* ẩn ID phụ trách + Tổng dư nợ, ưu tiên xem ngày đến hạn khi màn hình hẹp (vd chia đôi laptop) */
+  }
   table.summary-table th{background:#faf8f2;text-transform:uppercase;font-size:10.5px;color:var(--text-soft);padding:9px 12px;text-align:left;font-weight:600;}
   tr.summary-row td{padding:11px 12px;border-top:1px solid var(--line);cursor:pointer;background:#fff;}
   tr.summary-row:hover td{background:#faf8f2;}
@@ -239,6 +260,9 @@
   .chevron.open{transform:rotate(90deg);}
   tr.detail-row td{padding:0;border-top:none;}
   .detail-wrap{background:#faf8f2;padding:10px 12px 14px 40px;}
+  .detail-wrap .table-scroll{overflow-x:auto;}
+  .detail-wrap table.loan-table{min-width:680px;}
+  @media (max-width:760px){ .detail-wrap{padding:10px 8px 14px 24px;} }
   .detail-wrap table.loan-table{border-radius:8px;overflow:hidden;}
 
   .overall-chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.02em;}
@@ -314,15 +338,15 @@
   <main>
     <!-- TAB: DANH SACH -->
     <section class="panel active" id="panel-danhSach">
-      <div class="card">
-        <div class="sticky-filters" id="stickyFilters">
+      <div class="danhsach-layout">
+        <aside class="danhsach-sidebar sticky-filters" id="stickyFilters">
           <h2>Khách hàng cần nhắc</h2>
           <p class="desc">Khoản vay còn hiển thị ở đây cho tới khi được đánh dấu "Đã xử lý xong".</p>
-          <div id="remoteUpdateBanner" style="display:none;background:#fff3cd;border:1px solid #ffe08a;color:#8a6d1a;padding:8px 14px;border-radius:8px;font-size:13px;margin-bottom:10px;align-items:center;justify-content:space-between;gap:10px;">
+          <div id="remoteUpdateBanner" style="display:none;background:#fff3cd;border:1px solid #ffe08a;color:#8a6d1a;padding:8px 14px;border-radius:8px;font-size:13px;margin-bottom:10px;align-items:center;justify-content:space-between;gap:10px;flex-direction:column;">
             <span>🔔 Có người khác vừa cập nhật dữ liệu.</span>
-            <button class="btn btn-primary" id="remoteUpdateRefreshBtn" style="padding:6px 12px;font-size:12px;">Làm mới ngay</button>
+            <button class="btn btn-primary" id="remoteUpdateRefreshBtn" style="padding:6px 12px;font-size:12px;width:100%;">Làm mới ngay</button>
           </div>
-          <div class="toolbar">
+          <div class="toolbar toolbar-vertical">
             <input type="text" id="searchKH" placeholder="Tìm theo tên khách hàng...">
             <select id="filterGroup"><option value="">Tất cả ID</option></select>
             <select id="filterStatus">
@@ -332,13 +356,15 @@
             <button class="btn btn-ghost quick-filter" id="qfDueToday" data-mode="today" style="border-color:var(--amber);color:var(--amber);">📅 Đến hạn hôm nay <span class="mono qf-count"></span></button>
             <button class="btn btn-ghost quick-filter" id="qfOverdue" data-mode="overdue" style="border-color:var(--red);color:var(--red);">⚠️ Quá hạn <span class="mono qf-count"></span></button>
             <button class="btn btn-ghost quick-filter" id="qfUpcoming" data-mode="upcoming" style="border-color:#c98a2c;color:#c98a2c;">🕐 Sắp đến hạn <span class="mono qf-count"></span></button>
-            <button class="btn btn-primary" id="manualRefreshBtn" style="margin-left:auto;">🔄 Làm mới danh sách</button>
-            <span class="stat-pill" id="statCount">0 khoản</span>
+            <span class="stat-pill" id="statCount" style="text-align:center;">0 khoản</span>
+            <button class="btn btn-primary" id="manualRefreshBtn">🔄 Làm mới danh sách</button>
           </div>
+        </aside>
+        <div class="danhsach-main">
+          <div id="dacBietSection"></div>
+          <div id="theoDoiSection" style="margin-top:24px;"></div>
+          <div id="danhSachEmpty"></div>
         </div>
-        <div id="dacBietSection"></div>
-        <div id="theoDoiSection" style="margin-top:24px;"></div>
-        <div id="danhSachEmpty"></div>
       </div>
     </section>
 
@@ -697,7 +723,7 @@ async function loadDanhSachInner() {
 
   if (rows.length === 0) {
     document.getElementById('dacBietSection').innerHTML = '';
-    document.getElementById('danhSachEmpty').innerHTML = `<div class="empty-state"><div class="big">✅</div>Không có khoản nào cần theo dõi.</div>`;
+    document.getElementById('danhSachEmpty').innerHTML = `<div class="card empty-state"><div class="big">✅</div>Không có khoản nào cần theo dõi.</div>`;
     return;
   }
 
@@ -887,6 +913,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
           ${openCount > 0 ? `<button class="btn btn-primary btn-thongbao-id" data-group="${escapeHtml(groupId)}">📣 Đã thông báo cho ID</button>` : ''}
         </div>
       </div>
+      <div class="table-scroll">
       <table class="loan-table">
         <tr><th>Khách hàng</th><th>Ngày đến hạn</th><th>Trạng thái / Hành động</th></tr>
         ${g.loans.map(loan => {
@@ -896,6 +923,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
             <td>
               <b>${escapeHtml(loan.khach_hang ? loan.khach_hang.ten_kh : '')}</b>
               <button class="btn btn-ghost btn-copy-kh" data-copy="${escapeHtml(loan.khach_hang ? loan.khach_hang.ten_kh : '')}" title="Copy số tài khoản" style="padding:2px 6px;font-size:11px;">📋</button>
+              <button class="btn btn-ghost them-khoan-btn" data-kh="${loan.khach_hang ? loan.khach_hang.id : ''}" data-group="${escapeHtml(groupId)}" data-ten="${escapeHtml(loan.khach_hang ? loan.khach_hang.ten_kh : '')}" title="Thêm khoản vay mới cho KH này" style="padding:2px 6px;font-size:11px;color:var(--teal-dark);">➕</button>
             </td>
             <td class="${cls}">
               <span class="ngay-val">${icon ? icon + ' ' : ''}${fmtDateWithDay(loan.ngay_den_han)}</span>
@@ -914,6 +942,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
           </tr>`;
         }).join('')}
       </table>
+      </div>
     `;
     wrap.appendChild(card);
   });
@@ -926,6 +955,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
       const old = b.textContent; b.textContent = '✅'; setTimeout(() => { b.textContent = old; }, 1200);
     });
   }));
+  wrap.querySelectorAll('.them-khoan-btn').forEach(b => b.addEventListener('click', () => handleThemKhoanVay(b)));
 
   wrap.querySelectorAll('.btn-thongbao-id').forEach(b => b.addEventListener('click', async () => {
     b.disabled = true;
@@ -998,11 +1028,15 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
   if (!wrap) { wrap = document.createElement('div'); wrap.className = 'kh-table-wrap'; containerEl.appendChild(wrap); }
   wrap.innerHTML = '';
 
+  const scrollWrap = document.createElement('div');
+  scrollWrap.className = 'table-scroll';
+  wrap.appendChild(scrollWrap);
+
   const table = document.createElement('table');
   table.className = 'summary-table';
   table.innerHTML = `<tr>
-    <th></th><th>Khách hàng</th><th>ID phụ trách</th><th>Số khoản</th>
-    <th>Khoản sắp đến hạn nhất</th><th>Tổng dư nợ</th><th>Trạng thái chung</th><th></th>
+    <th></th><th>Khách hàng</th><th class="col-optional">ID phụ trách</th><th>Số khoản</th>
+    <th>Khoản sắp đến hạn nhất</th><th class="col-optional">Tổng dư nợ</th><th>Trạng thái chung</th><th></th>
   </tr>`;
 
   pageOrder.forEach((khId, i) => {
@@ -1028,12 +1062,13 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     summaryRow.innerHTML = `
       <td><span class="chevron ${isOpen ? 'open' : ''}">▶</span></td>
       <td>${idx}&nbsp;&nbsp;<b>${escapeHtml(g.ten)}</b> <button class="btn btn-ghost btn-copy-kh" data-copy="${escapeHtml(g.ten)}" title="Copy số tài khoản" style="padding:2px 6px;font-size:11px;">📋</button></td>
-      <td>${escapeHtml(g.groupId)}</td>
+      <td class="col-optional">${escapeHtml(g.groupId)}</td>
       <td>${g.loans.length} khoản</td>
       <td>${earliestHtml}</td>
-      <td><b>${fmtTien(tongDuNo)}</b></td>
+      <td class="col-optional"><b>${fmtTien(tongDuNo)}</b></td>
       <td><span class="overall-chip ${status.cls}">${status.label}</span></td>
       <td style="position:relative;">
+        <button class="btn btn-ghost them-khoan-btn" data-kh="${escapeHtml(khId)}" data-group="${escapeHtml(g.groupId)}" data-ten="${escapeHtml(g.ten)}" title="Thêm khoản vay mới cho KH này" style="padding:4px 8px;color:var(--teal-dark);">➕</button>
         <button class="btn btn-ghost del-kh-btn" data-kh="${escapeHtml(khId)}" title="Xoá toàn bộ khách hàng này" style="padding:4px 8px;color:var(--red);">🗑️</button>
         <button class="btn btn-ghost kebab-btn" data-kh="${escapeHtml(khId)}" style="padding:4px 8px;">⋮</button>
         <div class="kebab-menu" data-kh="${escapeHtml(khId)}" style="display:none;">
@@ -1061,13 +1096,13 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       detailCell.colSpan = 8;
       detailCell.innerHTML = `
         <div class="detail-wrap">
+          <div class="table-scroll">
           <table class="loan-table">
             <tr><th>Khoản vay</th><th>Ngày đến hạn</th><th>Tiền</th><th>Trạng thái / Hành động</th><th>Ghi chú</th></tr>
             ${g.loans.map((loan, li) => {
               const dLeft = daysUntil(loan.ngay_den_han);
               const { cls, icon } = dueClassAndIcon(dLeft);
-              return `<tr>
-                <td>Khoản vay ${li + 1}${loan.ma_khoan_vay ? ` <span class="mono" style="color:var(--text-soft);font-size:11px;">(${escapeHtml(loan.ma_khoan_vay)})</span>` : ''}</td>
+              return `<tr>                <td>Khoản vay ${li + 1}${loan.ma_khoan_vay ? ` <span class="mono" style="color:var(--text-soft);font-size:11px;">(${escapeHtml(loan.ma_khoan_vay)})</span>` : ''}</td>
                 <td class="${cls}">
                   <span class="ngay-val">${icon ? icon + ' ' : ''}${fmtDateWithDay(loan.ngay_den_han)}</span>
                   <button class="btn btn-ghost act-sua-ngay" data-id="${loan.id}" data-kh="${escapeHtml(khId)}" data-current="${loan.ngay_den_han ?? ''}" title="Sửa ngày đến hạn" style="padding:2px 6px;font-size:11px;margin-left:4px;">✏️</button>
@@ -1092,6 +1127,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
               </tr>`;
             }).join('')}
           </table>
+          </div>
           <div class="kh-card-foot">
             <span>Tổng số khoản: <b>${g.loans.length}</b></span>
             <span>Tổng dư nợ: <b>${fmtTien(tongDuNo)}</b></span>
@@ -1103,7 +1139,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     }
   });
 
-  wrap.appendChild(table);
+  scrollWrap.appendChild(table);
 
   // phân trang
   if (order.length > PAGE_SIZE) {
@@ -1150,6 +1186,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     if (error) { alert('Lỗi: ' + error.message); b.disabled = false; return; }
     loadDanhSach();
   }));
+  containerEl.querySelectorAll('.them-khoan-btn').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); handleThemKhoanVay(b); }));
 
   containerEl.querySelectorAll('.kebab-btn').forEach(b => b.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1295,6 +1332,38 @@ async function handleSuaNgay(e) {
     valEl.textContent = (icon ? icon + ' ' : '') + fmtDateWithDay(ngay_den_han);
   }
   showToast('Đã lưu ngày đến hạn. Bấm "Làm mới danh sách" nếu muốn cập nhật lại thứ tự/trạng thái tổng quan.');
+}
+
+async function handleThemKhoanVay(btn) {
+  const ten = btn.dataset.ten;
+  const groupId = btn.dataset.group;
+
+  const rawNgay = prompt(`Thêm khoản vay mới cho "${ten}"\n\nNhập ngày đến hạn (dd/mm/yyyy):`, '');
+  if (rawNgay === null) return; // bấm Huỷ
+  let ngay_den_han = null;
+  if (rawNgay.trim() !== '') {
+    ngay_den_han = normalizeDate(rawNgay.trim());
+    if (!ngay_den_han) { alert('Ngày không hợp lệ, nhập theo dạng dd/mm/yyyy.'); return; }
+  }
+
+  const rawTien = prompt('Số tiền (VNĐ) — để trống nếu chưa có:', '');
+  if (rawTien === null) return;
+  const cleanedTien = rawTien.replace(/[^\d.-]/g, '').trim();
+  const so_tien = cleanedTien === '' ? null : Number(cleanedTien);
+  if (cleanedTien !== '' && isNaN(so_tien)) { alert('Số tiền không hợp lệ.'); return; }
+
+  btn.disabled = true;
+  const { data, error } = await sb.rpc('margin_import_rows', {
+    p_rows: [{ group_id: groupId, ten_kh: ten, ngay_den_han, so_tien, ma_khoan_vay: null, ghi_chu: null }]
+  });
+  btn.disabled = false;
+  if (error) { alert('Lỗi: ' + error.message); return; }
+
+  if (data.inserted > 0) {
+    showToast('Đã thêm khoản vay mới. Bấm "Làm mới danh sách" để xem.');
+  } else {
+    showToast('Khoản vay này đã tồn tại (trùng ngày đến hạn) — không tạo trùng.');
+  }
 }
 
 async function handleGhiChuChange(e) {
