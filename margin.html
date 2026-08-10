@@ -140,14 +140,13 @@
   /* bố cục sidebar trái (tab Cần nhắc) */
   .danhsach-layout{display:flex;align-items:flex-start;gap:20px;}
   .danhsach-sidebar{
-    width:280px;flex-shrink:0;
+    width:320px;flex-shrink:0;
     background:var(--paper-card);border:1px solid var(--line);border-radius:12px;padding:20px;
     margin:0; /* ghi đè kiểu -20px của .sticky-filters vì giờ nó không còn nằm trong .card nữa */
-    max-height:calc(100vh - 120px);overflow-y:auto;
+    max-height:calc(100vh - 120px);overflow-y:auto;overflow-x:hidden;
   }
   .danhsach-main{flex:1;min-width:0;}
   .toolbar-vertical{flex-direction:column;align-items:stretch;}
-  .toolbar-vertical input,.toolbar-vertical select,.toolbar-vertical button{width:100%;min-width:0;}
   @media (max-width:900px){
     .danhsach-layout{flex-direction:column;}
     .danhsach-sidebar{width:100%;position:static !important;}
@@ -155,6 +154,7 @@
 
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
   .toolbar input,.toolbar select{width:auto;min-width:160px;}
+  .toolbar-vertical input,.toolbar-vertical select,.toolbar-vertical button{width:100%;min-width:0;max-width:100%;}
   .stat-pill{
     font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;
     background:#eee9db;color:var(--text-soft);
@@ -1010,18 +1010,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     return ea.ngay_den_han < eb.ngay_den_han ? -1 : ea.ngay_den_han > eb.ngay_den_han ? 1 : 0;
   });
 
-  if (!(sectionKey in sectionPageState)) sectionPageState[sectionKey] = 1;
-  if (pendingFocusKh && order.includes(pendingFocusKh)) {
-    const idx = order.indexOf(pendingFocusKh);
-    sectionPageState[sectionKey] = Math.floor(idx / PAGE_SIZE) + 1;
-    pendingFocusKh = null;
-  }
-  const totalPages = Math.max(1, Math.ceil(order.length / PAGE_SIZE));
-  if (sectionPageState[sectionKey] > totalPages) sectionPageState[sectionKey] = totalPages;
-  const page = sectionPageState[sectionKey];
-  const startIdx = (page - 1) * PAGE_SIZE;
-  const pageOrder = order.slice(startIdx, startIdx + PAGE_SIZE);
-
+  const pageOrder = order; // không phân trang nữa — hiện toàn bộ, cuộn để xem hết
   const totalLoans = rows.length;
 
   let wrap = containerEl.querySelector('.kh-table-wrap');
@@ -1041,7 +1030,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
 
   pageOrder.forEach((khId, i) => {
     const g = groups[khId];
-    const idx = startIdx + i + 1;
+    const idx = i + 1;
     const tongDuNo = g.loans.reduce((s, l) => s + (Number(l.so_tien) || 0), 0);
     const idNote = idInfo[g.groupId] ? idInfo[g.groupId].ghi_chu : '';
     const status = overallStatus(g.loans);
@@ -1141,24 +1130,12 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
 
   scrollWrap.appendChild(table);
 
-  // phân trang
-  if (order.length > PAGE_SIZE) {
-    const pag = document.createElement('div');
-    pag.className = 'pagination';
-    const from = startIdx + 1;
-    const to = Math.min(startIdx + PAGE_SIZE, order.length);
-    pag.innerHTML = `
-      <span>Hiển thị ${from} - ${to} trong tổng số ${order.length} khách hàng (${totalLoans} khoản)</span>
-      <div class="pagination-btns">
-        <button class="btn btn-ghost pg-prev" ${page <= 1 ? 'disabled' : ''}>‹</button>
-        ${Array.from({ length: totalPages }, (_, p) => p + 1).map(p => `<button class="btn ${p === page ? 'btn-primary' : 'btn-ghost'} pg-num" data-page="${p}">${p}</button>`).join('')}
-        <button class="btn btn-ghost pg-next" ${page >= totalPages ? 'disabled' : ''}>›</button>
-      </div>
-    `;
-    pag.querySelector('.pg-prev').addEventListener('click', () => { sectionPageState[sectionKey]--; renderKhCards(containerEl, rows, idInfo, sectionKey); });
-    pag.querySelector('.pg-next').addEventListener('click', () => { sectionPageState[sectionKey]++; renderKhCards(containerEl, rows, idInfo, sectionKey); });
-    pag.querySelectorAll('.pg-num').forEach(b => b.addEventListener('click', () => { sectionPageState[sectionKey] = parseInt(b.dataset.page); renderKhCards(containerEl, rows, idInfo, sectionKey); }));
-    wrap.appendChild(pag);
+  // không phân trang — chỉ hiện dòng tổng số để tham khảo, cuộn để xem hết toàn bộ
+  if (order.length > 0) {
+    const summaryLine = document.createElement('div');
+    summaryLine.style.cssText = 'margin-top:10px;font-size:12px;color:var(--text-soft);text-align:right;';
+    summaryLine.textContent = `Tổng ${order.length} khách hàng (${totalLoans} khoản)`;
+    wrap.appendChild(summaryLine);
   }
 
   containerEl.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', handleStatusChange));
