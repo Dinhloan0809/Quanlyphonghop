@@ -253,7 +253,7 @@
     table.summary-table{min-width:0;}
     table.summary-table .col-optional{display:none;} /* ẩn ID phụ trách + Tổng dư nợ, ưu tiên xem ngày đến hạn khi màn hình hẹp (vd chia đôi laptop) */
   }
-  table.summary-table th{background:#faf8f2;text-transform:uppercase;font-size:10.5px;color:var(--text-soft);padding:9px 12px;text-align:left;font-weight:600;}
+  table.summary-table th{background:#faf8f2;text-transform:uppercase;font-size:10.5px;color:var(--text-soft);padding:9px 12px;text-align:left;font-weight:600;position:sticky;top:var(--header-offset, 100px);z-index:4;box-shadow:0 1px 0 var(--line);}
   tr.summary-row td{padding:11px 12px;border-top:1px solid var(--line);cursor:pointer;background:#fff;}
   tr.summary-row:hover td{background:#faf8f2;}
   .chevron{display:inline-block;font-size:11px;color:var(--text-soft);transition:transform .15s;cursor:pointer;}
@@ -618,6 +618,7 @@ function updateStickyTop() {
   tabs.style.top = topbar.offsetHeight + 'px';
   const h = topbar.offsetHeight + tabs.offsetHeight;
   document.querySelectorAll('.sticky-filters').forEach(el => { el.style.top = h + 'px'; });
+  document.documentElement.style.setProperty('--header-offset', h + 'px');
 }
 
 /* ---------------- DANH SACH CAN NHAC ---------------- */
@@ -1052,7 +1053,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       <td><span class="chevron ${isOpen ? 'open' : ''}">▶</span></td>
       <td>${idx}&nbsp;&nbsp;<b>${escapeHtml(g.ten)}</b> <button class="btn btn-ghost btn-copy-kh" data-copy="${escapeHtml(g.ten)}" title="Copy số tài khoản" style="padding:2px 6px;font-size:11px;">📋</button></td>
       <td class="col-optional">${escapeHtml(g.groupId)}</td>
-      <td>${g.loans.length} khoản</td>
+      <td>${g.loans.length}</td>
       <td>${earliestHtml}</td>
       <td class="col-optional"><b>${fmtTien(tongDuNo)}</b></td>
       <td><span class="overall-chip ${status.cls}">${status.label}</span></td>
