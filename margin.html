@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root{
     --ink:#12222b;
@@ -379,16 +378,6 @@
         <div class="drop-zone" id="dropZone">📄 Kéo thả file .xlsx / .csv vào đây, hoặc bấm để chọn file
           <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
         </div>
-        <label>Hoặc chụp/tải ảnh danh sách (tự động đọc chữ trong ảnh)</label>
-        <div class="drop-zone" id="ocrZone" style="padding:16px;">🖼️ Bấm để chọn ảnh chụp danh sách (.png/.jpg)
-          <input type="file" id="ocrInput" accept="image/*" style="display:none">
-        </div>
-        <div id="ocrProgress" style="display:none;font-size:12px;color:var(--text-soft);margin-top:6px;">Đang đọc ảnh, chờ chút...</div>
-
-        <label>Hoặc dán dữ liệu đã copy từ Excel</label>
-        <textarea id="pasteArea" rows="5" placeholder="Dán dữ liệu (có dòng tiêu đề) từ Excel vào đây... Nếu vừa đọc từ ảnh, kiểm tra/sửa lại text ở đây trước khi bấm nút dưới, vì đọc ảnh có thể sai vài ký tự."></textarea>
-        <button class="btn btn-primary" id="parsePasteBtn" style="margin-top:10px;">Đọc dữ liệu đã dán</button>
-        <p class="desc" style="margin-top:10px;">💡 Đọc ảnh tự động có thể nhầm lẫn ký tự (O/0, I/1, B/8...) với mã dạng chữ+số ngắn — luôn kiểm tra kỹ ở bước xem trước bên dưới. Nếu ảnh mờ/nhiều dòng, cách chính xác hơn: tải ảnh lên Google Drive → mở bằng Google Docs (tự OCR) → copy văn bản sạch hơn rồi dán vào đây.</p>
       </div>
 
       <div class="card" id="mapCard" style="display:none;">
@@ -413,6 +402,27 @@
         </div>
         <button class="btn btn-primary" id="confirmImportBtn" style="margin-top:14px;">Import vào hệ thống</button>
         <div id="importResultMsg"></div>
+      </div>
+
+      <div class="card">
+        <h2>✍️ Nhập tay từng dòng</h2>
+        <p class="desc">Không có file sẵn thì nhập trực tiếp từng dòng ở đây — thêm bao nhiêu dòng tuỳ ý rồi import 1 lần.</p>
+        <div style="max-height:320px;overflow:auto;">
+          <table class="preview" id="manualEntryTable">
+            <tr><th>ID *</th><th>Mã KH / Số TK *</th><th>Ngày đến hạn</th><th>Số tiền</th><th>Ghi chú</th><th></th></tr>
+          </table>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;">
+          <button class="btn btn-ghost" id="addManualRowBtn">+ Thêm dòng</button>
+          <button class="btn btn-primary" id="importManualBtn">Import các dòng đã nhập</button>
+        </div>
+        <div id="manualImportMsg"></div>
+      </div>
+
+      <div class="card">
+        <h2>📜 Lịch sử import</h2>
+        <p class="desc">Các lần import gần đây nhất (file, nhập tay).</p>
+        <div id="importHistoryList" style="max-height:300px;overflow:auto;"></div>
       </div>
     </section>
 
@@ -576,6 +586,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === 'whitelist') loadWhitelist();
     if (btn.dataset.tab === 'danhSach') loadDanhSach();
     if (btn.dataset.tab === 'template') loadTemplateIntoTextarea();
+    if (btn.dataset.tab === 'import') loadImportHistory();
   });
 });
 
@@ -940,6 +951,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
               <div style="display:flex;align-items:center;gap:6px;">
                 <select class="status-select" data-id="${loan.id}" style="font-size:12.5px;padding:5px 7px;">
                   <option value="chua_nhac" ${loan.trang_thai === 'chua_nhac' ? 'selected' : ''}>Chưa báo ID</option>
+                  <option value="da_check" ${loan.trang_thai === 'da_check' ? 'selected' : ''}>Đã check</option>
                   <option value="da_nhac" ${loan.trang_thai === 'da_nhac' ? 'selected' : ''}>Đã báo ID</option>
                   <option value="da_xu_ly" ${loan.trang_thai === 'da_xu_ly' ? 'selected' : ''}>KH xử lý xong</option>
                 </select>
@@ -1119,6 +1131,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
                   <div style="display:flex;align-items:center;gap:6px;">
                     <select class="status-select" data-id="${loan.id}" data-kh="${escapeHtml(khId)}" style="font-size:12.5px;padding:5px 7px;">
                       <option value="chua_nhac" ${loan.trang_thai === 'chua_nhac' ? 'selected' : ''}>Chưa xử lý</option>
+                      <option value="da_check" ${loan.trang_thai === 'da_check' ? 'selected' : ''}>Đã check</option>
                       <option value="da_nhac" ${loan.trang_thai === 'da_nhac' ? 'selected' : ''}>Đã liên hệ</option>
                       <option value="da_xu_ly" ${loan.trang_thai === 'da_xu_ly' ? 'selected' : ''}>KH xử lý xong</option>
                     </select>
@@ -1375,7 +1388,7 @@ async function handleStatusChange(e) {
   const sel = e.currentTarget;
   const id = sel.dataset.id;
   const value = sel.value;
-  const rpcMap = { chua_nhac: 'margin_mo_lai', da_nhac: 'margin_danh_dau_da_nhac', da_xu_ly: 'margin_danh_dau_xu_ly_xong' };
+  const rpcMap = { chua_nhac: 'margin_mo_lai', da_check: 'margin_danh_dau_da_check', da_nhac: 'margin_danh_dau_da_nhac', da_xu_ly: 'margin_danh_dau_xu_ly_xong' };
   sel.disabled = true;
   markSelfEdit(id);
   const { error } = await sb.rpc(rpcMap[value], { p_khoan_vay_id: id, p_ghi_chu: null });
@@ -1604,7 +1617,6 @@ dropZone.addEventListener('drop', e => {
 fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
 
 function handleFile(file) {
-  lastInputWasOcr = false;
   const reader = new FileReader();
   reader.onload = (e) => {
     const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
@@ -1614,48 +1626,6 @@ function handleFile(file) {
   };
   reader.readAsBinaryString(file);
 }
-
-const ocrZone = document.getElementById('ocrZone');
-const ocrInput = document.getElementById('ocrInput');
-ocrZone.addEventListener('click', () => ocrInput.click());
-ocrInput.addEventListener('change', async () => {
-  if (!ocrInput.files.length) return;
-  const file = ocrInput.files[0];
-  const progressEl = document.getElementById('ocrProgress');
-  progressEl.style.display = 'block';
-  progressEl.textContent = 'Đang đọc ảnh, chờ chút...';
-  try {
-    const worker = await Tesseract.createWorker('eng', 1, {
-      logger: (m) => {
-        if (m.status === 'recognizing text') {
-          progressEl.textContent = `Đang đọc ảnh... ${Math.round(m.progress * 100)}%`;
-        }
-      }
-    });
-    await worker.setParameters({ tessedit_pageseg_mode: '6' }); // giả định 1 khối văn bản đồng nhất, hợp với dạng bảng
-    const { data: { text } } = await worker.recognize(file);
-    await worker.terminate();
-    const cleaned = (text || '').trim();
-    if (!cleaned) {
-      progressEl.innerHTML = '⚠️ Không đọc ra được chữ nào từ ảnh này (thường do ảnh có kẻ bảng/lưới làm rối công cụ đọc). Cách chắc ăn hơn: tải ảnh lên Google Drive → chuột phải "Mở bằng" → Google Docs (Google tự OCR rất tốt) → copy văn bản trong Docs → dán vào ô bên dưới.';
-      return;
-    }
-    document.getElementById('pasteArea').value = cleaned;
-    lastInputWasOcr = true;
-    progressEl.textContent = 'Đã đọc xong — kiểm tra kỹ text bên dưới trước khi bấm "Đọc dữ liệu đã dán" (đọc ảnh có thể sai vài ký tự).';
-  } catch (err) {
-    progressEl.textContent = 'Đọc ảnh lỗi: ' + err.message + ' — thử ảnh rõ nét hơn hoặc dùng cách Google Docs OCR.';
-  }
-});
-
-document.getElementById('parsePasteBtn').addEventListener('click', () => {
-  const text = document.getElementById('pasteArea').value;
-  if (!text.trim()) { alert('Dán dữ liệu vào ô trước đã.'); return; }
-  const rows = text.split(/\r?\n/).filter(l => l.trim().length > 0).map(line =>
-    line.includes('\t') ? line.split('\t') : line.trim().split(/ {2,}|\t/)
-  );
-  setParsedRows(rows);
-});
 
 function setParsedRows(rows) {
   if (!rows || rows.length < 1) { alert('Không đọc được dữ liệu.'); return; }
@@ -1783,7 +1753,94 @@ document.getElementById('confirmImportBtn').addEventListener('click', async () =
   if (error) { msgEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
   msgEl.innerHTML = `<div class="ok-msg">Đã import: ${data.inserted} khoản mới, ${data.updated} khoản đã có từ trước được cập nhật ngày (không tạo trùng). Bỏ qua ${data.skipped_bad_row} dòng thiếu dữ liệu.</div>`;
   loadDanhSach();
+  loadImportHistory();
 });
+
+/* ---------------- NHẬP TAY TỪNG DÒNG ---------------- */
+let manualRowCount = 0;
+function addManualRow() {
+  manualRowCount++;
+  const tbl = document.getElementById('manualEntryTable');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="m-id" style="width:90px;padding:5px 6px;font-size:12.5px;" placeholder="vd: BF62"></td>
+    <td><input type="text" class="m-ten" style="width:120px;padding:5px 6px;font-size:12.5px;" placeholder="Số TK / Mã KH"></td>
+    <td><input type="text" class="m-ngay" style="width:100px;padding:5px 6px;font-size:12.5px;" placeholder="dd/mm/yyyy"></td>
+    <td><input type="text" class="m-tien" style="width:100px;padding:5px 6px;font-size:12.5px;" placeholder="Số tiền"></td>
+    <td><input type="text" class="m-ghichu" style="width:120px;padding:5px 6px;font-size:12.5px;" placeholder="Ghi chú"></td>
+    <td><button class="btn btn-ghost m-del" style="padding:4px 8px;color:var(--red);">🗑️</button></td>
+  `;
+  tr.querySelector('.m-del').addEventListener('click', () => tr.remove());
+  tbl.appendChild(tr);
+}
+document.getElementById('addManualRowBtn').addEventListener('click', addManualRow);
+// mở tab sẵn 3 dòng trống cho tiện
+addManualRow(); addManualRow(); addManualRow();
+
+document.getElementById('importManualBtn').addEventListener('click', async () => {
+  const tbl = document.getElementById('manualEntryTable');
+  const rows = [];
+  let badCount = 0;
+  tbl.querySelectorAll('tr').forEach((tr, i) => {
+    if (i === 0) return; // dòng tiêu đề
+    const id = tr.querySelector('.m-id')?.value.trim();
+    const ten = tr.querySelector('.m-ten')?.value.trim();
+    const ngayRaw = tr.querySelector('.m-ngay')?.value.trim();
+    const tienRaw = tr.querySelector('.m-tien')?.value.trim();
+    const ghichu = tr.querySelector('.m-ghichu')?.value.trim();
+    if (!id && !ten) return; // dòng trống bỏ qua, không tính lỗi
+    if (!id || !ten) { badCount++; return; }
+    let ngay_den_han = null;
+    if (ngayRaw) {
+      ngay_den_han = normalizeDate(ngayRaw);
+      if (!ngay_den_han) { badCount++; return; }
+    }
+    const so_tien = tienRaw ? Number(tienRaw.replace(/[^\d.-]/g, '')) : null;
+    rows.push({ group_id: id, ten_kh: ten, ngay_den_han, so_tien, ma_khoan_vay: null, ghi_chu: ghichu || null });
+  });
+
+  const msgEl = document.getElementById('manualImportMsg');
+  if (badCount > 0) {
+    msgEl.innerHTML = `<div class="error-msg">${badCount} dòng thiếu ID/Mã KH hoặc sai định dạng ngày (dd/mm/yyyy) — sửa lại trước khi import.</div>`;
+    return;
+  }
+  if (rows.length === 0) {
+    msgEl.innerHTML = `<div class="error-msg">Chưa nhập dòng nào cả.</div>`;
+    return;
+  }
+
+  const btn = document.getElementById('importManualBtn');
+  btn.disabled = true;
+  btn.textContent = 'Đang import...';
+  const { data, error } = await sb.rpc('margin_import_rows', { p_rows: rows });
+  btn.disabled = false;
+  btn.textContent = 'Import các dòng đã nhập';
+  if (error) { msgEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+  msgEl.innerHTML = `<div class="ok-msg">Đã import: ${data.inserted} khoản mới, ${data.updated} khoản đã có từ trước được cập nhật (không tạo trùng).</div>`;
+  // xoá sạch bảng nhập tay, thêm lại vài dòng trống
+  tbl.querySelectorAll('tr:not(:first-child)').forEach(tr => tr.remove());
+  addManualRow(); addManualRow(); addManualRow();
+  loadDanhSach();
+  loadImportHistory();
+});
+
+/* ---------------- LỊCH SỬ IMPORT ---------------- */
+async function loadImportHistory() {
+  const el = document.getElementById('importHistoryList');
+  const { data, error } = await sb.from('margin_import_log').select('*').order('created_at', { ascending: false }).limit(30);
+  if (error) { el.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+  if (!data || data.length === 0) { el.innerHTML = `<p style="color:var(--text-soft);font-size:13px;">Chưa có lần import nào.</p>`; return; }
+  el.innerHTML = `<table class="preview">
+    <tr><th>Thời gian</th><th>Người import</th><th>Dòng mới</th><th>Dòng cập nhật</th><th>Dòng lỗi</th></tr>
+    ${data.map(r => `<tr>
+      <td>${new Date(r.created_at).toLocaleString('vi-VN')}</td>
+      <td>${escapeHtml(r.nguoi_import_email || '—')}</td>
+      <td>${r.so_dong_moi}</td>
+      <td>${r.so_dong_cap_nhat}</td>
+      <td>${r.so_dong_loi}</td>
+    </tr>`).join('')}
+  </table>`;
+}
 </script>
 </body>
 </html>
