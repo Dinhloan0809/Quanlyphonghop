@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Câu hỏi ôn tập - Đề thi thử</title>
+<style>
+  :root{ --navy:#1E2761; --ice:#CADCFC; --white:#FFFFFF; --dark:#1A1A2E; --light:#EEF1FB; --green:#1e7a34; --red:#b3261e; --gold:#B8860B; }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--light);color:var(--dark);}
+  header{background:var(--navy);color:var(--white);padding:16px 20px;}
+  header a{color:var(--ice);text-decoration:none;font-size:.85rem;font-weight:600;}
+  header h1{margin:6px 0 0;font-size:1.2rem;}
+  main{max-width:760px;margin:0 auto;padding:16px;padding-bottom:60px;}
+  .card{background:var(--white);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  input[type=text]{width:100%;padding:11px 12px;border:1px solid #ccd3e8;border-radius:8px;font-size:1rem;}
+  button{cursor:pointer;border:none;border-radius:8px;font-size:.95rem;font-weight:600;padding:12px 18px;}
+  .btn-primary{background:var(--gold);color:var(--white);width:100%;}
+  .q-block{border-bottom:1px solid #eceff8;padding:16px 0;}
+  .q-block:last-child{border-bottom:none;}
+  .q-num{font-size:.78rem;color:var(--navy);font-weight:700;text-transform:uppercase;}
+  .q-text{font-weight:600;margin:6px 0 10px;line-height:1.45;}
+  .opt{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border-radius:8px;margin-bottom:6px;border:1px solid #e3e7f5;cursor:pointer;}
+  .opt:hover{background:var(--light);}
+  .opt.correct{border-color:var(--green);background:#e9f7ec;}
+  .opt.wrong{border-color:var(--red);background:#fbeceb;}
+  .opt.disabled{cursor:default;}
+  .expl{background:var(--light);border-radius:8px;padding:9px 10px;margin-top:8px;font-size:.85rem;}
+  .expl b{color:var(--navy);}
+  .progress-bar{position:sticky;top:0;background:var(--white);padding:10px 14px;border-radius:9px;margin-bottom:10px;font-size:.85rem;font-weight:600;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .save-box{text-align:center;padding:14px;}
+  .empty{color:#999;font-size:.88rem;font-style:italic;}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="portal.html">‹ Quay lại danh sách bài học</a>
+  <h1 id="exam-title">Đang tải...</h1>
+</header>
+
+<main id="app"></main>
+
+<script>
+const SUPABASE_URL = "https://tvhzojcfycbikxkenhev.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2aHpvamNmeWNiaWt4a2VuaGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMjMzMzAsImV4cCI6MjEwMDY5OTMzMH0.-_hvVaUqsArDZcHHkv_5y0HSWNQuezyeYNTrzXEfmpU";
+
+async function callRpc(fn, args){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+    body: JSON.stringify(args || {})
+  });
+  return res.json();
+}
+function esc(s){ const d=document.createElement("div"); d.innerText = s==null?"":String(s); return d.innerHTML; }
+
+const params = new URLSearchParams(location.search);
+const subjectSlug = params.get("subject");
+
+let quizQuestions = [];
+let quizScore = 0;
+let quizAnswered = 0;
+let quizSlug = null;
+let examCount = 35;
+
+async function load(){
+  const data = await callRpc("get_subject_mock_exam_info_public", { p_subject_slug: subjectSlug });
+  const app = document.getElementById("app");
+  if(!data || data.status !== "ok"){
+    document.getElementById("exam-title").innerText = "Không có đề ôn tập";
+    app.innerHTML = `<div class="card empty">Môn học này chưa thiết lập đề ôn tập.</div>`;
+    return;
+  }
+  quizSlug = data.quiz_slug; examCount = data.count;
+  document.getElementById("exam-title").innerText = `⭐ ${data.title} (${examCount} câu ngẫu nhiên)`;
+
+  app.innerHTML = `
+    <div class="card">
+      <p class="empty">Mỗi lần bắt đầu, hệ thống sẽ chọn ngẫu nhiên ${examCount} câu từ bộ đề tổng hợp. Làm đến câu nào biết đáp án + giải thích ngay câu đó.</p>
+      <label style="font-weight:600;font-size:.9rem;">Tên của bạn</label>
+      <input type="text" id="taker-name" placeholder="VD: Nguyễn Văn A" style="margin:6px 0 12px;">
+      <button class="btn-primary" onclick="startQuiz()">Bắt đầu đề ôn tập</button>
+      <div id="quiz-area"></div>
+    </div>
+  `;
+}
+
+async function startQuiz(){
+  const nameEl = document.getElementById("taker-name");
+  const name = nameEl.value.trim();
+  if(!name){ nameEl.style.borderColor = "var(--red)"; nameEl.focus(); return; }
+  window.__takerName = name;
+
+  const area = document.getElementById("quiz-area");
+  area.innerHTML = `<div class="empty">Đang chọn câu hỏi ngẫu nhiên...</div>`;
+  const data = await callRpc("get_random_quiz_questions_full", { p_slug: quizSlug, p_count: examCount });
+  if(!data || data.status !== "ok"){ area.innerHTML = `<div class="empty">Không tải được câu hỏi.</div>`; return; }
+
+  quizQuestions = data.questions;
+  quizScore = 0; quizAnswered = 0;
+
+  area.innerHTML = `
+    <div class="progress-bar" id="progress-bar">Đã làm: 0/${quizQuestions.length} · Điểm: 0</div>
+    ${quizQuestions.map((q,i) => `
+      <div class="q-block" data-qid="${q.id}">
+        <span class="q-num">Câu ${i+1}/${quizQuestions.length}${q.topic ? " · Chương "+esc(q.topic) : ""}</span>
+        <div class="q-text">${esc(q.question)}</div>
+        ${["a","b","c","d"].map(k => `
+          <div class="opt" data-key="${k}" data-val="${esc(q["option_"+k])}" onclick="pickAnswer(${q.id}, this)">
+            <span>${esc(q["option_"+k])}</span>
+          </div>
+        `).join("")}
+        <div class="expl" style="display:none;"></div>
+      </div>
+    `).join("")}
+    <div class="save-box" id="save-box"></div>
+  `;
+  document.getElementById("quiz-area").scrollIntoView({behavior:"smooth"});
+}
+
+function pickAnswer(qid, el){
+  const block = el.closest(".q-block");
+  if(block.dataset.locked) return;
+  block.dataset.locked = "1";
+
+  const q = quizQuestions.find(x => x.id === qid);
+  const selectedVal = el.dataset.val;
+  const isCorrect = selectedVal.trim().toLowerCase() === (q.correct_answer||"").trim().toLowerCase();
+
+  block.querySelectorAll(".opt").forEach(o => {
+    o.classList.add("disabled");
+    if(o.dataset.val.trim().toLowerCase() === (q.correct_answer||"").trim().toLowerCase()) o.classList.add("correct");
+    else if(o === el && !isCorrect) o.classList.add("wrong");
+  });
+
+  const explEl = block.querySelector(".expl");
+  explEl.style.display = "block";
+  explEl.innerHTML = `<b>${isCorrect ? "✅ Chính xác." : "❌ Chưa đúng."}</b> Đáp án đúng: <b>${(q.correct_answer||"").replace(/</g,"&lt;")}</b>. ${(q.explanation||"").replace(/</g,"&lt;")}`;
+
+  if(isCorrect) quizScore++;
+  quizAnswered++;
+  document.getElementById("progress-bar").innerText = `Đã làm: ${quizAnswered}/${quizQuestions.length} · Điểm: ${quizScore}`;
+
+  if(quizAnswered === quizQuestions.length){
+    finishQuiz();
+  }
+}
+
+async function finishQuiz(){
+  const box = document.getElementById("save-box");
+  box.innerHTML = `<div class="empty">Đang lưu kết quả...</div>`;
+  await callRpc("log_quiz_attempt", { p_slug: quizSlug, p_taker_name: window.__takerName, p_score: quizScore, p_total: quizQuestions.length });
+  const pct = Math.round((quizScore/quizQuestions.length)*100);
+  box.innerHTML = `<div style="font-size:1.5rem;font-weight:800;color:var(--navy);">${quizScore}/${quizQuestions.length} (${pct}%)</div><div class="empty" style="margin-top:6px;">Đã lưu kết quả cho ${esc(window.__takerName)}.</div>`;
+}
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hệ thống ôn luyện Chứng chỉ Hành nghề</title>
+<style>
+  :root{ --navy:#1E2761; --ice:#CADCFC; --white:#FFFFFF; --dark:#1A1A2E; --light:#EEF1FB; --green:#1e7a34; --gold:#B8860B; }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--light);color:var(--dark);}
+  header{background:var(--navy);color:var(--white);padding:26px 20px;text-align:center;}
+  header h1{margin:0;font-size:1.5rem;font-weight:700;}
+  header p{margin:6px 0 0;color:var(--ice);font-size:.95rem;}
+  main{max-width:760px;margin:0 auto;padding:20px 16px 60px;}
+  .subject-card{background:var(--white);border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  .subject-title{color:var(--navy);font-size:1.2rem;font-weight:700;margin:0 0 4px;}
+  .subject-desc{color:#666;font-size:.88rem;margin:0 0 16px;}
+  .lesson-list{display:flex;flex-direction:column;gap:9px;}
+  .lesson-item{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border:1px solid #e3e7f5;border-radius:9px;text-decoration:none;color:var(--dark);transition:.15s;}
+  .lesson-item:hover{border-color:var(--navy);background:var(--light);}
+  .lesson-item .name{font-weight:600;}
+  .lesson-item .arrow{color:var(--navy);font-size:1.1rem;}
+  .exam-item{margin-top:6px;border:1.5px dashed var(--gold);background:#fdf8ec;}
+  .exam-item .name{color:var(--gold);}
+  .badge-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--ice);color:var(--navy);font-size:.78rem;font-weight:700;margin-right:10px;}
+  .exam-item .badge-num{background:var(--gold);color:var(--white);}
+  .muted{color:#888;font-size:.85rem;text-align:center;margin-top:30px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 Hệ thống ôn luyện Chứng chỉ Hành nghề</h1>
+  <p>Chọn môn học để bắt đầu ôn tập</p>
+</header>
+
+<main id="app">
+  <div class="muted">Đang tải...</div>
+</main>
+
+<script>
+const SUPABASE_URL = "https://tvhzojcfycbikxkenhev.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2aHpvamNmeWNiaWt4a2VuaGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMjMzMzAsImV4cCI6MjEwMDY5OTMzMH0.-_hvVaUqsArDZcHHkv_5y0HSWNQuezyeYNTrzXEfmpU";
+
+async function callRpc(fn, args){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+    body: JSON.stringify(args || {})
+  });
+  return res.json();
+}
+function esc(s){ const d=document.createElement("div"); d.innerText = s==null?"":String(s); return d.innerHTML; }
+
+async function load(){
+  const data = await callRpc("list_subjects_public", {});
+  const app = document.getElementById("app");
+  const subjects = (data && data.subjects) || [];
+  if(subjects.length === 0){
+    app.innerHTML = `<div class="muted">Chưa có môn học nào được đăng.</div>`;
+    return;
+  }
+  app.innerHTML = subjects.map(s => `
+    <div class="subject-card">
+      <div class="subject-title">${esc(s.title)}</div>
+      <div class="subject-desc">${esc(s.description||"")}</div>
+      <div class="lesson-list">
+        ${s.lessons.map((l,i) => `
+          <a class="lesson-item" href="lesson.html?subject=${encodeURIComponent(s.slug)}&lesson=${encodeURIComponent(l.slug)}">
+            <span><span class="badge-num">${i+1}</span><span class="name">${esc(l.title)}</span></span>
+            <span class="arrow">›</span>
+          </a>
+        `).join("")}
+        ${s.has_mock_exam ? `
+          <a class="lesson-item exam-item" href="exam.html?subject=${encodeURIComponent(s.slug)}">
+            <span><span class="badge-num">★</span><span class="name">${esc(s.mock_exam_title)} (đề thi thử ${s.mock_exam_count} câu lấy ngẫu nhiên)</span></span>
+            <span class="arrow">›</span>
+          </a>
+        ` : ""}
+      </div>
+    </div>
+  `).join("");
+}
+load();
+</script>
+</body>
+</html>
