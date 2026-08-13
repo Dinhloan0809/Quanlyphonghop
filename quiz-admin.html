@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản trị bộ đề trắc nghiệm</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root{ --navy:#1E2761; --ice:#CADCFC; --white:#FFFFFF; --dark:#1A1A2E; --light:#EEF1FB; --green:#1e7a34; --red:#b3261e; }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--light);color:var(--dark);}
+  header{background:var(--navy);color:var(--white);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;}
+  header h1{margin:0;font-size:1.1rem;}
+  main{max-width:980px;margin:0 auto;padding:18px;}
+  .card{background:var(--white);border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .card h2{margin:0 0 12px;font-size:1rem;color:var(--navy);}
+  label{display:block;font-size:.85rem;font-weight:600;margin:10px 0 4px;}
+  input[type=text],input[type=password],select,textarea{width:100%;padding:9px 10px;border:1px solid #ccd3e8;border-radius:7px;font-size:.92rem;font-family:inherit;}
+  button{cursor:pointer;border:none;border-radius:7px;font-size:.88rem;font-weight:600;padding:9px 16px;}
+  .btn-primary{background:var(--navy);color:var(--white);}
+  .btn-danger{background:var(--red);color:var(--white);}
+  .btn-secondary{background:var(--light);color:var(--navy);border:1px solid var(--navy);}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:10px;}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid #eceff8;}
+  th{color:var(--navy);font-weight:700;background:var(--light);}
+  tr:hover td{background:#f7f9fe;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;}
+  .row > *{flex:1;min-width:160px;}
+  .msg{font-size:.85rem;margin-top:8px;padding:8px 10px;border-radius:6px;}
+  .msg.ok{background:#e9f7ec;color:var(--green);}
+  .msg.err{background:#fbeceb;color:var(--red);}
+  .muted{color:#888;font-size:.85rem;}
+  .pill{display:inline-block;background:var(--ice);color:var(--navy);font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px;}
+  .hidden{display:none;}
+  .center{text-align:center;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ Quản trị bộ đề trắc nghiệm</h1>
+  <button class="btn-secondary hidden" id="btn-logout" onclick="logout()">Đăng xuất</button>
+</header>
+
+<main id="app">
+  <div class="card" id="login-card">
+    <h2>Đăng nhập quản trị</h2>
+    <label>Mật khẩu admin</label>
+    <input type="password" id="pw-input" placeholder="Mật khẩu">
+    <button class="btn-primary" style="margin-top:12px;" onclick="login()">Đăng nhập</button>
+    <div id="login-msg"></div>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = "https://tvhzojcfycbikxkenhev.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2aHpvamNmeWNiaWt4a2VuaGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMjMzMzAsImV4cCI6MjEwMDY5OTMzMH0.-_hvVaUqsArDZcHHkv_5y0HSWNQuezyeYNTrzXEfmpU";
+
+async function callRpc(fn, args){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+    body: JSON.stringify(args || {})
+  });
+  return res.json();
+}
+
+function esc(s){ const d=document.createElement("div"); d.innerText = s==null?"":String(s); return d.innerHTML; }
+
+let PASSWORD = sessionStorage.getItem("quiz_admin_pw") || "";
+const app = document.getElementById("app");
+const btnLogout = document.getElementById("btn-logout");
+let quizSets = [];
+let currentSlug = null;
+
+async function login(){
+  const pw = document.getElementById("pw-input").value;
+  const data = await callRpc("admin_list_quiz_sets", { p_password: pw });
+  if(data && data.status === "ok"){
+    PASSWORD = pw;
+    sessionStorage.setItem("quiz_admin_pw", pw);
+    renderMain(data.quiz_sets);
+  } else {
+    document.getElementById("login-msg").innerHTML = `<div class="msg err">Sai mật khẩu.</div>`;
+  }
+}
+function logout(){
+  sessionStorage.removeItem("quiz_admin_pw");
+  location.reload();
+}
+
+async function refreshSets(){
+  const data = await callRpc("admin_list_quiz_sets", { p_password: PASSWORD });
+  if(data && data.status === "ok"){ quizSets = data.quiz_sets; renderSetsTable(); }
+}
+
+function renderMain(sets){
+  quizSets = sets;
+  btnLogout.classList.remove("hidden");
+  app.innerHTML = `
+    <div class="card">
+      <h2>Tạo bộ đề mới</h2>
+      <div class="row">
+        <div>
+          <label>Slug (không dấu, không khoảng trắng, dùng trong URL)</label>
+          <input type="text" id="new-slug" placeholder="vd: buoi9-tong-on">
+        </div>
+        <div>
+          <label>Tên bộ đề</label>
+          <input type="text" id="new-title" placeholder="vd: Bộ 100 câu ôn tập tổng hợp">
+        </div>
+      </div>
+      <label>Mô tả (hiển thị cho người làm bài)</label>
+      <textarea id="new-desc" rows="2" placeholder="Mô tả ngắn về bộ đề..."></textarea>
+      <button class="btn-primary" style="margin-top:12px;" onclick="createSet()">+ Tạo bộ đề</button>
+      <div id="create-msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Danh sách bộ đề</h2>
+      <div id="sets-table"></div>
+    </div>
+
+    <div id="detail-panel"></div>
+
+    <div class="card">
+      <h2>📚 Quản lý Môn học & Bài học (portal.html)</h2>
+      <div class="row">
+        <div>
+          <label>Slug môn học</label>
+          <input type="text" id="subj-slug" placeholder="vd: phap-luat">
+        </div>
+        <div>
+          <label>Tên môn học</label>
+          <input type="text" id="subj-title" placeholder="vd: Môn Pháp luật">
+        </div>
+      </div>
+      <label>Mô tả</label>
+      <textarea id="subj-desc" rows="2" placeholder="Mô tả ngắn..."></textarea>
+      <div class="row">
+        <div>
+          <label>Thứ tự hiển thị</label>
+          <input type="text" id="subj-order" placeholder="1">
+        </div>
+        <div>
+          <label>Slug bộ đề dùng cho "Câu hỏi ôn tập" (đề random)</label>
+          <input type="text" id="subj-mock-slug" placeholder="vd: buoi9-100-cau">
+        </div>
+        <div>
+          <label>Số câu random</label>
+          <input type="text" id="subj-mock-count" placeholder="35">
+        </div>
+      </div>
+      <button class="btn-primary" style="margin-top:12px;" onclick="createSubject()">+ Tạo / cập nhật môn học</button>
+      <div id="subj-msg"></div>
+
+      <h2 style="margin-top:18px;">Danh sách môn học</h2>
+      <div id="subjects-table"><span class="muted">Đang tải...</span></div>
+
+      <div id="lessons-panel"></div>
+    </div>
+  `;
+  renderSetsTable();
+  loadSubjects();
+}
+
+let allQuizSlugs = [];
+let currentSubjectSlug = null;
+
+async function loadSubjects(){
+  const data = await callRpc("admin_list_subjects", { p_password: PASSWORD });
+  const el = document.getElementById("subjects-table");
+  if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
+  allQuizSlugs = quizSets.map(s => s.slug);
+  const subs = data.subjects;
+  if(subs.length === 0){ el.innerHTML = `<p class="muted">Chưa có môn học nào.</p>`; return; }
+  el.innerHTML = `
+    <table>
+      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th></th></tr>
+      ${subs.map(s => `
+        <tr>
+          <td><b>${esc(s.title)}</b><br><span class="muted">${esc(s.slug)}</span></td>
+          <td>${s.lesson_count}</td>
+          <td>${esc(s.mock_exam_quiz_slug||"—")} (${s.mock_exam_count})</td>
+          <td><button class="btn-secondary" onclick="openLessons('${s.slug.replace(/'/g,"\\'")}')">Quản lý bài học</button></td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+
+async function createSubject(){
+  const slug = document.getElementById("subj-slug").value.trim();
+  const title = document.getElementById("subj-title").value.trim();
+  const desc = document.getElementById("subj-desc").value.trim();
+  const order = parseInt(document.getElementById("subj-order").value) || 0;
+  const mockSlug = document.getElementById("subj-mock-slug").value.trim() || null;
+  const mockCount = parseInt(document.getElementById("subj-mock-count").value) || 35;
+  const msgEl = document.getElementById("subj-msg");
+  if(!slug || !title){ msgEl.innerHTML = `<div class="msg err">Cần nhập slug và tên môn học.</div>`; return; }
+  const data = await callRpc("admin_upsert_subject", { p_password: PASSWORD, p_slug: slug, p_title: title, p_description: desc, p_order_index: order, p_mock_exam_quiz_slug: mockSlug, p_mock_exam_count: mockCount });
+  if(data.status === "ok"){
+    msgEl.innerHTML = `<div class="msg ok">Đã lưu môn học "${esc(title)}".</div>`;
+    loadSubjects();
+  } else {
+    msgEl.innerHTML = `<div class="msg err">Lỗi: ${esc(data.status)}</div>`;
+  }
+}
+
+async function openLessons(subjectSlug){
+  currentSubjectSlug = subjectSlug;
+  const panel = document.getElementById("lessons-panel");
+  panel.innerHTML = `
+    <h2 style="margin-top:18px;">Bài học của "${esc(subjectSlug)}"</h2>
+    <div class="row">
+      <div><label>Slug bài</label><input type="text" id="les-slug" placeholder="vd: bai-1"></div>
+      <div><label>Tên bài</label><input type="text" id="les-title" placeholder="vd: Bài 1"></div>
+      <div><label>Thứ tự</label><input type="text" id="les-order" placeholder="1"></div>
+    </div>
+    <div class="row">
+      <div><label>Slug bộ đề Quizzi</label><input type="text" id="les-quiz" placeholder="vd: bai-1" list="quiz-slug-list"></div>
+    </div>
+    <datalist id="quiz-slug-list">${allQuizSlugs.map(s=>`<option value="${esc(s)}">`).join("")}</datalist>
+
+    <label>Video bài giảng (có thể thêm nhiều video)</label>
+    <div id="les-videos-list"></div>
+    <div class="row" style="align-items:end;">
+      <div><label>Tên video</label><input type="text" id="les-video-label" placeholder="vd: Video bài 1 - Phần 1"></div>
+      <div><label>Dán link (YouTube / Google Drive)</label><input type="text" id="les-video-url" placeholder="https://..."></div>
+      <div><button class="btn-secondary" type="button" onclick="addVideoLink()">+ Thêm link</button></div>
+    </div>
+    <div class="row" style="align-items:end;">
+      <div><label>...hoặc tải file video lên trực tiếp</label><input type="file" id="les-video-file" accept="video/*"></div>
+      <div><button class="btn-secondary" type="button" onclick="uploadVideoFile()">⬆️ Tải video lên & thêm</button></div>
+    </div>
+    <p class="muted">Lưu ý file video tải trực tiếp sẽ chiếm dung lượng lưu trữ — nếu video lớn, nên ưu tiên dán link YouTube/Google Drive (nhớ đổi quyền chia sẻ Drive thành "Anyone with the link").</p>
+    <div id="les-video-msg"></div>
+
+    <label>Mindmap</label>
+    <div id="les-mindmap-preview"></div>
+    <div class="row" style="align-items:end;">
+      <div><label>Tải ảnh mindmap lên (JPG/PNG...)</label><input type="file" id="les-mindmap-file" accept="image/*"></div>
+      <div><button class="btn-secondary" type="button" onclick="uploadMindmap()">⬆️ Tải ảnh lên</button></div>
+      <div><label>...hoặc dán link mindmap có sẵn</label><input type="text" id="les-mindmap" placeholder="https://..."></div>
+    </div>
+    <div id="les-mindmap-msg"></div>
+
+    <label>Tài liệu bài học</label>
+    <div id="les-docs-list"></div>
+    <div class="row" style="align-items:end;">
+      <div><label>Tên tài liệu</label><input type="text" id="les-doc-label" placeholder="vd: Tóm tắt bài giảng (Word)"></div>
+      <div><label>Chọn file</label><input type="file" id="les-doc-file"></div>
+      <div><button class="btn-secondary" type="button" onclick="uploadLessonDoc()">⬆️ Tải lên & thêm</button></div>
+    </div>
+    <div id="les-doc-msg"></div>
+
+    <button class="btn-primary" style="margin-top:14px;" onclick="saveLesson()">+ Tạo / cập nhật bài học</button>
+    <div id="les-msg"></div>
+    <div id="lessons-table" style="margin-top:12px;"><span class="muted">Đang tải...</span></div>
+  `;
+  currentLessonDocuments = [];
+  currentLessonVideos = [];
+  renderLessonDocsList();
+  renderVideosList();
+  renderMindmapPreview();
+  loadLessonsTable(subjectSlug);
+}
+
+let currentLessonDocuments = [];
+let currentLessonVideos = [];
+
+function renderVideosList(){
+  const el = document.getElementById("les-videos-list");
+  if(!el) return;
+  if(!currentLessonVideos.length){ el.innerHTML = `<p class="muted">Chưa có video nào cho bài này.</p>`; return; }
+  el.innerHTML = currentLessonVideos.map((v,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #eceff8;">
+      <a href="${esc(v.url)}" target="_blank" rel="noopener" style="flex:1;font-weight:600;font-size:.88rem;">▶️ ${esc(v.label)}</a>
+      <button class="btn-danger" type="button" onclick="removeVideo(${i})">Xoá</button>
+    </div>
+  `).join("");
+}
+function removeVideo(i){ currentLessonVideos.splice(i,1); renderVideosList(); }
+
+function addVideoLink(){
+  const labelEl = document.getElementById("les-video-label");
+  const urlEl = document.getElementById("les-video-url");
+  const msgEl = document.getElementById("les-video-msg");
+  const label = labelEl.value.trim();
+  const url = urlEl.value.trim();
+  if(!label || !url){ msgEl.innerHTML = `<div class="msg err">Nhập tên video và dán link trước.</div>`; return; }
+  currentLessonVideos.push({ label, url });
+  renderVideosList();
+  labelEl.value = ""; urlEl.value = "";
+  msgEl.innerHTML = `<div class="msg ok">Đã thêm "${esc(label)}".</div>`;
+}
+
+async function uploadVideoFile(){
+  const labelEl = document.getElementById("les-video-label");
+  const fileEl = document.getElementById("les-video-file");
+  const msgEl = document.getElementById("les-video-msg");
+  const label = labelEl.value.trim();
+  const file = fileEl.files[0];
+  if(!label || !file){ msgEl.innerHTML = `<div class="msg err">Nhập tên video và chọn file trước.</div>`; return; }
+  msgEl.innerHTML = `<div class="msg">Đang tải video lên, có thể mất một lúc...</div>`;
+  try{
+    const lessonSlug = document.getElementById("les-slug").value.trim() || "tam";
+    const safeName = file.name.replace(/[^\w.\-]/g, "_");
+    const path = `${currentSubjectSlug}/${lessonSlug}/video-${Date.now()}-${safeName}`;
+    const url = await uploadToStorage(file, path);
+    currentLessonVideos.push({ label, url });
+    renderVideosList();
+    labelEl.value = ""; fileEl.value = "";
+    msgEl.innerHTML = `<div class="msg ok">Đã tải video "${esc(label)}" lên.</div>`;
+  } catch(err){
+    msgEl.innerHTML = `<div class="msg err">Lỗi tải lên: ${esc(err.message)}</div>`;
+  }
+}
+
+function renderLessonDocsList(){
+  const el = document.getElementById("les-docs-list");
+  if(!el) return;
+  if(!currentLessonDocuments.length){ el.innerHTML = `<p class="muted">Chưa có tài liệu nào cho bài này.</p>`; return; }
+  el.innerHTML = currentLessonDocuments.map((d,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #eceff8;">
+      <a href="${esc(d.url)}" target="_blank" rel="noopener" style="flex:1;font-weight:600;font-size:.88rem;">📄 ${esc(d.label)}</a>
+      <button class="btn-danger" type="button" onclick="removeLessonDoc(${i})">Xoá</button>
+    </div>
+  `).join("");
+}
+function removeLessonDoc(i){ currentLessonDocuments.splice(i,1); renderLessonDocsList(); }
+
+async function uploadToStorage(file, path){
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/lesson-files/${path}`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": file.type || "application/octet-stream",
+      "x-upsert": "true"
+    },
+    body: file
+  });
+  if(!res.ok){
+    const t = await res.text();
+    throw new Error(`HTTP ${res.status}: ${t}`);
+  }
+  return `${SUPABASE_URL}/storage/v1/object/public/lesson-files/${path}`;
+}
+
+function renderMindmapPreview(){
+  const el = document.getElementById("les-mindmap-preview");
+  const url = document.getElementById("les-mindmap").value.trim();
+  if(!el) return;
+  if(!url){ el.innerHTML = `<p class="muted">Chưa có mindmap cho bài này.</p>`; return; }
+  el.innerHTML = /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(url)
+    ? `<img src="${esc(url)}" style="max-width:280px;border-radius:8px;border:1px solid #e3e7f5;display:block;margin-bottom:8px;">`
+    : `<a href="${esc(url)}" target="_blank" rel="noopener">Xem mindmap hiện tại</a>`;
+}
+
+async function uploadMindmap(){
+  const fileEl = document.getElementById("les-mindmap-file");
+  const msgEl = document.getElementById("les-mindmap-msg");
+  const file = fileEl.files[0];
+  if(!file){ msgEl.innerHTML = `<div class="msg err">Chọn ảnh trước.</div>`; return; }
+  msgEl.innerHTML = `<div class="msg">Đang tải ảnh lên...</div>`;
+  try{
+    const lessonSlug = document.getElementById("les-slug").value.trim() || "tam";
+    const safeName = file.name.replace(/[^\w.\-]/g, "_");
+    const path = `${currentSubjectSlug}/${lessonSlug}/mindmap-${Date.now()}-${safeName}`;
+    const url = await uploadToStorage(file, path);
+    document.getElementById("les-mindmap").value = url;
+    renderMindmapPreview();
+    fileEl.value = "";
+    msgEl.innerHTML = `<div class="msg ok">Đã tải ảnh mindmap lên.</div>`;
+  } catch(err){
+    msgEl.innerHTML = `<div class="msg err">Lỗi tải lên: ${esc(err.message)}</div>`;
+  }
+}
+
+async function uploadLessonDoc(){
+  const labelEl = document.getElementById("les-doc-label");
+  const fileEl = document.getElementById("les-doc-file");
+  const msgEl = document.getElementById("les-doc-msg");
+  const label = labelEl.value.trim();
+  const file = fileEl.files[0];
+  if(!label || !file){ msgEl.innerHTML = `<div class="msg err">Nhập tên tài liệu và chọn file trước.</div>`; return; }
+  msgEl.innerHTML = `<div class="msg">Đang tải lên...</div>`;
+  try{
+    const lessonSlug = document.getElementById("les-slug").value.trim() || "tam";
+    const safeName = file.name.replace(/[^\w.\-]/g, "_");
+    const path = `${currentSubjectSlug}/${lessonSlug}/${Date.now()}-${safeName}`;
+    const url = await uploadToStorage(file, path);
+    currentLessonDocuments.push({ label, url });
+    renderLessonDocsList();
+    labelEl.value = ""; fileEl.value = "";
+    msgEl.innerHTML = `<div class="msg ok">Đã tải lên "${esc(label)}".</div>`;
+  } catch(err){
+    msgEl.innerHTML = `<div class="msg err">Lỗi tải lên: ${esc(err.message)}</div>`;
+  }
+}
+
+let lastLoadedLessons = [];
+
+async function loadLessonsTable(subjectSlug){
+  const data = await callRpc("admin_list_lessons", { p_password: PASSWORD, p_subject_slug: subjectSlug });
+  const el = document.getElementById("lessons-table");
+  if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
+  const lessons = data.lessons;
+  lastLoadedLessons = lessons;
+  if(lessons.length === 0){ el.innerHTML = `<p class="muted">Chưa có bài học nào.</p>`; return; }
+  el.innerHTML = `
+    <table>
+      <tr><th>#</th><th>Bài</th><th>Video</th><th>Mindmap</th><th>Quiz</th><th>Tài liệu</th><th></th></tr>
+      ${lessons.map((l,i) => `
+        <tr>
+          <td>${l.order_index}</td>
+          <td><b>${esc(l.title)}</b><br><span class="muted">${esc(l.slug)}</span></td>
+          <td>${(l.videos||[]).length ? "✅ ("+l.videos.length+")" : "—"}</td>
+          <td>${l.mindmap_url ? "✅" : "—"}</td>
+          <td>${esc(l.quiz_slug||"—")}</td>
+          <td>${(l.documents||[]).length} file</td>
+          <td style="white-space:nowrap;">
+            <button class="btn-secondary" onclick="editLesson(lastLoadedLessons[${i}])">Sửa</button>
+            <button class="btn-danger" onclick="deleteLesson('${l.slug.replace(/'/g,"\\'")}')">Xoá</button>
+          </td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+
+async function saveLesson(){
+  const slug = document.getElementById("les-slug").value.trim();
+  const title = document.getElementById("les-title").value.trim();
+  const order = parseInt(document.getElementById("les-order").value) || 0;
+  const mindmap = document.getElementById("les-mindmap").value.trim();
+  const quizSlug = document.getElementById("les-quiz").value.trim() || null;
+  const msgEl = document.getElementById("les-msg");
+  if(!slug || !title){ msgEl.innerHTML = `<div class="msg err">Cần nhập slug và tên bài.</div>`; return; }
+
+  const data = await callRpc("admin_upsert_lesson", {
+    p_password: PASSWORD, p_subject_slug: currentSubjectSlug, p_slug: slug, p_title: title,
+    p_order_index: order, p_videos: currentLessonVideos, p_mindmap_url: mindmap, p_documents: currentLessonDocuments, p_quiz_slug: quizSlug
+  });
+  if(data.status === "ok"){
+    msgEl.innerHTML = `<div class="msg ok">Đã lưu bài "${esc(title)}".</div>`;
+    document.getElementById("les-slug").value = ""; document.getElementById("les-title").value = "";
+    document.getElementById("les-order").value = "";
+    document.getElementById("les-mindmap").value = ""; document.getElementById("les-quiz").value = "";
+    currentLessonDocuments = []; renderLessonDocsList();
+    currentLessonVideos = []; renderVideosList();
+    loadLessonsTable(currentSubjectSlug);
+    loadSubjects();
+  } else {
+    msgEl.innerHTML = `<div class="msg err">Lỗi: ${esc(data.status)} ${esc(data.message||"")}</div>`;
+  }
+}
+
+function editLesson(l){
+  document.getElementById("les-slug").value = l.slug;
+  document.getElementById("les-title").value = l.title;
+  document.getElementById("les-order").value = l.order_index;
+  document.getElementById("les-mindmap").value = l.mindmap_url || "";
+  document.getElementById("les-quiz").value = l.quiz_slug || "";
+  currentLessonDocuments = (l.documents || []).slice();
+  renderLessonDocsList();
+  currentLessonVideos = (l.videos || []).slice();
+  renderVideosList();
+  renderMindmapPreview();
+  document.getElementById("les-slug").scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+async function deleteLesson(lessonSlug){
+  if(!confirm("Xoá bài học này?")) return;
+  await callRpc("admin_delete_lesson", { p_password: PASSWORD, p_subject_slug: currentSubjectSlug, p_lesson_slug: lessonSlug });
+  loadLessonsTable(currentSubjectSlug);
+  loadSubjects();
+}
+
+function renderSetsTable(){
+  const el = document.getElementById("sets-table");
+  if(!el) return;
+  if(quizSets.length === 0){ el.innerHTML = `<p class="muted">Chưa có bộ đề nào.</p>`; return; }
+  el.innerHTML = `
+    <table>
+      <tr><th>Bộ đề</th><th>Số câu</th><th>Lượt làm</th><th>Trạng thái</th><th></th></tr>
+      ${quizSets.map(s => `
+        <tr>
+          <td><b>${esc(s.title)}</b><br><span class="muted">${esc(s.slug)}</span></td>
+          <td>${s.question_count}</td>
+          <td>${s.attempt_count}</td>
+          <td><span class="pill" style="background:${s.is_active ? '#CADCFC' : '#eee'};">${s.is_active ? 'Đang mở' : 'Đã ẩn'}</span></td>
+          <td>
+            <button class="btn-secondary" onclick="openDetail('${s.slug.replace(/'/g,"\\'")}')">Quản lý</button>
+          </td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+
+async function createSet(){
+  const slug = document.getElementById("new-slug").value.trim();
+  const title = document.getElementById("new-title").value.trim();
+  const desc = document.getElementById("new-desc").value.trim();
+  const msgEl = document.getElementById("create-msg");
+  if(!slug || !title){ msgEl.innerHTML = `<div class="msg err">Cần nhập slug và tên bộ đề.</div>`; return; }
+  const data = await callRpc("admin_create_quiz_set", { p_password: PASSWORD, p_slug: slug, p_title: title, p_description: desc });
+  if(data.status === "ok"){
+    msgEl.innerHTML = `<div class="msg ok">Đã tạo bộ đề "${esc(title)}".</div>`;
+    document.getElementById("new-slug").value = ""; document.getElementById("new-title").value = ""; document.getElementById("new-desc").value = "";
+    await refreshSets();
+  } else if(data.status === "unauthorized"){
+    msgEl.innerHTML = `<div class="msg err">Sai mật khẩu.</div>`;
+  } else if(data.message === "slug_exists"){
+    msgEl.innerHTML = `<div class="msg err">Slug này đã tồn tại, chọn slug khác.</div>`;
+  } else {
+    msgEl.innerHTML = `<div class="msg err">Lỗi: thiếu thông tin.</div>`;
+  }
+}
+
+async function openDetail(slug){
+  currentSlug = slug;
+  const set = quizSets.find(s => s.slug === slug);
+  const panel = document.getElementById("detail-panel");
+  panel.innerHTML = `
+    <div class="card">
+      <h2>${esc(set.title)} <span class="muted">(${esc(slug)})</span></h2>
+      <div class="row">
+        <button class="btn-secondary" onclick="toggleActive('${slug.replace(/'/g,"\\'")}', ${!set.is_active})">${set.is_active ? "Ẩn bộ đề" : "Mở lại bộ đề"}</button>
+        <button class="btn-danger" onclick="deleteSet('${slug.replace(/'/g,"\\'")}')">Xoá bộ đề (và toàn bộ câu hỏi/lượt làm)</button>
+      </div>
+
+      <h2 style="margin-top:18px;">Nhập câu hỏi từ Excel</h2>
+      <p class="muted">File .xlsx cần đúng thứ tự cột (dòng đầu là tiêu đề, sẽ bị bỏ qua): <b>STT, Câu hỏi, Lựa chọn 1, Lựa chọn 2, Lựa chọn 3, Lựa chọn 4, Đáp án đúng, Giải thích, Chương/Chủ đề</b>. Cột "Đáp án đúng" phải ghi đúng nguyên văn 1 trong 4 lựa chọn. Import lại cùng STT sẽ ghi đè câu cũ (dùng để sửa/cập nhật).</p>
+      <input type="file" id="excel-file" accept=".xlsx,.xls,.csv">
+      <button class="btn-primary" style="margin-top:10px;" onclick="importExcel()">Nhập câu hỏi</button>
+      <div id="import-msg"></div>
+
+      <h2 style="margin-top:18px;">Câu hỏi trong bộ đề</h2>
+      <div id="questions-table"><span class="muted">Đang tải...</span></div>
+
+      <h2 style="margin-top:18px;">Lượt làm bài</h2>
+      <div id="attempts-table"><span class="muted">Đang tải...</span></div>
+    </div>
+  `;
+  loadQuestions(slug);
+  loadAttempts(slug);
+}
+
+async function toggleActive(slug, newState){
+  await callRpc("admin_update_quiz_set", { p_password: PASSWORD, p_slug: slug, p_is_active: newState });
+  await refreshSets();
+  openDetail(slug);
+}
+async function deleteSet(slug){
+  if(!confirm("Xoá vĩnh viễn bộ đề này cùng toàn bộ câu hỏi và lượt làm bài?")) return;
+  await callRpc("admin_delete_quiz_set", { p_password: PASSWORD, p_slug: slug });
+  document.getElementById("detail-panel").innerHTML = "";
+  await refreshSets();
+}
+
+async function loadQuestions(slug){
+  const data = await callRpc("admin_list_quiz_questions", { p_password: PASSWORD, p_quiz_slug: slug });
+  const el = document.getElementById("questions-table");
+  if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
+  const qs = data.questions;
+  if(qs.length === 0){ el.innerHTML = `<p class="muted">Chưa có câu hỏi nào.</p>`; return; }
+  el.innerHTML = `
+    <table>
+      <tr><th>#</th><th>Câu hỏi</th><th>Đáp án đúng</th><th>Chủ đề</th><th></th></tr>
+      ${qs.map(q => `
+        <tr>
+          <td>${q.stt}</td>
+          <td>${esc(q.question)}</td>
+          <td>${esc(q.correct_answer)}</td>
+          <td>${esc(q.topic||"")}</td>
+          <td><button class="btn-danger" onclick="deleteQuestion(${q.id},'${slug.replace(/'/g,"\\'")}')">Xoá</button></td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+async function deleteQuestion(id, slug){
+  if(!confirm("Xoá câu hỏi này?")) return;
+  await callRpc("admin_delete_quiz_question", { p_password: PASSWORD, p_id: id });
+  loadQuestions(slug);
+  refreshSets();
+}
+
+async function loadAttempts(slug){
+  const data = await callRpc("admin_list_quiz_attempts", { p_password: PASSWORD, p_quiz_slug: slug, p_limit: 200, p_offset: 0 });
+  const el = document.getElementById("attempts-table");
+  if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
+  const at = data.attempts;
+  if(at.length === 0){ el.innerHTML = `<p class="muted">Chưa có ai làm bài.</p>`; return; }
+  el.innerHTML = `
+    <table>
+      <tr><th>Người làm</th><th>Điểm</th><th>Thời gian nộp</th></tr>
+      ${at.map(a => `
+        <tr><td>${esc(a.taker_name)}</td><td>${a.score}/${a.total}</td><td>${new Date(a.finished_at).toLocaleString("vi-VN")}</td></tr>
+      `).join("")}
+    </table>
+  `;
+}
+
+function readExcelFile(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const wb = XLSX.read(e.target.result, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+        resolve(rows);
+      } catch(err){ reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function importExcel(){
+  const fileInput = document.getElementById("excel-file");
+  const msgEl = document.getElementById("import-msg");
+  if(!fileInput.files.length){ msgEl.innerHTML = `<div class="msg err">Chọn file Excel trước.</div>`; return; }
+  msgEl.innerHTML = `<div class="msg">Đang đọc file...</div>`;
+  let rows;
+  try{ rows = await readExcelFile(fileInput.files[0]); }
+  catch(err){ msgEl.innerHTML = `<div class="msg err">Không đọc được file: ${esc(err.message)}</div>`; return; }
+
+  // Bỏ hàng tiêu đề (dò hàng đầu tiên có cột 1 không phải số => tiêu đề)
+  let startRow = 0;
+  if(rows.length && isNaN(parseInt(rows[0][0]))) startRow = 1;
+
+  const questions = [];
+  for(let i = startRow; i < rows.length; i++){
+    const r = rows[i];
+    if(!r || r.length === 0 || (!r[1] && !r[1+0])) continue;
+    const stt = parseInt(r[0]);
+    const question = String(r[1]||"").trim();
+    if(!question) continue;
+    questions.push({
+      stt: isNaN(stt) ? undefined : stt,
+      question,
+      option_a: String(r[2]||"").trim(),
+      option_b: String(r[3]||"").trim(),
+      option_c: String(r[4]||"").trim(),
+      option_d: String(r[5]||"").trim(),
+      correct_answer: String(r[6]||"").trim(),
+      explanation: String(r[7]||"").trim(),
+      topic: String(r[8]||"").trim()
+    });
+  }
+
+  if(questions.length === 0){ msgEl.innerHTML = `<div class="msg err">Không tìm thấy câu hỏi hợp lệ trong file.</div>`; return; }
+
+  msgEl.innerHTML = `<div class="msg">Đang nhập ${questions.length} câu hỏi...</div>`;
+  const data = await callRpc("admin_bulk_upsert_quiz_questions", { p_password: PASSWORD, p_quiz_slug: currentSlug, p_questions: questions });
+  if(data && data.status === "ok"){
+    msgEl.innerHTML = `<div class="msg ok">Đã nhập/cập nhật ${data.upserted} câu hỏi.</div>`;
+    fileInput.value = "";
+    loadQuestions(currentSlug);
+    refreshSets();
+  } else {
+    msgEl.innerHTML = `<div class="msg err">Lỗi khi nhập: ${esc(data && data.status)}</div>`;
+  }
+}
+
+// tự đăng nhập nếu đã có mật khẩu lưu trong session
+if(PASSWORD){
+  callRpc("admin_list_quiz_sets", { p_password: PASSWORD }).then(data => {
+    if(data && data.status === "ok") renderMain(data.quiz_sets);
+  });
+}
+</script>
+</body>
+</html>
