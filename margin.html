@@ -79,6 +79,7 @@
   #qfOverdue.active{background:var(--red);}
   #qfUpcoming.active{background:#c98a2c;}
   #qfChuaXuLy.active{background:#8a6d1a;}
+  #qfDaCheck.active{background:#2a7a8c;}
   .btn-danger{background:var(--red);color:#fff;}
   .btn-block{width:100%;margin-top:20px;}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -352,9 +353,10 @@
             <select id="filterGroup"><option value="">Tất cả ID</option></select>
             <select id="filterStatus">
               <option value="open">Đang cần theo dõi (chưa xử lý xong)</option>
-              <option value="all">Xem tất cả (kể cả đã xử lý)</option>
+              <option value="all" selected>Xem tất cả (kể cả đã xử lý)</option>
             </select>
             <button class="btn btn-ghost quick-filter" id="qfDueToday" data-mode="today" style="border-color:var(--amber);color:var(--amber);">📅 Đến hạn hôm nay <span class="mono qf-count"></span></button>
+            <button class="btn btn-ghost quick-filter" id="qfDaCheck" data-mode="dacheck" style="border-color:#2a7a8c;color:#2a7a8c;">✅ Đã check <span class="mono qf-count"></span></button>
             <button class="btn btn-ghost quick-filter" id="qfOverdue" data-mode="overdue" style="border-color:var(--red);color:var(--red);">⚠️ Quá hạn <span class="mono qf-count"></span></button>
             <button class="btn btn-ghost quick-filter" id="qfUpcoming" data-mode="upcoming" style="border-color:#c98a2c;color:#c98a2c;">🕐 Sắp đến hạn <span class="mono qf-count"></span></button>
             <button class="btn btn-ghost quick-filter" id="qfChuaXuLy" data-mode="chuaxuly" style="border-color:#8a6d1a;color:#8a6d1a;">📋 Chưa xử lý <span class="mono qf-count"></span></button>
@@ -727,15 +729,18 @@ async function loadDanhSachInner() {
   const cntOverdue = openAll.filter(r => daysUntil(r.ngay_den_han) !== null && daysUntil(r.ngay_den_han) < 0).length;
   const cntUpcoming = openAll.filter(r => { const d = daysUntil(r.ngay_den_han); return d !== null && d > 0 && d <= 3; }).length;
   const cntChuaXuLy = (data || []).filter(r => r.trang_thai === 'chua_nhac').length;
+  const cntDaCheck = (data || []).filter(r => r.trang_thai === 'da_check').length;
   document.querySelector('#qfDueToday .qf-count').textContent = cntToday > 0 ? `(${cntToday})` : '';
   document.querySelector('#qfOverdue .qf-count').textContent = cntOverdue > 0 ? `(${cntOverdue})` : '';
   document.querySelector('#qfUpcoming .qf-count').textContent = cntUpcoming > 0 ? `(${cntUpcoming})` : '';
   document.querySelector('#qfChuaXuLy .qf-count').textContent = cntChuaXuLy > 0 ? `(${cntChuaXuLy})` : '';
+  document.querySelector('#qfDaCheck .qf-count').textContent = cntDaCheck > 0 ? `(${cntDaCheck})` : '';
 
   if (quickFilterMode === 'today') rows = rows.filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) === 0);
   if (quickFilterMode === 'overdue') rows = rows.filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) !== null && daysUntil(r.ngay_den_han) < 0);
   if (quickFilterMode === 'upcoming') rows = rows.filter(r => { const d = daysUntil(r.ngay_den_han); return r.trang_thai !== 'da_xu_ly' && d !== null && d > 0 && d <= 3; });
   if (quickFilterMode === 'chuaxuly') rows = rows.filter(r => r.trang_thai === 'chua_nhac');
+  if (quickFilterMode === 'dacheck') rows = rows.filter(r => r.trang_thai === 'da_check');
 
   document.getElementById('statCount').textContent = rows.length + ' khoản';
 
@@ -1070,10 +1075,20 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     summaryRow.className = 'summary-row';
     summaryRow.innerHTML = `
       <td><span class="chevron ${isOpen ? 'open' : ''}">▶</span></td>
-      <td>
+      <td style="position:relative;">
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap;white-space:nowrap;">
+          <button class="btn btn-ghost kebab-btn" data-kh="${escapeHtml(khId)}" style="padding:3px 6px;font-size:11px;flex-shrink:0;">⋮</button>
           <span>${idx}</span><b>${escapeHtml(g.ten)}</b>
           <button class="btn btn-ghost btn-copy-kh" data-copy="${escapeHtml(g.ten)}" title="Copy số tài khoản" style="padding:2px 5px;font-size:10px;flex-shrink:0;">📋</button>
+        </div>
+        <div class="kebab-menu" data-kh="${escapeHtml(khId)}" style="display:none;left:0;right:auto;">
+          ${showBulkActions ? `
+          <button class="kebab-item btn-copy" data-kh="${escapeHtml(khId)}">📋 Copy danh sách</button>
+          <button class="kebab-item btn-export" data-kh="${escapeHtml(khId)}">⬇️ Xuất Excel</button>
+          ${openCount > 0 ? `<button class="kebab-item btn-thongbao" data-kh="${escapeHtml(khId)}">📣 Đã thông báo cho ID</button>` : ''}
+          <div style="border-top:1px solid var(--line);margin:4px 0;padding-top:4px;font-size:10.5px;color:var(--text-soft);padding-left:10px;">💬 Soạn tin nhắn — xưng hô:</div>
+          ` : `<div style="font-size:10.5px;color:var(--text-soft);padding:6px 10px;">💬 Soạn tin nhắn — xưng hô:</div>`}
+          ${pronounButtonsHtml('tn-opt', 'kh', khId)}
         </div>
       </td>
       <td class="col-optional">${escapeHtml(g.groupId)}</td>
@@ -1085,16 +1100,6 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
         <div style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap;">
         <button class="btn btn-ghost them-khoan-btn" data-kh="${escapeHtml(khId)}" data-group="${escapeHtml(g.groupId)}" data-ten="${escapeHtml(g.ten)}" title="Thêm khoản vay mới cho KH này" style="padding:3px 6px;font-size:11px;color:var(--teal-dark);">➕</button>
         <button class="btn btn-ghost del-kh-btn" data-kh="${escapeHtml(khId)}" title="Xoá toàn bộ khách hàng này" style="padding:3px 6px;font-size:11px;color:var(--red);">🗑️</button>
-        <button class="btn btn-ghost kebab-btn" data-kh="${escapeHtml(khId)}" style="padding:3px 6px;font-size:11px;">⋮</button>
-        </div>
-        <div class="kebab-menu" data-kh="${escapeHtml(khId)}" style="display:none;">
-          ${showBulkActions ? `
-          <button class="kebab-item btn-copy" data-kh="${escapeHtml(khId)}">📋 Copy danh sách</button>
-          <button class="kebab-item btn-export" data-kh="${escapeHtml(khId)}">⬇️ Xuất Excel</button>
-          ${openCount > 0 ? `<button class="kebab-item btn-thongbao" data-kh="${escapeHtml(khId)}">📣 Đã thông báo cho ID</button>` : ''}
-          <div style="border-top:1px solid var(--line);margin:4px 0;padding-top:4px;font-size:10.5px;color:var(--text-soft);padding-left:10px;">💬 Soạn tin nhắn — xưng hô:</div>
-          ` : `<div style="font-size:10.5px;color:var(--text-soft);padding:6px 10px;">💬 Soạn tin nhắn — xưng hô:</div>`}
-          ${pronounButtonsHtml('tn-opt', 'kh', khId)}
         </div>
       </td>
     `;
