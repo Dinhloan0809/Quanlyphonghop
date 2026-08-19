@@ -86,6 +86,10 @@
     display:flex;flex-direction:column;gap:8px;background:#faf8f2;
   }
   .qf-group-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-soft);}
+  .qf-group button.quick-filter{
+    min-height:44px;display:flex;align-items:center;justify-content:center;
+    text-align:center;white-space:normal;line-height:1.3;
+  }
   .btn-danger{background:var(--red);color:#fff;}
   .btn-block{width:100%;margin-top:20px;}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -125,7 +129,7 @@
   nav.tabs button.active{color:#fff;border-bottom-color:var(--teal);}
   nav.tabs button:hover{color:#fff;}
 
-  main{flex:1;padding:24px;max-width:1600px;margin:0 auto;width:100%;}
+  main{flex:1;padding:24px;max-width:1320px;margin:0 auto;width:100%;}
   .panel{display:none;}
   .panel.active{display:block;}
 
@@ -684,7 +688,6 @@ function daysUntil(d) {
 
 let onlyDueToday = false;
 let currentLoanById = {}; // map id -> object khoản vay đang hiển thị, dùng để sửa tại chỗ không bị mất khi vẽ lại bảng
-let pendingFocusKh = null; // KH vừa sửa ngày/trạng thái — dùng để tự nhảy đúng trang chứa nó sau khi tải lại
 let theoDoiCollapsed = true; // mặc định thu gọn khu vực ID theo dõi, bấm nút mới hiện chi tiết
 let dateFilterMode = null; // null | 'today' | 'overdue' | 'upcoming'
 let statusFilterMode = null; // null | 'chuaxuly' | 'dacheck'
@@ -715,19 +718,33 @@ async function loadDanhSach() {
   requestAnimationFrame(() => window.scrollTo(0, scrollY));
 }
 
+async function fetchAllMarginKhoanVay() {
+  const pageSize = 1000;
+  let allRows = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await sb.from('margin_khoan_vay')
+      .select('id, group_id, ma_khoan_vay, ngay_den_han, ngay_import, trang_thai, ghi_chu, so_tien, khach_hang:margin_khach_hang(id, ten_kh)')
+      .order('ngay_den_han', { ascending: true, nullsFirst: false })
+      .range(from, from + pageSize - 1);
+    if (error) return { data: null, error };
+    allRows = allRows.concat(data || []);
+    if (!data || data.length < pageSize) break;
+    from += pageSize;
+  }
+  return { data: allRows, error: null };
+}
+
 async function loadDanhSachInner() {
   document.getElementById('dacBietSection').innerHTML = '<p style="color:var(--text-soft);font-size:13px;">Đang tải...</p>';
   document.getElementById('theoDoiSection').innerHTML = '';
   document.getElementById('danhSachEmpty').innerHTML = '';
 
   const statusFilter = document.getElementById('filterStatus').value;
-  let query = sb.from('margin_khoan_vay')
-    .select('id, group_id, ma_khoan_vay, ngay_den_han, ngay_import, trang_thai, ghi_chu, so_tien, khach_hang:margin_khach_hang(id, ten_kh)')
-    .order('ngay_den_han', { ascending: true, nullsFirst: false });
   // không lọc trạng thái ngay ở đây nữa — cần lấy đủ dữ liệu để xét theo TỪNG KH (xem bên dưới)
 
   const [{ data, error }, { data: wl, error: wlErr }] = await Promise.all([
-    query,
+    fetchAllMarginKhoanVay(),
     sb.from('margin_id_whitelist').select('id, ghi_chu, loai_theo_doi, active')
   ]);
   if (error) { document.getElementById('dacBietSection').innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
@@ -837,9 +854,7 @@ async function loadDanhSachInner() {
   }
 }
 
-const sectionPageState = {}; // { sectionKey: currentPage }
 const sectionOpenState = {}; // { sectionKey_khId: true/false }
-const PAGE_SIZE = 10;
 
 function overallStatus(loans) {
   const openLoans = loans.filter(l => !isClosedStatus(l.trang_thai));
@@ -1374,6 +1389,24 @@ async function handleSuaNgay(e) {
     ngay_den_han = normalizeDate(raw.trim());
     if (!ngay_den_han) { alert('Ngày không hợp lệ, nhập theo dạng dd/mm/yyyy.'); return; }
   }
+
+  // cảnh báo nếu sửa xong sẽ trùng với 1 khoản khác đang mở của cùng KH (cùng ID, cùng mã khoản vay)
+  if (ngay_den_han) {
+    const thisLoan = currentLoanById[id];
+    const khId = thisLoan && thisLoan.khach_hang ? thisLoan.khach_hang.id : null;
+    if (thisLoan && khId) {
+      const dup = Object.values(currentLoanById).find(l =>
+        l.id !== id &&
+        l.khach_hang && l.khach_hang.id === khId &&
+        l.group_id === thisLoan.group_id &&
+        (l.ma_khoan_vay || '') === (thisLoan.ma_khoan_vay || '') &&
+        l.ngay_den_han === ngay_den_han &&
+        !isClosedStatus(l.trang_thai)
+      );
+      if (dup && !confirm(`KH này đã có 1 khoản khác đang mở cùng ngày đến hạn ${fmtDateWithDay(ngay_den_han)} rồi. Vẫn muốn đặt trùng ngày?`)) return;
+    }
+  }
+
   btn.disabled = true;
   markSelfEdit(id);
   const { error } = await sb.from('margin_khoan_vay').update({ ngay_den_han }).eq('id', id);
@@ -1476,6 +1509,7 @@ document.getElementById('manualRefreshBtn').addEventListener('click', async () =
   btn.disabled = true;
   const oldText = btn.textContent;
   btn.textContent = '🔄 Đang làm mới...';
+  Object.keys(sectionOpenState).forEach(k => delete sectionOpenState[k]); // thu gọn hết, chỉ còn nhìn tên KH
   await loadDanhSach();
   btn.textContent = oldText;
   btn.disabled = false;
@@ -1527,8 +1561,18 @@ async function loadWhitelist() {
     return;
   }
 
-  // lấy số liệu khoản vay đã import theo từng ID (tổng + đang mở)
-  const { data: khoanVayData } = await sb.from('margin_khoan_vay').select('group_id, trang_thai');
+  // lấy số liệu khoản vay đã import theo từng ID (tổng + đang mở) — phân trang để không bị cắt ở mốc 1000 dòng
+  let khoanVayData = [];
+  {
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data: page } = await sb.from('margin_khoan_vay').select('group_id, trang_thai').range(from, from + pageSize - 1);
+      khoanVayData = khoanVayData.concat(page || []);
+      if (!page || page.length < pageSize) break;
+      from += pageSize;
+    }
+  }
   const statsByGroup = {};
   (khoanVayData || []).forEach(r => {
     if (!statsByGroup[r.group_id]) statsByGroup[r.group_id] = { total: 0, open: 0 };
