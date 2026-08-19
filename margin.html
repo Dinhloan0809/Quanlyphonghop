@@ -80,6 +80,15 @@
   #qfUpcoming.active{background:#c98a2c;}
   #qfChuaXuLy.active{background:#8a6d1a;}
   #qfDaCheck.active{background:#2a7a8c;}
+  #bulkDeleteModeBtn.active{background:var(--red);color:#fff;}
+  .bulk-select-cb{width:16px;height:16px;cursor:pointer;flex-shrink:0;}
+  #bulkDeleteBar{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(100px);
+    background:var(--ink);color:#fff;padding:12px 16px;border-radius:12px;
+    display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.3);
+    z-index:998;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;
+  }
+  #bulkDeleteBar.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
   #qfDaLienHe.active{background:var(--teal-dark);}
   .qf-group{
     border:1px solid var(--line);border-radius:10px;padding:10px;
@@ -294,13 +303,14 @@
 
   #appToast{
     position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;
-    padding:12px 18px;border-radius:10px;font-size:13px;max-width:340px;
+    padding:12px 14px 12px 18px;border-radius:10px;font-size:13px;max-width:420px;
     box-shadow:0 10px 28px rgba(0,0,0,.28);
     opacity:0;transform:translateY(10px);
     transition:opacity .2s ease,transform .2s ease;
     pointer-events:none;z-index:999;
+    display:flex;align-items:center;
   }
-  #appToast.show{opacity:1;transform:translateY(0);}
+  #appToast.show{opacity:1;transform:translateY(0);pointer-events:auto;}
 
   @media (max-width:600px){
     main{padding:14px;}
@@ -332,6 +342,11 @@
 
 <!-- ============ APP ============ -->
 <div id="app">
+  <div id="bulkDeleteBar">
+    <span>Đã chọn <b id="bulkDeleteCount">0</b> khoản</span>
+    <button class="btn btn-danger" id="bulkDeleteConfirmBtn" style="padding:8px 14px;font-size:13px;">Xoá tất cả</button>
+    <button class="btn btn-ghost" id="bulkDeleteCancelBtn" style="padding:8px 14px;font-size:13px;color:#fff;border-color:rgba(255,255,255,.3);">Huỷ chọn</button>
+  </div>
   <header class="topbar">
     <div class="brand">Nhắc <span>Margin</span></div>
     <div class="user-chip">
@@ -378,6 +393,8 @@
             <button class="btn btn-ghost quick-filter" id="qfUpcoming" data-group="date" data-mode="upcoming" style="border-color:#c98a2c;color:#c98a2c;">🕐 Sắp đến hạn <span class="mono qf-count"></span></button>
             </div>
             <span class="stat-pill" id="statCount" style="text-align:center;">0 khoản</span>
+            <button class="btn btn-ghost" id="undoBtn" style="display:none;border-color:var(--teal-dark);color:var(--teal-dark);">↩️ Hoàn tác <span id="undoCount"></span></button>
+            <button class="btn btn-ghost" id="bulkDeleteModeBtn" style="display:none;border-color:var(--red);color:var(--red);">🗑️ Chọn để xoá</button>
             <button class="btn btn-primary" id="manualRefreshBtn">🔄 Làm mới danh sách</button>
           </div>
         </aside>
@@ -604,6 +621,7 @@ sb.auth.onAuthStateChange((event, session) => {
     document.getElementById('app').style.display = 'flex';
     document.getElementById('userEmail').textContent = session.user.email;
     isAdmin = (session.user.email || '').toLowerCase() === ADMIN_EMAIL;
+    document.getElementById('bulkDeleteModeBtn').style.display = isAdmin ? '' : 'none';
     initApp();
   } else {
     document.getElementById('loginScreen').style.display = 'flex';
@@ -637,6 +655,126 @@ function initApp() {
   window.addEventListener('resize', updateStickyTop);
   subscribeRealtimeUpdates();
 }
+
+function pushUndo(entry) {
+  undoStack.push(entry);
+  if (undoStack.length > 30) undoStack.shift(); // giới hạn 30 bước gần nhất
+  updateUndoBtn();
+}
+
+function updateUndoBtn() {
+  const btn = document.getElementById('undoBtn');
+  if (!btn) return;
+  if (undoStack.length === 0) {
+    btn.style.display = 'none';
+  } else {
+    btn.style.display = '';
+    document.getElementById('undoCount').textContent = `(${undoStack.length})`;
+  }
+}
+
+async function performUndo() {
+  const entry = undoStack.pop();
+  if (!entry) return;
+  updateUndoBtn();
+  markSelfEdit(entry.id);
+  let error;
+  if (entry.field === 'trang_thai') {
+    ({ error } = await sb.rpc(STATUS_RPC_MAP[entry.oldValue], { p_khoan_vay_id: entry.id, p_ghi_chu: null }));
+  } else {
+    ({ error } = await sb.from('margin_khoan_vay').update({ [entry.field]: entry.oldValue }).eq('id', entry.id));
+  }
+  if (error) { alert('Lỗi khi hoàn tác: ' + error.message); return; }
+  if (currentLoanById[entry.id]) currentLoanById[entry.id][entry.field] = entry.oldValue;
+
+  // cập nhật lại giao diện tại chỗ nếu dòng đó vẫn đang hiển thị trên màn hình
+  if (entry.field === 'trang_thai') {
+    const sel = document.querySelector(`select.status-select[data-id="${entry.id}"]`);
+    if (sel) sel.value = entry.oldValue;
+  } else if (entry.field === 'ngay_den_han') {
+    const btn = document.querySelector(`button.act-sua-ngay[data-id="${entry.id}"]`);
+    if (btn) {
+      btn.dataset.current = entry.oldValue ?? '';
+      const td = btn.closest('td');
+      const valEl = td ? td.querySelector('.ngay-val') : null;
+      if (td && valEl) {
+        const dLeft = daysUntil(entry.oldValue);
+        const { cls, icon } = dueClassAndIcon(dLeft);
+        td.className = cls;
+        valEl.textContent = (icon ? icon + ' ' : '') + fmtDateWithDay(entry.oldValue);
+      }
+    }
+  } else if (entry.field === 'so_tien') {
+    const btn = document.querySelector(`button.act-sua-tien[data-id="${entry.id}"]`);
+    if (btn) {
+      btn.dataset.current = entry.oldValue ?? '';
+      const valEl = btn.parentElement.querySelector('.tien-val');
+      if (valEl) valEl.textContent = fmtTien(entry.oldValue);
+    }
+  } else if (entry.field === 'ghi_chu') {
+    const inp = document.querySelector(`input.ghi-chu-input[data-id="${entry.id}"]`);
+    if (inp) inp.value = entry.oldValue || '';
+  }
+
+  showToast(`Đã hoàn tác: ${entry.desc}`);
+}
+
+document.getElementById('undoBtn').addEventListener('click', performUndo);
+
+function toggleBulkSelect(id, checked) {
+  if (checked) bulkSelectedIds.add(id); else bulkSelectedIds.delete(id);
+  updateBulkDeleteBar();
+}
+
+function updateBulkDeleteBar() {
+  const bar = document.getElementById('bulkDeleteBar');
+  document.getElementById('bulkDeleteCount').textContent = bulkSelectedIds.size;
+  bar.classList.toggle('show', bulkSelectedIds.size > 0);
+}
+
+document.getElementById('bulkDeleteModeBtn').addEventListener('click', () => {
+  bulkDeleteMode = !bulkDeleteMode;
+  document.getElementById('bulkDeleteModeBtn').classList.toggle('active', bulkDeleteMode);
+  document.getElementById('bulkDeleteModeBtn').textContent = bulkDeleteMode ? '✕ Thoát chế độ chọn' : '🗑️ Chọn để xoá';
+  if (!bulkDeleteMode) {
+    bulkSelectedIds.clear();
+    updateBulkDeleteBar();
+  }
+  loadDanhSach(); // vẽ lại để hiện/ẩn checkbox ở từng dòng
+});
+
+document.getElementById('bulkDeleteCancelBtn').addEventListener('click', () => {
+  bulkSelectedIds.clear();
+  updateBulkDeleteBar();
+  loadDanhSach(); // bỏ hết tick đã chọn
+});
+
+document.getElementById('bulkDeleteConfirmBtn').addEventListener('click', async () => {
+  const ids = [...bulkSelectedIds];
+  if (ids.length === 0) return;
+  if (!confirm(`Xoá vĩnh viễn ${ids.length} khoản vay đã chọn? Không thể khôi phục lại được.`)) return;
+  const btn = document.getElementById('bulkDeleteConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = 'Đang xoá...';
+  ids.forEach(markSelfEdit);
+  const { error } = await sb.from('margin_khoan_vay').delete().in('id', ids);
+  btn.disabled = false;
+  btn.textContent = 'Xoá tất cả';
+  if (error) { alert('Lỗi: ' + error.message); return; }
+  showToast(`Đã xoá ${ids.length} khoản vay.`);
+  bulkSelectedIds.clear();
+  updateBulkDeleteBar();
+  bulkDeleteMode = false;
+  document.getElementById('bulkDeleteModeBtn').classList.remove('active');
+  document.getElementById('bulkDeleteModeBtn').textContent = '🗑️ Chọn để xoá';
+  loadDanhSach();
+});
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+    e.preventDefault();
+    performUndo();
+  }
+});
 
 function markSelfEdit(id) {
   if (!window.__justEditedIds) window.__justEditedIds = new Set();
@@ -688,6 +826,9 @@ function daysUntil(d) {
 
 let onlyDueToday = false;
 let currentLoanById = {}; // map id -> object khoản vay đang hiển thị, dùng để sửa tại chỗ không bị mất khi vẽ lại bảng
+let undoStack = []; // [{ id, field, oldValue, desc }] — lùi nhiều bước kiểu Ctrl+Z
+let bulkDeleteMode = false;
+let bulkSelectedIds = new Set();
 let theoDoiCollapsed = true; // mặc định thu gọn khu vực ID theo dõi, bấm nút mới hiện chi tiết
 let dateFilterMode = null; // null | 'today' | 'overdue' | 'upcoming'
 let statusFilterMode = null; // null | 'chuaxuly' | 'dacheck'
@@ -834,11 +975,15 @@ async function loadDanhSachInner() {
     dacBietEl.className = '';
   }
   if (theoDoiRows.length > 0) {
+    const soKh = new Set(theoDoiRows.map(r => r.khach_hang ? r.khach_hang.id : r.id)).size;
+    const soQuaHan = theoDoiRows.filter(r => !isClosedStatus(r.trang_thai) && daysUntil(r.ngay_den_han) !== null && daysUntil(r.ngay_den_han) < 0).length;
     const h = document.createElement('div');
     h.className = 'section-head theo-doi';
-    h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+    h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;';
     h.innerHTML = `
-      <span>👁 ID theo dõi <span class="count-badge">${new Set(theoDoiRows.map(r => r.group_id)).size}</span></span>
+      <span>👁 ID theo dõi <span class="count-badge">${new Set(theoDoiRows.map(r => r.group_id)).size}</span>
+        <span style="font-size:12px;font-weight:400;color:var(--text-soft);margin-left:10px;">${soKh} khách hàng · ${theoDoiRows.length} khoản${soQuaHan > 0 ? ` · <span style="color:var(--red);font-weight:700;">⚠️ ${soQuaHan} quá hạn</span>` : ''}</span>
+      </span>
       <button class="btn btn-ghost" id="toggleTheoDoiBtn">${theoDoiCollapsed ? '▶ Xem danh sách chi tiết' : '▲ Ẩn danh sách chi tiết'}</button>
     `;
     theoDoiEl.appendChild(h);
@@ -988,6 +1133,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
     card.innerHTML = `
       <div class="id-group-head">
         <div>
+          ${bulkDeleteMode && isAdmin ? `<input type="checkbox" class="bulk-select-all-group" data-group="${escapeHtml(groupId)}" title="Chọn tất cả khoản của ID này" style="margin-right:8px;width:16px;height:16px;">` : ''}
           <span class="idtag" style="font-size:14px;">${escapeHtml(groupId)}</span>
           ${g.note ? `<span style="font-size:12px;color:var(--text-soft);margin-left:8px;">${escapeHtml(g.note)}</span>` : ''}
         </div>
@@ -1000,11 +1146,12 @@ function renderTongHopByID(containerEl, rows, idInfo) {
       </div>
       <div class="table-scroll">
       <table class="loan-table">
-        <tr><th>Khách hàng</th><th>Ngày đến hạn</th><th>Trạng thái / Hành động</th></tr>
+        <tr>${bulkDeleteMode && isAdmin ? '<th></th>' : ''}<th>Khách hàng</th><th>Ngày đến hạn</th><th>Trạng thái / Hành động</th></tr>
         ${g.loans.map(loan => {
           const dLeft = daysUntil(loan.ngay_den_han);
           const { cls, icon } = dueClassAndIcon(dLeft);
           return `<tr>
+            ${bulkDeleteMode && isAdmin ? `<td><input type="checkbox" class="bulk-select-cb" data-id="${loan.id}" ${bulkSelectedIds.has(loan.id) ? 'checked' : ''}></td>` : ''}
             <td>
               <b>${escapeHtml(loan.khach_hang ? loan.khach_hang.ten_kh : '')}</b>
               <button class="btn btn-ghost btn-copy-kh" data-copy="${escapeHtml(loan.khach_hang ? loan.khach_hang.ten_kh : '')}" title="Copy số tài khoản" style="padding:2px 6px;font-size:11px;">📋</button>
@@ -1043,6 +1190,14 @@ function renderTongHopByID(containerEl, rows, idInfo) {
     });
   }));
   wrap.querySelectorAll('.them-khoan-btn').forEach(b => b.addEventListener('click', () => handleThemKhoanVay(b)));
+  wrap.querySelectorAll('.bulk-select-cb').forEach(cb => cb.addEventListener('change', () => toggleBulkSelect(cb.dataset.id, cb.checked)));
+  wrap.querySelectorAll('.bulk-select-all-group').forEach(cb => cb.addEventListener('change', () => {
+    const g = groups[cb.dataset.group];
+    g.loans.forEach(l => toggleBulkSelect(l.id, cb.checked));
+    wrap.querySelectorAll(`input.bulk-select-cb`).forEach(rowCb => {
+      if (g.loans.some(l => l.id === rowCb.dataset.id)) rowCb.checked = cb.checked;
+    });
+  }));
 
   wrap.querySelectorAll('.btn-thongbao-id').forEach(b => b.addEventListener('click', async () => {
     b.disabled = true;
@@ -1111,7 +1266,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
   const table = document.createElement('table');
   table.className = 'summary-table';
   table.innerHTML = `<thead><tr>
-    <th></th><th>Khách hàng</th><th class="col-optional">ID phụ trách</th><th>Số khoản</th>
+    ${bulkDeleteMode && isAdmin ? '<th></th>' : ''}<th></th><th>Khách hàng</th><th class="col-optional">ID phụ trách</th><th>Số khoản</th>
     <th>Khoản sắp đến hạn nhất</th><th class="col-optional">Tổng dư nợ</th><th>Trạng thái chung</th><th></th>
   </tr></thead><tbody></tbody>`;
   const tbody = table.querySelector('tbody');
@@ -1134,9 +1289,11 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       earliestHtml = `<span class="${cls}" style="white-space:nowrap;">${icon ? icon + ' ' : ''}${fmtDateWithDay(earliest.ngay_den_han)}</span>`;
     }
 
+    const allSelected = g.loans.length > 0 && g.loans.every(l => bulkSelectedIds.has(l.id));
     const summaryRow = document.createElement('tr');
     summaryRow.className = 'summary-row';
     summaryRow.innerHTML = `
+      ${bulkDeleteMode && isAdmin ? `<td><input type="checkbox" class="bulk-select-all-kh" data-kh="${escapeHtml(khId)}" ${allSelected ? 'checked' : ''}></td>` : ''}
       <td><span class="chevron ${isOpen ? 'open' : ''}">▶</span></td>
       <td style="position:relative;">
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap;white-space:nowrap;">
@@ -1167,7 +1324,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       </td>
     `;
     summaryRow.addEventListener('click', (e) => {
-      if (e.target.closest('.kebab-btn') || e.target.closest('.kebab-menu') || e.target.closest('.btn-copy-kh') || e.target.closest('.del-kh-btn')) return;
+      if (e.target.closest('.kebab-btn') || e.target.closest('.kebab-menu') || e.target.closest('.btn-copy-kh') || e.target.closest('.del-kh-btn') || e.target.closest('.bulk-select-all-kh')) return;
       sectionOpenState[stateKey] = !sectionOpenState[stateKey];
       renderKhCards(containerEl, rows, idInfo, sectionKey);
     });
@@ -1182,11 +1339,11 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
         <div class="detail-wrap">
           <div class="table-scroll">
           <table class="loan-table">
-            <tr><th>Khoản vay</th><th>Ngày đến hạn</th><th>Tiền</th><th>Trạng thái / Hành động</th><th>Ghi chú</th></tr>
+            <tr>${bulkDeleteMode && isAdmin ? '<th></th>' : ''}<th>Khoản vay</th><th>Ngày đến hạn</th><th>Tiền</th><th>Trạng thái / Hành động</th><th>Ghi chú</th></tr>
             ${g.loans.map((loan, li) => {
               const dLeft = daysUntil(loan.ngay_den_han);
               const { cls, icon } = dueClassAndIcon(dLeft);
-              return `<tr>                <td>Khoản vay ${li + 1}${loan.ma_khoan_vay ? ` <span class="mono" style="color:var(--text-soft);font-size:11px;">(${escapeHtml(loan.ma_khoan_vay)})</span>` : ''}</td>
+              return `<tr>${bulkDeleteMode && isAdmin ? `<td><input type="checkbox" class="bulk-select-cb" data-id="${loan.id}" ${bulkSelectedIds.has(loan.id) ? 'checked' : ''}></td>` : ''}<td>Khoản vay ${li + 1}${loan.ma_khoan_vay ? ` <span class="mono" style="color:var(--text-soft);font-size:11px;">(${escapeHtml(loan.ma_khoan_vay)})</span>` : ''}</td>
                 <td class="${cls}">
                   <span class="ngay-val">${icon ? icon + ' ' : ''}${fmtDateWithDay(loan.ngay_den_han)}</span>
                   <button class="btn btn-ghost act-sua-ngay" data-id="${loan.id}" data-kh="${escapeHtml(khId)}" data-current="${loan.ngay_den_han ?? ''}" title="Sửa ngày đến hạn" style="padding:2px 6px;font-size:11px;margin-left:4px;">✏️</button>
@@ -1261,6 +1418,16 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     loadDanhSach();
   }));
   containerEl.querySelectorAll('.them-khoan-btn').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); handleThemKhoanVay(b); }));
+  containerEl.querySelectorAll('.bulk-select-cb').forEach(cb => cb.addEventListener('click', (e) => e.stopPropagation()));
+  containerEl.querySelectorAll('.bulk-select-cb').forEach(cb => cb.addEventListener('change', () => toggleBulkSelect(cb.dataset.id, cb.checked)));
+  containerEl.querySelectorAll('.bulk-select-all-kh').forEach(cb => cb.addEventListener('click', (e) => e.stopPropagation()));
+  containerEl.querySelectorAll('.bulk-select-all-kh').forEach(cb => cb.addEventListener('change', () => {
+    const g = groups[cb.dataset.kh];
+    g.loans.forEach(l => toggleBulkSelect(l.id, cb.checked));
+    containerEl.querySelectorAll('input.bulk-select-cb').forEach(rowCb => {
+      if (g.loans.some(l => l.id === rowCb.dataset.id)) rowCb.checked = cb.checked;
+    });
+  }));
 
   containerEl.querySelectorAll('.kebab-btn').forEach(b => b.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1367,6 +1534,7 @@ async function handleSuaTien(e) {
   if (cleaned !== '' && isNaN(so_tien)) { alert('Số tiền không hợp lệ.'); return; }
   btn.disabled = true;
   markSelfEdit(id);
+  const oldTien = currentLoanById[id] ? currentLoanById[id].so_tien : (current ? Number(current) : null);
   const { error } = await sb.from('margin_khoan_vay').update({ so_tien }).eq('id', id);
   btn.disabled = false;
   if (error) { alert('Lỗi: ' + error.message); return; }
@@ -1375,6 +1543,9 @@ async function handleSuaTien(e) {
   btn.dataset.current = so_tien ?? '';
   const valEl = btn.parentElement.querySelector('.tien-val');
   if (valEl) valEl.textContent = fmtTien(so_tien);
+  if (Number(oldTien) !== Number(so_tien)) {
+    pushUndo({ id, field: 'so_tien', oldValue: oldTien, desc: `số tiền → ${fmtTien(oldTien)}` });
+  }
   showToast('Đã lưu số tiền.');
 }
 
@@ -1409,6 +1580,7 @@ async function handleSuaNgay(e) {
 
   btn.disabled = true;
   markSelfEdit(id);
+  const oldNgay = currentLoanById[id] ? currentLoanById[id].ngay_den_han : current || null;
   const { error } = await sb.from('margin_khoan_vay').update({ ngay_den_han }).eq('id', id);
   btn.disabled = false;
   if (error) { alert('Lỗi: ' + error.message); return; }
@@ -1423,7 +1595,10 @@ async function handleSuaNgay(e) {
     td.className = cls;
     valEl.textContent = (icon ? icon + ' ' : '') + fmtDateWithDay(ngay_den_han);
   }
-  showToast('Đã lưu ngày đến hạn. Bấm "Làm mới danh sách" nếu muốn cập nhật lại thứ tự/trạng thái tổng quan.');
+  if (oldNgay !== ngay_den_han) {
+    pushUndo({ id, field: 'ngay_den_han', oldValue: oldNgay, desc: `ngày đến hạn → ${oldNgay ? fmtDateWithDay(oldNgay) : 'trống'}` });
+  }
+  showToast('Đã lưu ngày đến hạn.');
 }
 
 async function handleThemKhoanVay(btn) {
@@ -1462,27 +1637,37 @@ async function handleGhiChuChange(e) {
   const inp = e.currentTarget;
   const id = inp.dataset.id;
   const ghi_chu = inp.value.trim() || null;
+  const oldGhiChu = currentLoanById[id] ? currentLoanById[id].ghi_chu : null;
   inp.disabled = true;
   markSelfEdit(id);
   const { error } = await sb.from('margin_khoan_vay').update({ ghi_chu }).eq('id', id);
   inp.disabled = false;
   if (error) { alert('Lỗi: ' + error.message); return; }
   if (currentLoanById[id]) currentLoanById[id].ghi_chu = ghi_chu;
+  if (oldGhiChu !== ghi_chu) {
+    pushUndo({ id, field: 'ghi_chu', oldValue: oldGhiChu, desc: `ghi chú → "${oldGhiChu || '(trống)'}"` });
+  }
   showToast('Đã lưu ghi chú.');
 }
+
+const STATUS_RPC_MAP = { chua_nhac: 'margin_mo_lai', da_check: 'margin_danh_dau_da_check', da_nhac: 'margin_danh_dau_da_nhac', da_xu_ly: 'margin_danh_dau_xu_ly_xong', cty_xu_ly: 'margin_danh_dau_cty_xu_ly' };
+const STATUS_LABEL_MAP = { chua_nhac: 'Chưa xử lý', da_check: 'Đã check', da_nhac: 'Đã liên hệ', da_xu_ly: 'KH xử lý xong', cty_xu_ly: 'Công ty đã xử lý' };
 
 async function handleStatusChange(e) {
   const sel = e.currentTarget;
   const id = sel.dataset.id;
   const value = sel.value;
-  const rpcMap = { chua_nhac: 'margin_mo_lai', da_check: 'margin_danh_dau_da_check', da_nhac: 'margin_danh_dau_da_nhac', da_xu_ly: 'margin_danh_dau_xu_ly_xong', cty_xu_ly: 'margin_danh_dau_cty_xu_ly' };
+  const previousValue = currentLoanById[id] ? currentLoanById[id].trang_thai : null;
   sel.disabled = true;
   markSelfEdit(id);
-  const { error } = await sb.rpc(rpcMap[value], { p_khoan_vay_id: id, p_ghi_chu: null });
+  const { error } = await sb.rpc(STATUS_RPC_MAP[value], { p_khoan_vay_id: id, p_ghi_chu: null });
   sel.disabled = false;
   if (error) { alert('Lỗi: ' + error.message); return; }
   if (currentLoanById[id]) currentLoanById[id].trang_thai = value;
   // không tải lại cả danh sách — dropdown đã tự phản ánh lựa chọn mới, bấm "Làm mới danh sách" khi xong để cập nhật tổng quan
+  if (previousValue && previousValue !== value) {
+    pushUndo({ id, field: 'trang_thai', oldValue: previousValue, desc: `trạng thái → "${STATUS_LABEL_MAP[previousValue]}"` });
+  }
   showToast('Đã cập nhật trạng thái.');
 }
 
@@ -1533,17 +1718,40 @@ function hasRiskyChar(str) {
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-function showToast(msg) {
+function showToast(msg, actionLabel, actionFn) {
   let toast = document.getElementById('appToast');
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'appToast';
     document.body.appendChild(toast);
   }
-  toast.textContent = msg;
+  toast.innerHTML = `<span>${escapeHtml(msg)}</span>`;
+  if (actionLabel && actionFn) {
+    const btn = document.createElement('button');
+    btn.textContent = actionLabel;
+    btn.className = 'btn btn-primary';
+    btn.style.cssText = 'margin-left:10px;padding:6px 12px;font-size:12px;flex-shrink:0;';
+    btn.addEventListener('click', () => {
+      toast.classList.remove('show');
+      clearTimeout(window.__toastTimer);
+      actionFn();
+    });
+    toast.appendChild(btn);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.title = 'Đóng';
+    closeBtn.className = 'btn btn-ghost';
+    closeBtn.style.cssText = 'margin-left:6px;padding:6px 10px;font-size:12px;flex-shrink:0;color:#fff;border-color:rgba(255,255,255,.3);';
+    closeBtn.addEventListener('click', () => { toast.classList.remove('show'); clearTimeout(window.__toastTimer); });
+    toast.appendChild(closeBtn);
+  }
   toast.classList.add('show');
   clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3200);
+  // có nút hành động (vd Hoàn tác) thì đứng yên luôn, không tự biến mất — chỉ tự ẩn với thông báo thường
+  if (!actionLabel) {
+    window.__toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3200);
+  }
 }
 
 /* ---------------- WHITELIST ---------------- */
