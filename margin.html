@@ -80,6 +80,12 @@
   #qfUpcoming.active{background:#c98a2c;}
   #qfChuaXuLy.active{background:#8a6d1a;}
   #qfDaCheck.active{background:#2a7a8c;}
+  #qfDaLienHe.active{background:var(--teal-dark);}
+  .qf-group{
+    border:1px solid var(--line);border-radius:10px;padding:10px;
+    display:flex;flex-direction:column;gap:8px;background:#faf8f2;
+  }
+  .qf-group-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-soft);}
   .btn-danger{background:var(--red);color:#fff;}
   .btn-block{width:100%;margin-top:20px;}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -119,7 +125,7 @@
   nav.tabs button.active{color:#fff;border-bottom-color:var(--teal);}
   nav.tabs button:hover{color:#fff;}
 
-  main{flex:1;padding:24px;max-width:1100px;margin:0 auto;width:100%;}
+  main{flex:1;padding:24px;max-width:1600px;margin:0 auto;width:100%;}
   .panel{display:none;}
   .panel.active{display:block;}
 
@@ -250,7 +256,7 @@
 
   /* bảng tổng quan thu gọn/mở rộng */
   .table-scroll{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;}
-  table.summary-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;min-width:640px;}
+  table.summary-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;min-width:560px;}
   @media (max-width:760px){
     table.summary-table{min-width:0;}
     table.summary-table .col-optional{display:none;} /* ẩn ID phụ trách + Tổng dư nợ, ưu tiên xem ngày đến hạn khi màn hình hẹp (vd chia đôi laptop) */
@@ -263,7 +269,7 @@
   tr.detail-row td{padding:0;border-top:none;}
   .detail-wrap{background:#faf8f2;padding:10px 12px 14px 40px;}
   .detail-wrap .table-scroll{overflow-x:auto;}
-  .detail-wrap table.loan-table{min-width:680px;}
+  .detail-wrap table.loan-table{min-width:600px;}
   @media (max-width:760px){ .detail-wrap{padding:10px 8px 14px 24px;} }
   .detail-wrap table.loan-table{border-radius:8px;overflow:hidden;}
 
@@ -352,14 +358,21 @@
             <input type="text" id="searchKH" placeholder="Tìm theo tên khách hàng...">
             <select id="filterGroup"><option value="">Tất cả ID</option></select>
             <select id="filterStatus">
-              <option value="open">Đang cần theo dõi (chưa xử lý xong)</option>
+              <option value="open">Chỉ KH còn khoản chưa xử lý xong</option>
               <option value="all" selected>Xem tất cả (kể cả đã xử lý)</option>
             </select>
-            <button class="btn btn-ghost quick-filter" id="qfDueToday" data-mode="today" style="border-color:var(--amber);color:var(--amber);">📅 Đến hạn hôm nay <span class="mono qf-count"></span></button>
-            <button class="btn btn-ghost quick-filter" id="qfDaCheck" data-mode="dacheck" style="border-color:#2a7a8c;color:#2a7a8c;">✅ Đã check <span class="mono qf-count"></span></button>
-            <button class="btn btn-ghost quick-filter" id="qfOverdue" data-mode="overdue" style="border-color:var(--red);color:var(--red);">⚠️ Quá hạn <span class="mono qf-count"></span></button>
-            <button class="btn btn-ghost quick-filter" id="qfUpcoming" data-mode="upcoming" style="border-color:#c98a2c;color:#c98a2c;">🕐 Sắp đến hạn <span class="mono qf-count"></span></button>
-            <button class="btn btn-ghost quick-filter" id="qfChuaXuLy" data-mode="chuaxuly" style="border-color:#8a6d1a;color:#8a6d1a;">📋 Chưa xử lý <span class="mono qf-count"></span></button>
+            <div class="qf-group">
+              <div class="qf-group-label">Lọc theo trạng thái</div>
+              <button class="btn btn-ghost quick-filter" id="qfChuaXuLy" data-group="status" data-mode="chuaxuly" style="border-color:#8a6d1a;color:#8a6d1a;">📋 Chưa xử lý <span class="mono qf-count"></span></button>
+              <button class="btn btn-ghost quick-filter" id="qfDaCheck" data-group="status" data-mode="dacheck" style="border-color:#2a7a8c;color:#2a7a8c;">✅ Đã check <span class="mono qf-count"></span></button>
+              <button class="btn btn-ghost quick-filter" id="qfDaLienHe" data-group="status" data-mode="dalienhe" style="border-color:var(--teal-dark);color:var(--teal-dark);">📞 Đã liên hệ <span class="mono qf-count"></span></button>
+            </div>
+            <div class="qf-group">
+              <div class="qf-group-label">Lọc theo ngày</div>
+              <button class="btn btn-ghost quick-filter" id="qfDueToday" data-group="date" data-mode="today" style="border-color:var(--amber);color:var(--amber);">📅 Đến hạn hôm nay <span class="mono qf-count"></span></button>
+            <button class="btn btn-ghost quick-filter" id="qfOverdue" data-group="date" data-mode="overdue" style="border-color:var(--red);color:var(--red);">⚠️ Quá hạn <span class="mono qf-count"></span></button>
+            <button class="btn btn-ghost quick-filter" id="qfUpcoming" data-group="date" data-mode="upcoming" style="border-color:#c98a2c;color:#c98a2c;">🕐 Sắp đến hạn <span class="mono qf-count"></span></button>
+            </div>
             <span class="stat-pill" id="statCount" style="text-align:center;">0 khoản</span>
             <button class="btn btn-primary" id="manualRefreshBtn">🔄 Làm mới danh sách</button>
           </div>
@@ -425,6 +438,18 @@
         <h2>📜 Lịch sử import</h2>
         <p class="desc">Các lần import gần đây nhất (file, nhập tay).</p>
         <div id="importHistoryList" style="max-height:300px;overflow:auto;"></div>
+      </div>
+
+      <div class="card" id="cleanupCard" style="display:none;">
+        <h2>🧹 Dọn khoản vay đã xử lý từ lâu</h2>
+        <p class="desc">Xoá vĩnh viễn các khoản đã ở trạng thái "KH xử lý xong" / "Công ty đã xử lý" và không có cập nhật gì thêm trong khoảng thời gian dưới đây. Chỉ admin thấy được mục này. Luôn xem trước số lượng trước khi xoá thật.</p>
+        <div class="toolbar">
+          <span>Xoá khoản đã xử lý từ hơn</span>
+          <input type="number" id="cleanupMonths" value="3" min="1" style="width:70px;">
+          <span>tháng trước</span>
+          <button class="btn btn-ghost" id="cleanupPreviewBtn">Xem trước số lượng</button>
+        </div>
+        <div id="cleanupResultMsg"></div>
       </div>
     </section>
 
@@ -566,11 +591,15 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await sb.auth.signOut();
 });
 
+const ADMIN_EMAIL = 'trolynt@gmail.com';
+let isAdmin = false;
+
 sb.auth.onAuthStateChange((event, session) => {
   if (session) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
     document.getElementById('userEmail').textContent = session.user.email;
+    isAdmin = (session.user.email || '').toLowerCase() === ADMIN_EMAIL;
     initApp();
   } else {
     document.getElementById('loginScreen').style.display = 'flex';
@@ -643,6 +672,9 @@ function fmtDate(d) {
   const dt = new Date(d + 'T00:00:00');
   return dt.toLocaleDateString('vi-VN');
 }
+const CLOSED_STATUSES = ['da_xu_ly', 'cty_xu_ly']; // các trạng thái coi như đã đóng khoản, không cần theo dõi nữa
+function isClosedStatus(t) { return CLOSED_STATUSES.includes(t); }
+
 function daysUntil(d) {
   if (!d) return null;
   const today = new Date(); today.setHours(0,0,0,0);
@@ -654,7 +686,8 @@ let onlyDueToday = false;
 let currentLoanById = {}; // map id -> object khoản vay đang hiển thị, dùng để sửa tại chỗ không bị mất khi vẽ lại bảng
 let pendingFocusKh = null; // KH vừa sửa ngày/trạng thái — dùng để tự nhảy đúng trang chứa nó sau khi tải lại
 let theoDoiCollapsed = true; // mặc định thu gọn khu vực ID theo dõi, bấm nút mới hiện chi tiết
-let quickFilterMode = null; // null | 'today' | 'overdue' | 'upcoming'
+let dateFilterMode = null; // null | 'today' | 'overdue' | 'upcoming'
+let statusFilterMode = null; // null | 'chuaxuly' | 'dacheck'
 
 function dueClassAndIcon(dLeft) {
   if (dLeft === null) return { cls: '', icon: '' };
@@ -691,8 +724,7 @@ async function loadDanhSachInner() {
   let query = sb.from('margin_khoan_vay')
     .select('id, group_id, ma_khoan_vay, ngay_den_han, ngay_import, trang_thai, ghi_chu, so_tien, khach_hang:margin_khach_hang(id, ten_kh)')
     .order('ngay_den_han', { ascending: true, nullsFirst: false });
-
-  if (statusFilter === 'open') query = query.neq('trang_thai', 'da_xu_ly');
+  // không lọc trạng thái ngay ở đây nữa — cần lấy đủ dữ liệu để xét theo TỪNG KH (xem bên dưới)
 
   const [{ data, error }, { data: wl, error: wlErr }] = await Promise.all([
     query,
@@ -723,24 +755,39 @@ async function loadDanhSachInner() {
   if (groupFilter === 'dac_biet') rows = rows.filter(r => idInfo[r.group_id] && idInfo[r.group_id].active);
   if (groupFilter === 'theo_doi') rows = rows.filter(r => !idInfo[r.group_id] || !idInfo[r.group_id].active);
 
+  // "Chỉ KH còn khoản chưa xử lý xong": xét theo TỪNG KH — nếu KH đó có ≥1 khoản chưa xong,
+  // vẫn hiện ĐỦ TẤT CẢ khoản của KH đó (kể cả khoản đã xử lý xong), không cắt bớt.
+  if (statusFilter === 'open') {
+    const khCanTheoDoi = new Set();
+    rows.forEach(r => {
+      if (!isClosedStatus(r.trang_thai)) {
+        khCanTheoDoi.add(r.khach_hang ? r.khach_hang.id : r.id);
+      }
+    });
+    rows = rows.filter(r => khCanTheoDoi.has(r.khach_hang ? r.khach_hang.id : r.id));
+  }
+
   // đếm cho 4 nút lọc nhanh (trên toàn bộ dữ liệu đang mở, không phụ thuộc lọc khác)
-  const openAll = (data || []).filter(r => r.trang_thai !== 'da_xu_ly');
+  const openAll = (data || []).filter(r => !isClosedStatus(r.trang_thai));
   const cntToday = openAll.filter(r => daysUntil(r.ngay_den_han) === 0).length;
   const cntOverdue = openAll.filter(r => daysUntil(r.ngay_den_han) !== null && daysUntil(r.ngay_den_han) < 0).length;
   const cntUpcoming = openAll.filter(r => { const d = daysUntil(r.ngay_den_han); return d !== null && d > 0 && d <= 3; }).length;
   const cntChuaXuLy = (data || []).filter(r => r.trang_thai === 'chua_nhac').length;
   const cntDaCheck = (data || []).filter(r => r.trang_thai === 'da_check').length;
+  const cntDaLienHe = (data || []).filter(r => r.trang_thai === 'da_nhac').length;
   document.querySelector('#qfDueToday .qf-count').textContent = cntToday > 0 ? `(${cntToday})` : '';
   document.querySelector('#qfOverdue .qf-count').textContent = cntOverdue > 0 ? `(${cntOverdue})` : '';
   document.querySelector('#qfUpcoming .qf-count').textContent = cntUpcoming > 0 ? `(${cntUpcoming})` : '';
   document.querySelector('#qfChuaXuLy .qf-count').textContent = cntChuaXuLy > 0 ? `(${cntChuaXuLy})` : '';
   document.querySelector('#qfDaCheck .qf-count').textContent = cntDaCheck > 0 ? `(${cntDaCheck})` : '';
+  document.querySelector('#qfDaLienHe .qf-count').textContent = cntDaLienHe > 0 ? `(${cntDaLienHe})` : '';
 
-  if (quickFilterMode === 'today') rows = rows.filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) === 0);
-  if (quickFilterMode === 'overdue') rows = rows.filter(r => r.trang_thai !== 'da_xu_ly' && daysUntil(r.ngay_den_han) !== null && daysUntil(r.ngay_den_han) < 0);
-  if (quickFilterMode === 'upcoming') rows = rows.filter(r => { const d = daysUntil(r.ngay_den_han); return r.trang_thai !== 'da_xu_ly' && d !== null && d > 0 && d <= 3; });
-  if (quickFilterMode === 'chuaxuly') rows = rows.filter(r => r.trang_thai === 'chua_nhac');
-  if (quickFilterMode === 'dacheck') rows = rows.filter(r => r.trang_thai === 'da_check');
+  if (dateFilterMode === 'today') rows = rows.filter(r => !isClosedStatus(r.trang_thai) && daysUntil(r.ngay_den_han) === 0);
+  if (dateFilterMode === 'overdue') rows = rows.filter(r => !isClosedStatus(r.trang_thai) && daysUntil(r.ngay_den_han) !== null && daysUntil(r.ngay_den_han) < 0);
+  if (dateFilterMode === 'upcoming') rows = rows.filter(r => { const d = daysUntil(r.ngay_den_han); return !isClosedStatus(r.trang_thai) && d !== null && d > 0 && d <= 3; });
+  if (statusFilterMode === 'chuaxuly') rows = rows.filter(r => r.trang_thai === 'chua_nhac');
+  if (statusFilterMode === 'dacheck') rows = rows.filter(r => r.trang_thai === 'da_check');
+  if (statusFilterMode === 'dalienhe') rows = rows.filter(r => r.trang_thai === 'da_nhac');
 
   document.getElementById('statCount').textContent = rows.length + ' khoản';
 
@@ -795,7 +842,7 @@ const sectionOpenState = {}; // { sectionKey_khId: true/false }
 const PAGE_SIZE = 10;
 
 function overallStatus(loans) {
-  const openLoans = loans.filter(l => l.trang_thai !== 'da_xu_ly');
+  const openLoans = loans.filter(l => !isClosedStatus(l.trang_thai));
   if (openLoans.length === 0) return { label: 'Đã xử lý xong', cls: 'status-da_xu_ly' };
   const hasOverdue = openLoans.some(l => { const d = daysUntil(l.ngay_den_han); return d !== null && d < 0; });
   if (hasOverdue) return { label: 'Quá hạn', cls: 'due-overdue-chip' };
@@ -807,7 +854,7 @@ function overallStatus(loans) {
 }
 
 function earliestOpenLoan(loans) {
-  const openLoans = loans.filter(l => l.trang_thai !== 'da_xu_ly' && l.ngay_den_han);
+  const openLoans = loans.filter(l => !isClosedStatus(l.trang_thai) && l.ngay_den_han);
   if (openLoans.length === 0) return null;
   return openLoans.reduce((a, b) => (a.ngay_den_han < b.ngay_den_han ? a : b));
 }
@@ -880,7 +927,7 @@ function pronounButtonsHtml(cssClass, dataAttrName, dataAttrValue) {
 }
 
 function generateTinNhan(g, khTu, tuXung) {
-  const openLoans = g.loans.filter(l => l.trang_thai !== 'da_xu_ly' && l.ngay_den_han).sort((a, b) => a.ngay_den_han < b.ngay_den_han ? -1 : 1);
+  const openLoans = g.loans.filter(l => !isClosedStatus(l.trang_thai) && l.ngay_den_han).sort((a, b) => a.ngay_den_han < b.ngay_den_han ? -1 : 1);
   const nearest3 = openLoans.slice(0, 3).map(l => l.ngay_den_han);
   const ngayText = formatNgayGop(nearest3) || 'sắp tới';
   const template = tinNhanTemplate || DEFAULT_TEMPLATE;
@@ -919,7 +966,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
 
   order.forEach(groupId => {
     const g = groups[groupId];
-    const openCount = g.loans.filter(l => l.trang_thai !== 'da_xu_ly').length;
+    const openCount = g.loans.filter(l => !isClosedStatus(l.trang_thai)).length;
 
     const card = document.createElement('div');
     card.className = 'id-group-card';
@@ -932,7 +979,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
         <span class="kh-count-badge">${g.loans.length} khoản${openCount > 0 ? ` · ${openCount} chưa báo/xử lý` : ''}</span>
         <div class="kh-btns">
           <button class="btn btn-ghost btn-copy-id" data-group="${escapeHtml(groupId)}">📋 Copy danh sách</button>
-          <button class="btn btn-ghost btn-export-id" data-group="${escapeHtml(groupId)}">⬇️ Xuất Excel</button>
+          ${isAdmin ? `<button class="btn btn-ghost btn-export-id" data-group="${escapeHtml(groupId)}">⬇️ Xuất Excel</button>` : ''}
           ${openCount > 0 ? `<button class="btn btn-primary btn-thongbao-id" data-group="${escapeHtml(groupId)}">📣 Đã thông báo cho ID</button>` : ''}
         </div>
       </div>
@@ -959,8 +1006,9 @@ function renderTongHopByID(containerEl, rows, idInfo) {
                   <option value="da_check" ${loan.trang_thai === 'da_check' ? 'selected' : ''}>Đã check</option>
                   <option value="da_nhac" ${loan.trang_thai === 'da_nhac' ? 'selected' : ''}>Đã báo ID</option>
                   <option value="da_xu_ly" ${loan.trang_thai === 'da_xu_ly' ? 'selected' : ''}>KH xử lý xong</option>
+                  <option value="cty_xu_ly" ${loan.trang_thai === 'cty_xu_ly' ? 'selected' : ''}>Công ty đã xử lý</option>
                 </select>
-                <button class="btn btn-ghost act-xoa" data-id="${loan.id}" title="Xoá khoản vay này" style="padding:5px 8px;font-size:13px;color:var(--red);border-color:#f0c9bd;">🗑️</button>
+                ${isAdmin ? `<button class="btn btn-ghost act-xoa" data-id="${loan.id}" title="Xoá khoản vay này" style="padding:5px 8px;font-size:13px;color:var(--red);border-color:#f0c9bd;">🗑️</button>` : ''}
               </div>
             </td>
           </tr>`;
@@ -991,7 +1039,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
   wrap.querySelectorAll('.btn-copy-id').forEach(b => b.addEventListener('click', () => {
     const g = groups[b.dataset.group];
     const lines = [`Danh sách KH cần xử lý margin — ID ${b.dataset.group}:`];
-    g.loans.filter(l => l.trang_thai !== 'da_xu_ly').forEach(l => {
+    g.loans.filter(l => !isClosedStatus(l.trang_thai)).forEach(l => {
       lines.push(`- ${l.khach_hang ? l.khach_hang.ten_kh : ''} — hạn ${fmtDateWithDay(l.ngay_den_han)}`);
     });
     navigator.clipboard.writeText(lines.join('\n')).then(() => showToast('Đã copy danh sách ID ' + b.dataset.group));
@@ -1002,7 +1050,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
     const sheetData = g.loans.map(l => ({
       'Khách hàng': l.khach_hang ? l.khach_hang.ten_kh : '',
       'Ngày đến hạn': l.ngay_den_han || '',
-      'Trạng thái': { chua_nhac: 'Chưa báo ID', da_nhac: 'Đã báo ID', da_xu_ly: 'KH xử lý xong' }[l.trang_thai]
+      'Trạng thái': { chua_nhac: 'Chưa báo ID', da_check: 'Đã check', da_nhac: 'Đã báo ID', da_xu_ly: 'KH xử lý xong', cty_xu_ly: 'Công ty đã xử lý' }[l.trang_thai]
     }));
     const ws = XLSX.utils.json_to_sheet(sheetData);
     const wbOut = XLSX.utils.book_new();
@@ -1060,7 +1108,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     const idNote = idInfo[g.groupId] ? idInfo[g.groupId].ghi_chu : '';
     const status = overallStatus(g.loans);
     const earliest = earliestOpenLoan(g.loans);
-    const openCount = g.loans.filter(l => l.trang_thai !== 'da_xu_ly').length;
+    const openCount = g.loans.filter(l => !isClosedStatus(l.trang_thai)).length;
     const stateKey = sectionKey + '_' + khId;
     const isOpen = !!sectionOpenState[stateKey];
 
@@ -1084,7 +1132,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
         <div class="kebab-menu" data-kh="${escapeHtml(khId)}" style="display:none;left:0;right:auto;">
           ${showBulkActions ? `
           <button class="kebab-item btn-copy" data-kh="${escapeHtml(khId)}">📋 Copy danh sách</button>
-          <button class="kebab-item btn-export" data-kh="${escapeHtml(khId)}">⬇️ Xuất Excel</button>
+          ${isAdmin ? `<button class="kebab-item btn-export" data-kh="${escapeHtml(khId)}">⬇️ Xuất Excel</button>` : ''}
           ${openCount > 0 ? `<button class="kebab-item btn-thongbao" data-kh="${escapeHtml(khId)}">📣 Đã thông báo cho ID</button>` : ''}
           <div style="border-top:1px solid var(--line);margin:4px 0;padding-top:4px;font-size:10.5px;color:var(--text-soft);padding-left:10px;">💬 Soạn tin nhắn — xưng hô:</div>
           ` : `<div style="font-size:10.5px;color:var(--text-soft);padding:6px 10px;">💬 Soạn tin nhắn — xưng hô:</div>`}
@@ -1099,7 +1147,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       <td style="position:relative;">
         <div style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap;">
         <button class="btn btn-ghost them-khoan-btn" data-kh="${escapeHtml(khId)}" data-group="${escapeHtml(g.groupId)}" data-ten="${escapeHtml(g.ten)}" title="Thêm khoản vay mới cho KH này" style="padding:3px 6px;font-size:11px;color:var(--teal-dark);">➕</button>
-        <button class="btn btn-ghost del-kh-btn" data-kh="${escapeHtml(khId)}" title="Xoá toàn bộ khách hàng này" style="padding:3px 6px;font-size:11px;color:var(--red);">🗑️</button>
+        ${isAdmin ? `<button class="btn btn-ghost del-kh-btn" data-kh="${escapeHtml(khId)}" title="Xoá toàn bộ khách hàng này" style="padding:3px 6px;font-size:11px;color:var(--red);">🗑️</button>` : ''}
         </div>
       </td>
     `;
@@ -1139,8 +1187,9 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
                       <option value="da_check" ${loan.trang_thai === 'da_check' ? 'selected' : ''}>Đã check</option>
                       <option value="da_nhac" ${loan.trang_thai === 'da_nhac' ? 'selected' : ''}>Đã liên hệ</option>
                       <option value="da_xu_ly" ${loan.trang_thai === 'da_xu_ly' ? 'selected' : ''}>KH xử lý xong</option>
+                      <option value="cty_xu_ly" ${loan.trang_thai === 'cty_xu_ly' ? 'selected' : ''}>Công ty đã xử lý</option>
                     </select>
-                    <button class="btn btn-ghost act-xoa" data-id="${loan.id}" data-kh="${escapeHtml(khId)}" title="Xoá khoản vay này" style="padding:5px 8px;font-size:13px;color:var(--red);border-color:#f0c9bd;">🗑️</button>
+                    ${isAdmin ? `<button class="btn btn-ghost act-xoa" data-id="${loan.id}" data-kh="${escapeHtml(khId)}" title="Xoá khoản vay này" style="padding:5px 8px;font-size:13px;color:var(--red);border-color:#f0c9bd;">🗑️</button>` : ''}
                   </div>
                 </td>
                 <td>
@@ -1214,7 +1263,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
   containerEl.querySelectorAll('.btn-thongbao').forEach(b => b.addEventListener('click', async () => {
     const khId = b.dataset.kh;
     const g = groups[khId];
-    const openIds = g.loans.filter(l => l.trang_thai !== 'da_xu_ly').map(l => l.id);
+    const openIds = g.loans.filter(l => !isClosedStatus(l.trang_thai)).map(l => l.id);
     b.disabled = true;
     for (const id of openIds) {
       const { error } = await sb.rpc('margin_danh_dau_da_nhac', { p_khoan_vay_id: id, p_ghi_chu: null });
@@ -1236,7 +1285,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
     const khId = b.dataset.kh;
     const g = groups[khId];
     const lines = [`Danh sách khoản vay cần xử lý — ${g.ten} (ID: ${g.groupId}):`];
-    g.loans.filter(l => l.trang_thai !== 'da_xu_ly').forEach(l => {
+    g.loans.filter(l => !isClosedStatus(l.trang_thai)).forEach(l => {
       lines.push(`- ${fmtDateWithDay(l.ngay_den_han)}${l.so_tien ? ' — ' + fmtTien(l.so_tien) : ''}${l.ma_khoan_vay ? ' — TK ' + l.ma_khoan_vay : ''}`);
     });
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
@@ -1252,7 +1301,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
       'Số TK / Mã khoản vay': l.ma_khoan_vay || '',
       'Ngày đến hạn': l.ngay_den_han || '',
       'Tiền': l.so_tien || '',
-      'Trạng thái': { chua_nhac: 'Chưa nhắc', da_nhac: 'Đã nhắc, chờ xử lý', da_xu_ly: 'Đã xử lý xong' }[l.trang_thai],
+      'Trạng thái': { chua_nhac: 'Chưa nhắc', da_check: 'Đã check', da_nhac: 'Đã nhắc, chờ xử lý', da_xu_ly: 'Đã xử lý xong', cty_xu_ly: 'Công ty đã xử lý' }[l.trang_thai],
       'ID phụ trách': l.group_id
     }));
     const ws = XLSX.utils.json_to_sheet(sheetData);
@@ -1393,7 +1442,7 @@ async function handleStatusChange(e) {
   const sel = e.currentTarget;
   const id = sel.dataset.id;
   const value = sel.value;
-  const rpcMap = { chua_nhac: 'margin_mo_lai', da_check: 'margin_danh_dau_da_check', da_nhac: 'margin_danh_dau_da_nhac', da_xu_ly: 'margin_danh_dau_xu_ly_xong' };
+  const rpcMap = { chua_nhac: 'margin_mo_lai', da_check: 'margin_danh_dau_da_check', da_nhac: 'margin_danh_dau_da_nhac', da_xu_ly: 'margin_danh_dau_xu_ly_xong', cty_xu_ly: 'margin_danh_dau_cty_xu_ly' };
   sel.disabled = true;
   markSelfEdit(id);
   const { error } = await sb.rpc(rpcMap[value], { p_khoan_vay_id: id, p_ghi_chu: null });
@@ -1410,8 +1459,14 @@ document.getElementById('filterStatus').addEventListener('change', loadDanhSach)
 document.querySelectorAll('.quick-filter').forEach(btn => {
   btn.addEventListener('click', () => {
     const mode = btn.dataset.mode;
-    quickFilterMode = quickFilterMode === mode ? null : mode;
-    document.querySelectorAll('.quick-filter').forEach(b => b.classList.toggle('active', b.dataset.mode === quickFilterMode));
+    const group = btn.dataset.group;
+    if (group === 'date') {
+      dateFilterMode = dateFilterMode === mode ? null : mode;
+    } else {
+      statusFilterMode = statusFilterMode === mode ? null : mode;
+    }
+    document.querySelectorAll('.quick-filter[data-group="date"]').forEach(b => b.classList.toggle('active', b.dataset.mode === dateFilterMode));
+    document.querySelectorAll('.quick-filter[data-group="status"]').forEach(b => b.classList.toggle('active', b.dataset.mode === statusFilterMode));
     loadDanhSach();
   });
 });
@@ -1478,7 +1533,7 @@ async function loadWhitelist() {
   (khoanVayData || []).forEach(r => {
     if (!statsByGroup[r.group_id]) statsByGroup[r.group_id] = { total: 0, open: 0 };
     statsByGroup[r.group_id].total++;
-    if (r.trang_thai !== 'da_xu_ly') statsByGroup[r.group_id].open++;
+    if (!isClosedStatus(r.trang_thai)) statsByGroup[r.group_id].open++;
   });
 
   listEl.innerHTML = whitelistCache.map(w => {
@@ -1845,7 +1900,47 @@ async function loadImportHistory() {
       <td>${r.so_dong_loi}</td>
     </tr>`).join('')}
   </table>`;
+  document.getElementById('cleanupCard').style.display = isAdmin ? 'block' : 'none';
 }
+
+function cleanupCutoffDate() {
+  const months = parseInt(document.getElementById('cleanupMonths').value) || 3;
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  return d.toISOString();
+}
+
+document.getElementById('cleanupPreviewBtn').addEventListener('click', async () => {
+  const msgEl = document.getElementById('cleanupResultMsg');
+  const cutoff = cleanupCutoffDate();
+  const { count, error } = await sb.from('margin_khoan_vay')
+    .select('id', { count: 'exact', head: true })
+    .in('trang_thai', ['da_xu_ly', 'cty_xu_ly'])
+    .lt('updated_at', cutoff);
+  if (error) { msgEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+  if (!count || count === 0) {
+    msgEl.innerHTML = `<div class="ok-msg">Không có khoản nào đủ điều kiện xoá.</div>`;
+    return;
+  }
+  msgEl.innerHTML = `
+    <div class="error-msg">Sẽ xoá vĩnh viễn <b>${count} khoản</b> đã xử lý xong, không cập nhật gì thêm từ trước ${new Date(cutoff).toLocaleDateString('vi-VN')}. Hành động này KHÔNG thể khôi phục.</div>
+    <button class="btn btn-danger" id="cleanupConfirmBtn" style="margin-top:10px;">Xoá vĩnh viễn ${count} khoản này</button>
+  `;
+  document.getElementById('cleanupConfirmBtn').addEventListener('click', async () => {
+    if (!confirm(`Chắc chắn xoá vĩnh viễn ${count} khoản đã xử lý xong lâu ngày? Không thể khôi phục lại.`)) return;
+    const btn = document.getElementById('cleanupConfirmBtn');
+    btn.disabled = true;
+    btn.textContent = 'Đang xoá...';
+    const cutoff2 = cleanupCutoffDate();
+    const { error: delErr } = await sb.from('margin_khoan_vay')
+      .delete()
+      .in('trang_thai', ['da_xu_ly', 'cty_xu_ly'])
+      .lt('updated_at', cutoff2);
+    if (delErr) { msgEl.innerHTML = `<div class="error-msg">${delErr.message}</div>`; return; }
+    msgEl.innerHTML = `<div class="ok-msg">Đã xoá xong.</div>`;
+    loadDanhSach();
+  });
+});
 </script>
 </body>
 </html>
