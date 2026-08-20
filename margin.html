@@ -472,6 +472,18 @@
         </div>
         <div id="cleanupResultMsg"></div>
       </div>
+
+      <div class="card" id="cleanupLichSuCard" style="display:none;">
+        <h2>🧹 Dọn lịch sử thao tác cũ</h2>
+        <p class="desc">Xoá vĩnh viễn các dòng lịch sử (đổi trạng thái, sửa ngày/tiền/ghi chú) cũ hơn khoảng thời gian dưới đây. Không ảnh hưởng đến khoản vay hiện tại, chỉ dọn bớt nhật ký cũ. Chỉ admin thấy được mục này.</p>
+        <div class="toolbar">
+          <span>Xoá lịch sử từ hơn</span>
+          <input type="number" id="cleanupLichSuMonths" value="12" min="1" style="width:70px;">
+          <span>tháng trước</span>
+          <button class="btn btn-ghost" id="cleanupLichSuPreviewBtn">Xem trước số lượng</button>
+        </div>
+        <div id="cleanupLichSuResultMsg"></div>
+      </div>
     </section>
 
     <!-- TAB: WHITELIST -->
@@ -614,6 +626,8 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 
 const ADMIN_EMAIL = 'trolynt@gmail.com';
 let isAdmin = false;
+let currentUserId = null;
+let currentUserEmail = null;
 
 sb.auth.onAuthStateChange((event, session) => {
   if (session) {
@@ -621,6 +635,8 @@ sb.auth.onAuthStateChange((event, session) => {
     document.getElementById('app').style.display = 'flex';
     document.getElementById('userEmail').textContent = session.user.email;
     isAdmin = (session.user.email || '').toLowerCase() === ADMIN_EMAIL;
+    currentUserId = session.user.id;
+    currentUserEmail = session.user.email;
     document.getElementById('bulkDeleteModeBtn').style.display = isAdmin ? '' : 'none';
     initApp();
   } else {
@@ -678,6 +694,18 @@ async function performUndo() {
   if (!entry) return;
   updateUndoBtn();
   markSelfEdit(entry.id);
+
+  if (entry.field === '__added__') {
+    const { data, error } = await sb.rpc('margin_undo_add_khoan_vay', { p_id: entry.id });
+    if (error) { alert('Lỗi khi hoàn tác: ' + error.message); return; }
+    if (data.status === 'too_late') { alert(data.message); return; }
+    if (data.status === 'not_found') { showToast('Khoản này đã bị xoá từ trước rồi.'); return; }
+    delete currentLoanById[entry.id];
+    document.querySelectorAll(`[data-id="${entry.id}"]`).forEach(el => { const row = el.closest('tr'); if (row) row.remove(); });
+    showToast(`Đã hoàn tác: xoá lại ${entry.desc}.`);
+    return;
+  }
+
   let error;
   if (entry.field === 'trang_thai') {
     ({ error } = await sb.rpc(STATUS_RPC_MAP[entry.oldValue], { p_khoan_vay_id: entry.id, p_ghi_chu: null }));
@@ -775,6 +803,36 @@ document.addEventListener('keydown', (e) => {
     performUndo();
   }
 });
+
+async function logEditHistory(loanId, hanhDong, oldVal, newVal) {
+  try {
+    await sb.from('margin_lich_su').insert({
+      khoan_vay_id: loanId,
+      nguoi_thao_tac: currentUserId,
+      nguoi_thao_tac_email: currentUserEmail,
+      hanh_dong: hanhDong,
+      ghi_chu: `${oldVal ?? '(trống)'} → ${newVal ?? '(trống)'}`
+    });
+  } catch (err) { console.error('Lỗi ghi lịch sử:', err); }
+}
+
+async function showLichSu(loanId) {
+  const { data, error } = await sb.from('margin_lich_su')
+    .select('hanh_dong, ghi_chu, nguoi_thao_tac_email, created_at')
+    .eq('khoan_vay_id', loanId)
+    .order('created_at', { ascending: false });
+  if (error) { alert('Lỗi: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('Khoản này chưa có lịch sử thao tác nào (có thể được tạo trước khi tính năng này ra mắt).'); return; }
+  const labelMap = { nhac_kh: 'Đánh dấu Đã liên hệ', xu_ly_xong: 'Đánh dấu KH xử lý xong', mo_lai: 'Mở lại (Chưa xử lý)', da_check: 'Đánh dấu Đã check', cty_xu_ly: 'Đánh dấu Công ty đã xử lý', thong_bao_id: 'Đã thông báo cho ID', sua_ngay_den_han: 'Sửa ngày đến hạn', sua_so_tien: 'Sửa số tiền', sua_ghi_chu: 'Sửa ghi chú' };
+  const lines = data.map(r => {
+    const label = labelMap[r.hanh_dong] || r.hanh_dong;
+    const who = r.nguoi_thao_tac_email || '(không rõ ai)';
+    const when = new Date(r.created_at).toLocaleString('vi-VN');
+    const detail = r.ghi_chu ? ` — ${r.ghi_chu}` : '';
+    return `• ${when} — ${who}\n  ${label}${detail}`;
+  });
+  alert(`Lịch sử thao tác khoản vay:\n\n${lines.join('\n\n')}`);
+}
 
 function markSelfEdit(id) {
   if (!window.__justEditedIds) window.__justEditedIds = new Set();
@@ -1171,6 +1229,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
                   <option value="cty_xu_ly" ${loan.trang_thai === 'cty_xu_ly' ? 'selected' : ''}>Công ty đã xử lý</option>
                 </select>
                 ${isAdmin ? `<button class="btn btn-ghost act-xoa" data-id="${loan.id}" title="Xoá khoản vay này" style="padding:5px 8px;font-size:13px;color:var(--red);border-color:#f0c9bd;">🗑️</button>` : ''}
+                <button class="btn btn-ghost act-xem-lichsu" data-id="${loan.id}" title="Xem lịch sử thao tác" style="padding:5px 8px;font-size:13px;">🕐</button>
               </div>
             </td>
           </tr>`;
@@ -1184,6 +1243,7 @@ function renderTongHopByID(containerEl, rows, idInfo) {
   wrap.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', handleStatusChange));
   wrap.querySelectorAll('.act-xoa').forEach(b => b.addEventListener('click', handleDelete));
   wrap.querySelectorAll('.act-sua-ngay').forEach(b => b.addEventListener('click', handleSuaNgay));
+  wrap.querySelectorAll('.act-xem-lichsu').forEach(b => b.addEventListener('click', () => showLichSu(b.dataset.id)));
   wrap.querySelectorAll('.btn-copy-kh').forEach(b => b.addEventListener('click', () => {
     navigator.clipboard.writeText(b.dataset.copy).then(() => {
       const old = b.textContent; b.textContent = '✅'; setTimeout(() => { b.textContent = old; }, 1200);
@@ -1362,6 +1422,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
                       <option value="cty_xu_ly" ${loan.trang_thai === 'cty_xu_ly' ? 'selected' : ''}>Công ty đã xử lý</option>
                     </select>
                     ${isAdmin ? `<button class="btn btn-ghost act-xoa" data-id="${loan.id}" data-kh="${escapeHtml(khId)}" title="Xoá khoản vay này" style="padding:5px 8px;font-size:13px;color:var(--red);border-color:#f0c9bd;">🗑️</button>` : ''}
+                    <button class="btn btn-ghost act-xem-lichsu" data-id="${loan.id}" title="Xem lịch sử thao tác" style="padding:5px 8px;font-size:13px;">🕐</button>
                   </div>
                 </td>
                 <td>
@@ -1395,6 +1456,7 @@ function renderKhCards(containerEl, rows, idInfo, sectionKey) {
   containerEl.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', handleStatusChange));
   containerEl.querySelectorAll('.act-xoa').forEach(b => b.addEventListener('click', handleDelete));
   containerEl.querySelectorAll('.act-sua-ngay').forEach(b => b.addEventListener('click', handleSuaNgay));
+  containerEl.querySelectorAll('.act-xem-lichsu').forEach(b => b.addEventListener('click', () => showLichSu(b.dataset.id)));
   containerEl.querySelectorAll('.act-sua-tien').forEach(b => b.addEventListener('click', handleSuaTien));
   containerEl.querySelectorAll('.btn-copy-kh').forEach(b => b.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1545,6 +1607,7 @@ async function handleSuaTien(e) {
   if (valEl) valEl.textContent = fmtTien(so_tien);
   if (Number(oldTien) !== Number(so_tien)) {
     pushUndo({ id, field: 'so_tien', oldValue: oldTien, desc: `số tiền → ${fmtTien(oldTien)}` });
+    logEditHistory(id, 'sua_so_tien', fmtTien(oldTien), fmtTien(so_tien));
   }
   showToast('Đã lưu số tiền.');
 }
@@ -1597,6 +1660,7 @@ async function handleSuaNgay(e) {
   }
   if (oldNgay !== ngay_den_han) {
     pushUndo({ id, field: 'ngay_den_han', oldValue: oldNgay, desc: `ngày đến hạn → ${oldNgay ? fmtDateWithDay(oldNgay) : 'trống'}` });
+    logEditHistory(id, 'sua_ngay_den_han', oldNgay ? fmtDate(oldNgay) : null, ngay_den_han ? fmtDate(ngay_den_han) : null);
   }
   showToast('Đã lưu ngày đến hạn.');
 }
@@ -1620,16 +1684,17 @@ async function handleThemKhoanVay(btn) {
   if (cleanedTien !== '' && isNaN(so_tien)) { alert('Số tiền không hợp lệ.'); return; }
 
   btn.disabled = true;
-  const { data, error } = await sb.rpc('margin_import_rows', {
-    p_rows: [{ group_id: groupId, ten_kh: ten, ngay_den_han, so_tien, ma_khoan_vay: null, ghi_chu: null }]
+  const { data, error } = await sb.rpc('margin_add_single_khoan_vay', {
+    p_group_id: groupId, p_ten_kh: ten, p_ngay_den_han: ngay_den_han, p_so_tien: so_tien
   });
   btn.disabled = false;
   if (error) { alert('Lỗi: ' + error.message); return; }
 
-  if (data.inserted > 0) {
+  if (data.action === 'inserted') {
+    pushUndo({ id: data.id, field: '__added__', oldValue: null, desc: `khoản vay mới cho "${ten}"` });
     showToast('Đã thêm khoản vay mới. Bấm "Làm mới danh sách" để xem.');
   } else {
-    showToast('Khoản vay này đã tồn tại (trùng ngày đến hạn) — không tạo trùng.');
+    showToast('Khoản vay này đã tồn tại (trùng ngày đến hạn) — không tạo trùng, chỉ cập nhật lại.');
   }
 }
 
@@ -1646,6 +1711,7 @@ async function handleGhiChuChange(e) {
   if (currentLoanById[id]) currentLoanById[id].ghi_chu = ghi_chu;
   if (oldGhiChu !== ghi_chu) {
     pushUndo({ id, field: 'ghi_chu', oldValue: oldGhiChu, desc: `ghi chú → "${oldGhiChu || '(trống)'}"` });
+    logEditHistory(id, 'sua_ghi_chu', oldGhiChu, ghi_chu);
   }
   showToast('Đã lưu ghi chú.');
 }
@@ -2153,6 +2219,7 @@ async function loadImportHistory() {
     </tr>`).join('')}
   </table>`;
   document.getElementById('cleanupCard').style.display = isAdmin ? 'block' : 'none';
+  document.getElementById('cleanupLichSuCard').style.display = isAdmin ? 'block' : 'none';
 }
 
 function cleanupCutoffDate() {
@@ -2191,6 +2258,39 @@ document.getElementById('cleanupPreviewBtn').addEventListener('click', async () 
     if (delErr) { msgEl.innerHTML = `<div class="error-msg">${delErr.message}</div>`; return; }
     msgEl.innerHTML = `<div class="ok-msg">Đã xoá xong.</div>`;
     loadDanhSach();
+  });
+});
+function cleanupLichSuCutoffDate() {
+  const months = parseInt(document.getElementById('cleanupLichSuMonths').value) || 12;
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  return d.toISOString();
+}
+
+document.getElementById('cleanupLichSuPreviewBtn').addEventListener('click', async () => {
+  const msgEl = document.getElementById('cleanupLichSuResultMsg');
+  const cutoff = cleanupLichSuCutoffDate();
+  const { count, error } = await sb.from('margin_lich_su')
+    .select('id', { count: 'exact', head: true })
+    .lt('created_at', cutoff);
+  if (error) { msgEl.innerHTML = `<div class="error-msg">${error.message}</div>`; return; }
+  if (!count || count === 0) {
+    msgEl.innerHTML = `<div class="ok-msg">Không có dòng lịch sử nào đủ điều kiện xoá.</div>`;
+    return;
+  }
+  msgEl.innerHTML = `
+    <div class="error-msg">Sẽ xoá vĩnh viễn <b>${count} dòng lịch sử</b> từ trước ${new Date(cutoff).toLocaleDateString('vi-VN')}. Không ảnh hưởng đến khoản vay hiện tại — chỉ mất nhật ký cũ. Hành động này KHÔNG thể khôi phục.</div>
+    <button class="btn btn-danger" id="cleanupLichSuConfirmBtn" style="margin-top:10px;">Xoá vĩnh viễn ${count} dòng này</button>
+  `;
+  document.getElementById('cleanupLichSuConfirmBtn').addEventListener('click', async () => {
+    if (!confirm(`Chắc chắn xoá vĩnh viễn ${count} dòng lịch sử cũ? Không thể khôi phục lại.`)) return;
+    const btn = document.getElementById('cleanupLichSuConfirmBtn');
+    btn.disabled = true;
+    btn.textContent = 'Đang xoá...';
+    const cutoff2 = cleanupLichSuCutoffDate();
+    const { error: delErr } = await sb.from('margin_lich_su').delete().lt('created_at', cutoff2);
+    if (delErr) { msgEl.innerHTML = `<div class="error-msg">${delErr.message}</div>`; return; }
+    msgEl.innerHTML = `<div class="ok-msg">Đã xoá xong.</div>`;
   });
 });
 </script>
