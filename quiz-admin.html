@@ -44,7 +44,10 @@
 
 <header>
   <h1>⚙️ Quản trị bộ đề trắc nghiệm</h1>
-  <button class="btn-secondary hidden" id="btn-logout" onclick="logout()">Đăng xuất</button>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="portal.html" class="btn-secondary" style="text-decoration:none;display:inline-block;">← Về trang học viên</a>
+    <button class="btn-secondary hidden" id="btn-logout" onclick="logout()">Đăng xuất</button>
+  </div>
 </header>
 
 <main id="app">
@@ -119,6 +122,7 @@ function renderMain(sets){
       <button class="tab-btn" data-tab="tab-subjects" onclick="showTab('tab-subjects')">📚 Môn học &amp; bài học</button>
       <button class="tab-btn" data-tab="tab-students" onclick="showTab('tab-students')">👤 Tài khoản học viên</button>
       <button class="tab-btn" data-tab="tab-settings" onclick="showTab('tab-settings')">⚙️ Cấu hình hỗ trợ</button>
+      <button class="tab-btn" data-tab="tab-feedback" onclick="showTab('tab-feedback')">💬 Phản hồi câu hỏi</button>
     </div>
 
     <div id="tab-quiz" class="tab-content">
@@ -251,11 +255,31 @@ function renderMain(sets){
         <div id="settings-reject-msg"></div>
       </div>
     </div>
+
+    <div id="tab-feedback" class="tab-content hidden">
+      <div class="card">
+        <h2>💬 Phản hồi / báo lỗi câu hỏi từ học viên</h2>
+        <div class="row" style="align-items:end;">
+          <div>
+            <label>Trạng thái</label>
+            <select id="fb-status" onchange="loadFeedback(0)">
+              <option value="all">Tất cả</option>
+              <option value="new" selected>🆕 Chưa xem</option>
+              <option value="reviewed">✅ Đã xem</option>
+            </select>
+          </div>
+          <div><button class="btn-secondary" type="button" onclick="loadFeedback(0)">Làm mới</button></div>
+        </div>
+        <div id="feedback-table" style="margin-top:10px;"><span class="muted">Đang tải...</span></div>
+        <div id="feedback-pager" style="margin-top:10px;"></div>
+      </div>
+    </div>
   `;
   renderSetsTable();
   loadSubjects();
   loadStudents(0);
   loadSettings();
+  loadFeedback(0);
   showTab(sessionStorage.getItem("quiz_admin_tab") || "tab-quiz");
 }
 
@@ -744,6 +768,62 @@ async function deleteStudent(id){
   if(!confirm("Xoá tài khoản học viên này? Học viên sẽ cần đăng ký lại nếu muốn tiếp tục học.")) return;
   await callRpc("admin_delete_student", { p_password: PASSWORD, p_id: id });
   loadStudents(studentsOffset);
+}
+
+/* ---------- Phản hồi / báo lỗi câu hỏi ---------- */
+const FB_PAGE_SIZE = 20;
+let feedbackOffset = 0;
+let feedbackTotal = 0;
+
+async function loadFeedback(offset){
+  feedbackOffset = offset;
+  const statusEl = document.getElementById("fb-status");
+  const status = statusEl ? statusEl.value : "new";
+  const el = document.getElementById("feedback-table");
+  if(!el) return;
+  el.innerHTML = `<span class="muted">Đang tải...</span>`;
+  const data = await callRpc("admin_list_question_feedback", { p_password: PASSWORD, p_status: status, p_limit: FB_PAGE_SIZE, p_offset: offset });
+  if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
+  feedbackTotal = data.total;
+  const rows = data.items;
+  if(rows.length === 0){ el.innerHTML = `<p class="muted">Không có phản hồi nào.</p>`; document.getElementById("feedback-pager").innerHTML = ""; return; }
+  el.innerHTML = `
+    <table>
+      <tr><th>Trạng thái</th><th>Bộ đề</th><th>Câu hỏi</th><th>Nội dung phản hồi</th><th>Học viên</th><th>Thời gian</th><th></th></tr>
+      ${rows.map(f => `
+        <tr>
+          <td>${f.status === "new" ? `<span class="pill" style="background:#fdf1de;color:#a07a17;">🆕 Chưa xem</span>` : `<span class="pill" style="background:#e9f7ec;color:var(--green);">✅ Đã xem</span>`}</td>
+          <td>${esc(f.quiz_slug||"—")}</td>
+          <td style="max-width:220px;">${esc(f.question_text||"—")}</td>
+          <td style="max-width:220px;">${esc(f.feedback_text)}</td>
+          <td>${esc(f.taker_name||"—")}</td>
+          <td>${fmtDT(f.created_at)}</td>
+          <td style="white-space:nowrap;">
+            ${f.status !== "reviewed" ? `<button class="btn-secondary" onclick="markFeedback(${f.id},'reviewed')">Đánh dấu đã xem</button>` : `<button class="btn-secondary" onclick="markFeedback(${f.id},'new')">Đánh dấu chưa xem</button>`}
+            <button class="btn-danger" onclick="deleteFeedback(${f.id})">Xoá</button>
+          </td>
+        </tr>
+      `).join("")}
+    </table>
+    <p class="muted" style="margin-top:8px;">Tổng ${feedbackTotal} phản hồi.</p>
+  `;
+  const pager = document.getElementById("feedback-pager");
+  const hasPrev = offset > 0;
+  const hasNext = offset + FB_PAGE_SIZE < feedbackTotal;
+  pager.innerHTML = `
+    <button class="btn-secondary" ${hasPrev ? "" : "disabled"} onclick="loadFeedback(${Math.max(0, offset - FB_PAGE_SIZE)})">← Trước</button>
+    <button class="btn-secondary" ${hasNext ? "" : "disabled"} onclick="loadFeedback(${offset + FB_PAGE_SIZE})">Sau →</button>
+  `;
+}
+
+async function markFeedback(id, status){
+  await callRpc("admin_mark_question_feedback", { p_password: PASSWORD, p_id: id, p_status: status });
+  loadFeedback(feedbackOffset);
+}
+async function deleteFeedback(id){
+  if(!confirm("Xoá phản hồi này?")) return;
+  await callRpc("admin_delete_question_feedback", { p_password: PASSWORD, p_id: id });
+  loadFeedback(feedbackOffset);
 }
 
 function renderSetsTable(){

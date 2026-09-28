@@ -178,6 +178,10 @@
   <div class="access-card" id="access-card"><!-- nội dung được render động bởi renderAccessModal() --></div>
 </div>
 
+<div class="access-modal" id="feedback-modal">
+  <div class="access-card" id="feedback-card"><!-- nội dung được render động bởi renderFeedbackForm() --></div>
+</div>
+
 <div class="app-shell" id="app-shell">
 <header class="topbar">
   <div class="topbar-left">
@@ -196,6 +200,7 @@
     <span class="user-chevron">⌄</span>
     <div class="user-menu" id="user-menu" style="display:none;">
       <button type="button" onclick="changeDisplayName(event)">✏️ Đổi tên hiển thị</button>
+      <a href="quiz-admin.html" style="display:block;width:100%;text-align:left;background:none;border:none;padding:9px 10px;border-radius:7px;font-size:.85rem;font-weight:600;color:var(--dark);text-decoration:none;box-sizing:border-box;" onmouseover="this.style.background='var(--light)'" onmouseout="this.style.background='none'">⚙️ Trang quản trị</a>
       <button type="button" onclick="logoutStudent(event)">🚪 Đăng xuất</button>
     </div>
   </div>
@@ -817,9 +822,10 @@ async function submitExamAnswers(isAutoSubmit){
     });
     const explEl = block.querySelector(".expl");
     explEl.style.display = "block";
-    explEl.innerHTML = chosenKey
+    explEl.innerHTML = (chosenKey
       ? `<b>${isCorrect ? "✅ Chính xác." : "❌ Chưa đúng."}</b> Đáp án đúng: <b>${(q.correct_answer||"").replace(/</g,"&lt;")}</b>. ${(q.explanation||"").replace(/</g,"&lt;")}`
-      : `<b>⏺ Bạn chưa chọn câu này.</b> Đáp án đúng: <b>${(q.correct_answer||"").replace(/</g,"&lt;")}</b>. ${(q.explanation||"").replace(/</g,"&lt;")}`;
+      : `<b>⏺ Bạn chưa chọn câu này.</b> Đáp án đúng: <b>${(q.correct_answer||"").replace(/</g,"&lt;")}</b>. ${(q.explanation||"").replace(/</g,"&lt;")}`)
+      + feedbackBtnHtml(q.id);
   });
 
   const submitBtn = document.querySelector(".exam-submit-row button");
@@ -882,7 +888,7 @@ function pickAnswer(qid, el){
 
   const explEl = block.querySelector(".expl");
   explEl.style.display = "block";
-  explEl.innerHTML = `<b>${isCorrect ? "✅ Chính xác." : "❌ Chưa đúng."}</b> Đáp án đúng: <b>${(q.correct_answer||"").replace(/</g,"&lt;")}</b>. ${(q.explanation||"").replace(/</g,"&lt;")}`;
+  explEl.innerHTML = `<b>${isCorrect ? "✅ Chính xác." : "❌ Chưa đúng."}</b> Đáp án đúng: <b>${(q.correct_answer||"").replace(/</g,"&lt;")}</b>. ${(q.explanation||"").replace(/</g,"&lt;")}` + feedbackBtnHtml(q.id);
 
   if(isCorrect) quizCtx.score++;
   quizCtx.answered++;
@@ -893,14 +899,83 @@ function pickAnswer(qid, el){
   }
 }
 
+/* ---------- Báo lỗi / góp ý từng câu hỏi ---------- */
+function feedbackBtnHtml(qid){
+  return `<div style="margin-top:8px;"><button type="button" class="btn-secondary" style="padding:4px 10px;font-size:.78rem;" onclick="openFeedbackModal(${qid})">🚩 Báo lỗi câu này</button></div>`;
+}
+
+let currentFeedbackQ = null;
+function openFeedbackModal(qid){
+  const q = quizCtx.questions.find(x => x.id === qid);
+  currentFeedbackQ = { id: qid, text: q ? q.question : "" };
+  document.getElementById("feedback-modal").classList.add("open");
+  renderFeedbackForm();
+}
+function closeFeedbackModal(){
+  document.getElementById("feedback-modal").classList.remove("open");
+}
+function renderFeedbackForm(){
+  const card = document.getElementById("feedback-card");
+  card.innerHTML = `
+    <button type="button" class="close-x" onclick="closeFeedbackModal()">✕</button>
+    <h3>🚩 Báo lỗi câu hỏi</h3>
+    <p class="muted" style="margin:0 0 10px;">${esc(currentFeedbackQ.text)}</p>
+    <label>Bạn thấy câu này có vấn đề gì? (đáp án sai, câu hỏi không rõ, giải thích chưa đúng...)</label>
+    <textarea id="fb-text" rows="3" placeholder="Mô tả ngắn gọn vấn đề bạn gặp..."></textarea>
+    <div class="err" id="fb-err"></div>
+    <div class="actions">
+      <button class="btn-secondary" type="button" onclick="closeFeedbackModal()">Huỷ</button>
+      <button class="btn-primary" type="button" onclick="submitQuestionFeedback()">Gửi phản hồi</button>
+    </div>
+  `;
+}
+async function submitQuestionFeedback(){
+  const textEl = document.getElementById("fb-text");
+  const errEl = document.getElementById("fb-err");
+  const text = textEl.value.trim();
+  errEl.style.display = "none";
+  if(!text){
+    errEl.innerText = "Vui lòng nhập nội dung phản hồi.";
+    errEl.style.display = "block";
+    return;
+  }
+  const btn = document.querySelector("#feedback-card .btn-primary");
+  btn.disabled = true; btn.innerText = "Đang gửi...";
+  const takerName = (currentStudent && currentStudent.full_name) || displayName || "Học viên";
+  const data = await callRpc("submit_question_feedback", {
+    p_quiz_slug: quizCtx.slug, p_question_id: currentFeedbackQ.id, p_question_text: currentFeedbackQ.text,
+    p_taker_name: takerName, p_feedback_text: text
+  });
+  if(data && data.status === "ok"){
+    document.getElementById("feedback-card").innerHTML = `
+      <h3>✅ Đã gửi phản hồi</h3>
+      <p>Cảm ơn bạn đã góp ý, ban quản trị sẽ xem lại câu hỏi này.</p>
+      <div class="actions"><button class="btn-secondary" onclick="closeFeedbackModal()">Đóng</button></div>
+    `;
+  } else {
+    btn.disabled = false; btn.innerText = "Gửi phản hồi";
+    errEl.innerText = "Không gửi được, vui lòng thử lại.";
+    errEl.style.display = "block";
+  }
+}
+
+function scoreMessage(pct){
+  if(pct >= 90) return { emoji: "🌟", text: "Xuất sắc! Bạn đã nắm rất vững kiến thức bài này.", color: "var(--green)" };
+  if(pct >= 70) return { emoji: "🎉", text: "Chúc mừng bạn đã làm bài tốt!", color: "var(--green)" };
+  if(pct >= 50) return { emoji: "👍", text: "Bạn đã hoàn thành bài, cố gắng ôn thêm để chắc kiến thức hơn nhé.", color: "#a07a17" };
+  return { emoji: "📚", text: "Bạn cần học tập thêm phần này để nắm chắc kiến thức nhé.", color: "var(--red)" };
+}
+
 async function finishQuiz(){
   const box = document.getElementById("save-box");
   box.innerHTML = `<div class="empty">Đang lưu kết quả...</div>`;
   await callRpc("log_quiz_attempt", { p_slug: quizCtx.slug, p_taker_name: window.__takerName, p_score: quizCtx.score, p_total: quizCtx.questions.length });
   const pct = Math.round((quizCtx.score/quizCtx.questions.length)*100);
   const restartFn = currentMode === "exam" ? "startExamQuiz" : "startLessonQuiz";
+  const msg = scoreMessage(pct);
   box.innerHTML = `
     <div style="font-size:1.5rem;font-weight:800;color:var(--navy);">${quizCtx.score}/${quizCtx.questions.length} (${pct}%)</div>
+    <div style="margin-top:8px;font-weight:700;color:${msg.color};">${msg.emoji} ${msg.text}</div>
     <div class="empty" style="margin-top:6px;">Đã lưu kết quả cho ${esc(window.__takerName)}.</div>
     <button class="btn-secondary" style="margin-top:12px;" onclick="${restartFn}()">Làm lại</button>
   `;
