@@ -67,6 +67,17 @@ async function callRpc(fn, args){
 
 function esc(s){ const d=document.createElement("div"); d.innerText = s==null?"":String(s); return d.innerHTML; }
 
+// Chuẩn hoá slug dùng trong đường dẫn upload: bỏ dấu tiếng Việt, đổi khoảng trắng/ký tự lạ thành "-"
+function slugify(s){
+  return String(s||"")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d").replace(/Đ/g, "D")
+    .trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    || "tam";
+}
+
 let PASSWORD = sessionStorage.getItem("quiz_admin_pw") || "";
 const app = document.getElementById("app");
 const btnLogout = document.getElementById("btn-logout");
@@ -159,34 +170,100 @@ function renderMain(sets){
 
       <div id="lessons-panel"></div>
     </div>
+
+    <div class="card">
+      <h2>⚙️ Cấu hình hỗ trợ (hiển thị khi từ chối duyệt)</h2>
+      <div class="row">
+        <div>
+          <label>SĐT hỗ trợ</label>
+          <input type="text" id="settings-phone" placeholder="VD: 0912345678">
+        </div>
+        <div>
+          <label>Link điền thông tin mở ID CTV (nếu có)</label>
+          <input type="text" id="settings-ctv" placeholder="https://...">
+        </div>
+      </div>
+      <button class="btn-primary" style="margin-top:12px;" onclick="saveSettings()">Lưu cấu hình</button>
+      <div id="settings-msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>👤 Tài khoản học viên đã đăng ký (SĐT + email)</h2>
+      <div class="row" style="align-items:end;">
+        <div>
+          <label>Tìm theo tên / SĐT / email / ID môi giới</label>
+          <input type="text" id="stu-search" placeholder="Gõ để tìm..." oninput="debounceSearchStudents()">
+        </div>
+        <div>
+          <label>Trạng thái duyệt</label>
+          <select id="stu-status" onchange="loadStudents(0)">
+            <option value="all">Tất cả</option>
+            <option value="pending">⏳ Chờ duyệt</option>
+            <option value="approved">✅ Đã duyệt</option>
+            <option value="rejected">❌ Từ chối</option>
+            <option value="none">Chưa yêu cầu</option>
+          </select>
+        </div>
+        <div><button class="btn-secondary" type="button" onclick="loadStudents(0)">Làm mới</button></div>
+      </div>
+      <div id="students-table" style="margin-top:10px;"><span class="muted">Đang tải...</span></div>
+      <div id="students-pager" style="margin-top:10px;"></div>
+    </div>
   `;
   renderSetsTable();
   loadSubjects();
+  loadStudents(0);
+  loadSettings();
 }
 
 let allQuizSlugs = [];
 let currentSubjectSlug = null;
 
 async function loadSubjects(){
-  const data = await callRpc("admin_list_subjects", { p_password: PASSWORD });
+  const [data, timeData] = await Promise.all([
+    callRpc("admin_list_subjects", { p_password: PASSWORD }),
+    callRpc("admin_list_mock_exam_time_limits", { p_password: PASSWORD }).catch(() => null)
+  ]);
   const el = document.getElementById("subjects-table");
   if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
   allQuizSlugs = quizSets.map(s => s.slug);
   const subs = data.subjects;
+  const timeLimits = {};
+  if(timeData && timeData.status === "ok"){
+    (timeData.items||[]).forEach(it => { timeLimits[it.slug] = it.mock_exam_time_limit_minutes; });
+  }
   if(subs.length === 0){ el.innerHTML = `<p class="muted">Chưa có môn học nào.</p>`; return; }
   el.innerHTML = `
     <table>
-      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th></th></tr>
+      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th>Thời gian làm bài</th><th></th></tr>
       ${subs.map(s => `
         <tr>
           <td><b>${esc(s.title)}</b><br><span class="muted">${esc(s.slug)}</span></td>
           <td>${s.lesson_count}</td>
           <td>${esc(s.mock_exam_quiz_slug||"—")} (${s.mock_exam_count})</td>
+          <td style="white-space:nowrap;">
+            <input type="text" id="time-${esc(s.slug)}" value="${timeLimits[s.slug] != null ? timeLimits[s.slug] : ""}" placeholder="Không giới hạn" style="width:110px;display:inline-block;">
+            <button class="btn-secondary" onclick="saveExamTimeLimit('${s.slug.replace(/'/g,"\\'")}')">Lưu</button>
+          </td>
           <td><button class="btn-secondary" onclick="openLessons('${s.slug.replace(/'/g,"\\'")}')">Quản lý bài học</button></td>
         </tr>
       `).join("")}
     </table>
+    <p class="muted" style="margin-top:8px;">Thời gian làm bài tính bằng phút, để trống = không giới hạn thời gian (đáp án vẫn ẩn tới khi nộp bài).</p>
   `;
+}
+
+async function saveExamTimeLimit(slug){
+  const input = document.getElementById(`time-${slug}`);
+  const raw = input.value.trim();
+  const minutes = raw === "" ? null : parseInt(raw);
+  if(raw !== "" && (isNaN(minutes) || minutes <= 0)){
+    alert("Số phút phải là số nguyên dương, hoặc để trống nếu không giới hạn.");
+    return;
+  }
+  const data = await callRpc("admin_set_mock_exam_time_limit", { p_password: PASSWORD, p_subject_slug: slug, p_minutes: minutes });
+  if(!data || data.status !== "ok"){ alert("Lỗi khi lưu: " + (data && data.status)); return; }
+  loadSubjects();
 }
 
 async function createSubject(){
@@ -304,9 +381,9 @@ async function uploadVideoFile(){
   if(!label || !file){ msgEl.innerHTML = `<div class="msg err">Nhập tên video và chọn file trước.</div>`; return; }
   msgEl.innerHTML = `<div class="msg">Đang tải video lên, có thể mất một lúc...</div>`;
   try{
-    const lessonSlug = document.getElementById("les-slug").value.trim() || "tam";
+    const lessonSlug = slugify(document.getElementById("les-slug").value);
     const safeName = file.name.replace(/[^\w.\-]/g, "_");
-    const path = `${currentSubjectSlug}/${lessonSlug}/video-${Date.now()}-${safeName}`;
+    const path = `${slugify(currentSubjectSlug)}/${lessonSlug}/video-${Date.now()}-${safeName}`;
     const url = await uploadToStorage(file, path);
     currentLessonVideos.push({ label, url });
     renderVideosList();
@@ -365,9 +442,9 @@ async function uploadMindmap(){
   if(!file){ msgEl.innerHTML = `<div class="msg err">Chọn ảnh trước.</div>`; return; }
   msgEl.innerHTML = `<div class="msg">Đang tải ảnh lên...</div>`;
   try{
-    const lessonSlug = document.getElementById("les-slug").value.trim() || "tam";
+    const lessonSlug = slugify(document.getElementById("les-slug").value);
     const safeName = file.name.replace(/[^\w.\-]/g, "_");
-    const path = `${currentSubjectSlug}/${lessonSlug}/mindmap-${Date.now()}-${safeName}`;
+    const path = `${slugify(currentSubjectSlug)}/${lessonSlug}/mindmap-${Date.now()}-${safeName}`;
     const url = await uploadToStorage(file, path);
     document.getElementById("les-mindmap").value = url;
     renderMindmapPreview();
@@ -387,9 +464,9 @@ async function uploadLessonDoc(){
   if(!label || !file){ msgEl.innerHTML = `<div class="msg err">Nhập tên tài liệu và chọn file trước.</div>`; return; }
   msgEl.innerHTML = `<div class="msg">Đang tải lên...</div>`;
   try{
-    const lessonSlug = document.getElementById("les-slug").value.trim() || "tam";
+    const lessonSlug = slugify(document.getElementById("les-slug").value);
     const safeName = file.name.replace(/[^\w.\-]/g, "_");
-    const path = `${currentSubjectSlug}/${lessonSlug}/${Date.now()}-${safeName}`;
+    const path = `${slugify(currentSubjectSlug)}/${lessonSlug}/${Date.now()}-${safeName}`;
     const url = await uploadToStorage(file, path);
     currentLessonDocuments.push({ label, url });
     renderLessonDocsList();
@@ -476,6 +553,122 @@ async function deleteLesson(lessonSlug){
   await callRpc("admin_delete_lesson", { p_password: PASSWORD, p_subject_slug: currentSubjectSlug, p_lesson_slug: lessonSlug });
   loadLessonsTable(currentSubjectSlug);
   loadSubjects();
+}
+
+/* ---------- Tài khoản học viên (đăng ký SĐT + email) ---------- */
+const STU_PAGE_SIZE = 20;
+let studentsOffset = 0;
+let studentsTotal = 0;
+let studentSearchTimer = null;
+
+function debounceSearchStudents(){
+  clearTimeout(studentSearchTimer);
+  studentSearchTimer = setTimeout(() => loadStudents(0), 350);
+}
+
+function fmtDT(iso){
+  if(!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleString("vi-VN");
+}
+
+const STATUS_LABEL = {
+  none: { text: "Chưa yêu cầu", bg: "#eee", fg: "#666" },
+  pending: { text: "⏳ Chờ duyệt", bg: "#fdf1de", fg: "#a07a17" },
+  approved: { text: "✅ Đã duyệt", bg: "#e9f7ec", fg: "var(--green)" },
+  rejected: { text: "❌ Từ chối", bg: "#fbeceb", fg: "var(--red)" }
+};
+
+async function loadStudents(offset){
+  studentsOffset = offset;
+  const search = document.getElementById("stu-search").value.trim();
+  const status = document.getElementById("stu-status").value;
+  const el = document.getElementById("students-table");
+  el.innerHTML = `<span class="muted">Đang tải...</span>`;
+  const data = await callRpc("admin_list_students", { p_password: PASSWORD, p_search: search || null, p_status: status, p_limit: STU_PAGE_SIZE, p_offset: offset });
+  if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
+  studentsTotal = data.total;
+  const rows = data.students;
+  if(rows.length === 0){ el.innerHTML = `<p class="muted">Không có học viên nào khớp bộ lọc.</p>`; document.getElementById("students-pager").innerHTML = ""; return; }
+  el.innerHTML = `
+    <table>
+      <tr><th>Họ tên</th><th>SĐT</th><th>Email</th><th>ID môi giới</th><th>Phòng</th><th>Trạng thái</th><th>Đăng ký lúc</th><th></th></tr>
+      ${rows.map(s => {
+        const st = STATUS_LABEL[s.approval_status] || STATUS_LABEL.none;
+        return `
+        <tr>
+          <td><b>${esc(s.full_name)}</b></td>
+          <td>${esc(s.phone)}</td>
+          <td>${esc(s.email)}</td>
+          <td>${esc(s.broker_id||"—")}</td>
+          <td>${esc(s.department||"—")}</td>
+          <td><span class="pill" style="background:${st.bg};color:${st.fg};">${st.text}</span></td>
+          <td>${fmtDT(s.requested_at || s.created_at)}</td>
+          <td style="white-space:nowrap;">
+            ${s.approval_status !== "approved" ? `<button class="btn-secondary" style="color:var(--green);" onclick="approveStudent(${s.id})">Duyệt</button>` : ""}
+            ${s.approval_status !== "rejected" && s.approval_status !== "none" ? `<button class="btn-secondary" style="color:var(--red);" onclick="rejectStudent(${s.id})">Từ chối</button>` : ""}
+            <button class="btn-secondary" onclick="editStudent(${s.id},'${esc(s.full_name).replace(/'/g,"\\'")}','${esc(s.phone).replace(/'/g,"\\'")}','${esc(s.email).replace(/'/g,"\\'")}')">Sửa</button>
+            <button class="btn-danger" onclick="deleteStudent(${s.id})">Xoá</button>
+          </td>
+        </tr>
+      `;}).join("")}
+    </table>
+    <p class="muted" style="margin-top:8px;">Tổng ${studentsTotal} học viên.</p>
+  `;
+  const pager = document.getElementById("students-pager");
+  const hasPrev = offset > 0;
+  const hasNext = offset + STU_PAGE_SIZE < studentsTotal;
+  pager.innerHTML = `
+    <button class="btn-secondary" ${hasPrev ? "" : "disabled"} onclick="loadStudents(${Math.max(0, offset - STU_PAGE_SIZE)})">← Trước</button>
+    <button class="btn-secondary" ${hasNext ? "" : "disabled"} onclick="loadStudents(${offset + STU_PAGE_SIZE})">Sau →</button>
+  `;
+}
+
+async function approveStudent(id){
+  await callRpc("admin_approve_student", { p_password: PASSWORD, p_id: id });
+  loadStudents(studentsOffset);
+}
+async function rejectStudent(id){
+  if(!confirm("Từ chối yêu cầu mở khoá của học viên này?")) return;
+  await callRpc("admin_reject_student", { p_password: PASSWORD, p_id: id });
+  loadStudents(studentsOffset);
+}
+
+async function loadSettings(){
+  const data = await callRpc("get_portal_settings_public", {});
+  if(data && data.status === "ok"){
+    document.getElementById("settings-phone").value = data.support_phone || "";
+    document.getElementById("settings-ctv").value = data.ctv_signup_url || "";
+  }
+}
+async function saveSettings(){
+  const phone = document.getElementById("settings-phone").value.trim();
+  const ctv = document.getElementById("settings-ctv").value.trim();
+  const msgEl = document.getElementById("settings-msg");
+  const data = await callRpc("admin_update_portal_settings", { p_password: PASSWORD, p_support_phone: phone, p_ctv_signup_url: ctv });
+  if(data && data.status === "ok"){
+    msgEl.innerHTML = `<div class="msg ok">Đã lưu cấu hình.</div>`;
+  } else {
+    msgEl.innerHTML = `<div class="msg err">Lỗi: ${esc(data && data.status)}</div>`;
+  }
+}
+
+async function editStudent(id, curName, curPhone, curEmail){
+  const name = prompt("Họ tên:", curName);
+  if(name === null) return;
+  const phone = prompt("Số điện thoại:", curPhone);
+  if(phone === null) return;
+  const email = prompt("Email:", curEmail);
+  if(email === null) return;
+  const data = await callRpc("admin_update_student", { p_password: PASSWORD, p_id: id, p_full_name: name.trim(), p_phone: phone.trim(), p_email: email.trim() });
+  if(!data || data.status !== "ok"){ alert("Lỗi khi cập nhật: " + (data && data.status)); return; }
+  loadStudents(studentsOffset);
+}
+
+async function deleteStudent(id){
+  if(!confirm("Xoá tài khoản học viên này? Học viên sẽ cần đăng ký lại nếu muốn tiếp tục học.")) return;
+  await callRpc("admin_delete_student", { p_password: PASSWORD, p_id: id });
+  loadStudents(studentsOffset);
 }
 
 function renderSetsTable(){
