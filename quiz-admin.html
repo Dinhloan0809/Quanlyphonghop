@@ -295,6 +295,19 @@ function showTab(id){
 
 let allQuizSlugs = [];
 let currentSubjectSlug = null;
+let lastLoadedSubjects = [];
+
+function editSubject(i){
+  const s = lastLoadedSubjects[i];
+  if(!s) return;
+  document.getElementById("subj-slug").value = s.slug;
+  document.getElementById("subj-title").value = s.title;
+  document.getElementById("subj-desc").value = s.description || "";
+  document.getElementById("subj-order").value = s.order_index;
+  document.getElementById("subj-mock-slug").value = s.mock_exam_quiz_slug || "";
+  document.getElementById("subj-mock-count").value = s.mock_exam_count;
+  document.getElementById("subj-slug").scrollIntoView({behavior:"smooth", block:"center"});
+}
 
 async function loadSubjects(){
   const [data, timeData] = await Promise.all([
@@ -309,11 +322,12 @@ async function loadSubjects(){
   if(timeData && timeData.status === "ok"){
     (timeData.items||[]).forEach(it => { timeLimits[it.slug] = it.mock_exam_time_limit_minutes; });
   }
+  lastLoadedSubjects = subs;
   if(subs.length === 0){ el.innerHTML = `<p class="muted">Chưa có môn học nào.</p>`; return; }
   el.innerHTML = `
     <table>
-      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th>Thời gian làm bài</th><th></th><th></th></tr>
-      ${subs.map(s => `
+      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th>Thời gian làm bài</th><th></th><th></th><th></th></tr>
+      ${subs.map((s,i) => `
         <tr>
           <td><b>${esc(s.title)}</b><br><span class="muted">${esc(s.slug)}</span></td>
           <td>${s.lesson_count}</td>
@@ -324,6 +338,7 @@ async function loadSubjects(){
           </td>
           <td><button class="btn-primary" onclick="manageMockExamQuestions('${(s.mock_exam_quiz_slug||"").replace(/'/g,"\\'")}')">📥 Câu hỏi ôn tập</button></td>
           <td><button class="btn-secondary" onclick="openLessons('${s.slug.replace(/'/g,"\\'")}')">Quản lý bài học</button></td>
+          <td><button class="btn-secondary" onclick="editSubject(${i})">Sửa</button></td>
         </tr>
       `).join("")}
     </table>
@@ -366,10 +381,15 @@ async function createSubject(){
   const title = document.getElementById("subj-title").value.trim();
   const desc = document.getElementById("subj-desc").value.trim();
   const order = parseInt(document.getElementById("subj-order").value) || 0;
-  const mockSlug = document.getElementById("subj-mock-slug").value.trim() || null;
+  let mockSlug = document.getElementById("subj-mock-slug").value.trim() || null;
   const mockCount = parseInt(document.getElementById("subj-mock-count").value) || 35;
   const msgEl = document.getElementById("subj-msg");
   if(!slug || !title){ msgEl.innerHTML = `<div class="msg err">Cần nhập slug và tên môn học.</div>`; return; }
+  // Để trống ô "Slug bộ đề ôn tập" khi đang cập nhật môn đã có sẵn => giữ nguyên giá trị cũ, không xoá mất.
+  if(!mockSlug){
+    const existing = lastLoadedSubjects.find(s => s.slug === slug);
+    if(existing && existing.mock_exam_quiz_slug) mockSlug = existing.mock_exam_quiz_slug;
+  }
   const data = await callRpc("admin_upsert_subject", { p_password: PASSWORD, p_slug: slug, p_title: title, p_description: desc, p_order_index: order, p_mock_exam_quiz_slug: mockSlug, p_mock_exam_count: mockCount });
   if(data.status === "ok"){
     msgEl.innerHTML = `<div class="msg ok">Đã lưu môn học "${esc(title)}".</div>`;
