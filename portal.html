@@ -260,7 +260,13 @@ function renderVideoBlock(v){
 let currentStudent = null;
 try{ currentStudent = JSON.parse(localStorage.getItem("cchn_student") || "null"); }catch(e){ currentStudent = null; }
 
-let portalSettings = { support_phone: null, ctv_signup_url: null };
+let portalSettings = {
+  support_phone: null, ctv_signup_url: null,
+  access_request_title: "🔓 Mở khoá toàn bộ bài học",
+  access_request_desc: "Nhập thông tin để được duyệt truy cập đầy đủ nội dung khoá học.",
+  access_pending_text: "Yêu cầu mở khoá của bạn (ID môi giới: {broker_id}, phòng: {department}) đã được gửi và đang chờ duyệt. Vui lòng quay lại sau.",
+  access_rejected_text: "Thông tin bạn cung cấp chưa xác nhận thuộc phòng đăng ký học."
+};
 
 async function refreshStudentStatus(){
   if(!currentStudent || !currentStudent.phone) return;
@@ -347,10 +353,13 @@ function renderAccessModal(){
   const status = currentStudent ? currentStudent.approval_status : "none";
 
   if(status === "pending"){
+    const pendingText = esc(portalSettings.access_pending_text || "")
+      .replace(/\{broker_id\}/g, esc(currentStudent.broker_id||""))
+      .replace(/\{department\}/g, esc(currentStudent.department||""));
     card.innerHTML = `
       <button type="button" class="close-x" onclick="closeAccessModal()">✕</button>
       <h3>⏳ Đang chờ duyệt</h3>
-      <p>Yêu cầu mở khoá của bạn (ID môi giới: <b>${esc(currentStudent.broker_id||"")}</b>, phòng: <b>${esc(currentStudent.department||"")}</b>) đã được gửi và đang chờ duyệt. Vui lòng quay lại sau.</p>
+      <p>${pendingText}</p>
       <div class="actions"><button class="btn-secondary" onclick="closeAccessModal()">Đóng</button></div>
     `;
     return;
@@ -362,7 +371,7 @@ function renderAccessModal(){
     card.innerHTML = `
       <button type="button" class="close-x" onclick="closeAccessModal()">✕</button>
       <h3>❌ Chưa thể mở khoá</h3>
-      <p>Thông tin bạn cung cấp chưa xác nhận thuộc phòng đăng ký học.</p>
+      <p>${esc(portalSettings.access_rejected_text || "")}</p>
       <div class="support-box">
         ${phone ? `Vui lòng liên hệ SĐT <a href="tel:${esc(phone)}">${esc(phone)}</a> để được hỗ trợ.` : `Vui lòng liên hệ bộ phận phụ trách để được hỗ trợ.`}
         ${link ? `<br><br><a href="${esc(link)}" target="_blank" rel="noopener">→ Điền thông tin mở ID CTV tại đây</a>` : ""}
@@ -382,14 +391,14 @@ function renderAccessRequestForm(){
   const card = document.getElementById("access-card");
   card.innerHTML = `
     <button type="button" class="close-x" onclick="closeAccessModal()">✕</button>
-    <h3>🔓 Mở khoá toàn bộ bài học</h3>
-    <p>Nhập thông tin để được duyệt truy cập đầy đủ nội dung khoá học.</p>
+    <h3>${esc(portalSettings.access_request_title || "🔓 Mở khoá toàn bộ bài học")}</h3>
+    <p>${esc(portalSettings.access_request_desc || "Nhập thông tin để được duyệt truy cập đầy đủ nội dung khoá học.")}</p>
     <label>Họ và tên</label>
     <input type="text" id="acc-name" value="${esc(currentStudent ? currentStudent.full_name : displayName)}">
     <label>ID môi giới</label>
-    <input type="text" id="acc-broker" placeholder="VD: MG0123" value="${esc(currentStudent ? (currentStudent.broker_id||"") : "")}">
+    <input type="text" id="acc-broker" placeholder="VD: BDFV" value="${esc(currentStudent ? (currentStudent.broker_id||"") : "")}">
     <label>Phòng</label>
-    <input type="text" id="acc-dept" placeholder="VD: Phòng Kinh doanh 1" value="${esc(currentStudent ? (currentStudent.department||"") : "")}">
+    <input type="text" id="acc-dept" placeholder="VD: 205 - HO" value="${esc(currentStudent ? (currentStudent.department||"") : "")}">
     <div class="err" id="acc-err"></div>
     <div class="actions">
       <button class="btn-secondary" type="button" onclick="closeAccessModal()">Để sau</button>

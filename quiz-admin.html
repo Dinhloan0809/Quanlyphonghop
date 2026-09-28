@@ -33,6 +33,11 @@
   .pill{display:inline-block;background:var(--ice);color:var(--navy);font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px;}
   .hidden{display:none;}
   .center{text-align:center;}
+  .tabs{position:sticky;top:0;z-index:20;display:flex;gap:6px;background:var(--white);border-radius:10px;padding:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow-x:auto;}
+  .tab-btn{flex:1;min-width:150px;white-space:nowrap;background:transparent;color:var(--navy);border-radius:7px;padding:10px 14px;font-weight:700;font-size:.88rem;text-align:center;}
+  .tab-btn:hover{background:var(--light);}
+  .tab-btn.active{background:var(--navy);color:var(--white);}
+  .tab-content.hidden{display:none;}
 </style>
 </head>
 <body>
@@ -109,111 +114,159 @@ function renderMain(sets){
   quizSets = sets;
   btnLogout.classList.remove("hidden");
   app.innerHTML = `
-    <div class="card">
-      <h2>Tạo bộ đề mới</h2>
-      <div class="row">
-        <div>
-          <label>Slug (không dấu, không khoảng trắng, dùng trong URL)</label>
-          <input type="text" id="new-slug" placeholder="vd: buoi9-tong-on">
-        </div>
-        <div>
-          <label>Tên bộ đề</label>
-          <input type="text" id="new-title" placeholder="vd: Bộ 100 câu ôn tập tổng hợp">
-        </div>
-      </div>
-      <label>Mô tả (hiển thị cho người làm bài)</label>
-      <textarea id="new-desc" rows="2" placeholder="Mô tả ngắn về bộ đề..."></textarea>
-      <button class="btn-primary" style="margin-top:12px;" onclick="createSet()">+ Tạo bộ đề</button>
-      <div id="create-msg"></div>
+    <div class="tabs">
+      <button class="tab-btn" data-tab="tab-quiz" onclick="showTab('tab-quiz')">📝 Bộ đề trắc nghiệm</button>
+      <button class="tab-btn" data-tab="tab-subjects" onclick="showTab('tab-subjects')">📚 Môn học &amp; bài học</button>
+      <button class="tab-btn" data-tab="tab-students" onclick="showTab('tab-students')">👤 Tài khoản học viên</button>
+      <button class="tab-btn" data-tab="tab-settings" onclick="showTab('tab-settings')">⚙️ Cấu hình hỗ trợ</button>
     </div>
 
-    <div class="card">
-      <h2>Danh sách bộ đề</h2>
-      <div id="sets-table"></div>
+    <div id="tab-quiz" class="tab-content">
+      <div class="card">
+        <h2>Tạo bộ đề mới</h2>
+        <div class="row">
+          <div>
+            <label>Slug (không dấu, không khoảng trắng, dùng trong URL)</label>
+            <input type="text" id="new-slug" placeholder="vd: buoi9-tong-on">
+          </div>
+          <div>
+            <label>Tên bộ đề</label>
+            <input type="text" id="new-title" placeholder="vd: Bộ 100 câu ôn tập tổng hợp">
+          </div>
+        </div>
+        <label>Mô tả (hiển thị cho người làm bài)</label>
+        <textarea id="new-desc" rows="2" placeholder="Mô tả ngắn về bộ đề..."></textarea>
+        <button class="btn-primary" style="margin-top:12px;" onclick="createSet()">+ Tạo bộ đề</button>
+        <div id="create-msg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Danh sách bộ đề</h2>
+        <div id="sets-table"></div>
+      </div>
+
+      <div id="detail-panel"></div>
     </div>
 
-    <div id="detail-panel"></div>
+    <div id="tab-subjects" class="tab-content hidden">
+      <div class="card">
+        <h2>📚 Quản lý Môn học & Bài học (portal.html)</h2>
+        <div class="row">
+          <div>
+            <label>Slug môn học</label>
+            <input type="text" id="subj-slug" placeholder="vd: phap-luat">
+          </div>
+          <div>
+            <label>Tên môn học</label>
+            <input type="text" id="subj-title" placeholder="vd: Môn Pháp luật">
+          </div>
+        </div>
+        <label>Mô tả</label>
+        <textarea id="subj-desc" rows="2" placeholder="Mô tả ngắn..."></textarea>
+        <div class="row">
+          <div>
+            <label>Thứ tự hiển thị</label>
+            <input type="text" id="subj-order" placeholder="1">
+          </div>
+          <div>
+            <label>Slug bộ đề dùng cho "Câu hỏi ôn tập" (đề random)</label>
+            <input type="text" id="subj-mock-slug" placeholder="vd: buoi9-100-cau">
+          </div>
+          <div>
+            <label>Số câu random</label>
+            <input type="text" id="subj-mock-count" placeholder="35">
+          </div>
+        </div>
+        <button class="btn-primary" style="margin-top:12px;" onclick="createSubject()">+ Tạo / cập nhật môn học</button>
+        <div id="subj-msg"></div>
 
-    <div class="card">
-      <h2>📚 Quản lý Môn học & Bài học (portal.html)</h2>
-      <div class="row">
-        <div>
-          <label>Slug môn học</label>
-          <input type="text" id="subj-slug" placeholder="vd: phap-luat">
-        </div>
-        <div>
-          <label>Tên môn học</label>
-          <input type="text" id="subj-title" placeholder="vd: Môn Pháp luật">
-        </div>
+        <h2 style="margin-top:18px;">Danh sách môn học</h2>
+        <div id="subjects-table"><span class="muted">Đang tải...</span></div>
+
+        <div id="lessons-panel"></div>
       </div>
-      <label>Mô tả</label>
-      <textarea id="subj-desc" rows="2" placeholder="Mô tả ngắn..."></textarea>
-      <div class="row">
-        <div>
-          <label>Thứ tự hiển thị</label>
-          <input type="text" id="subj-order" placeholder="1">
-        </div>
-        <div>
-          <label>Slug bộ đề dùng cho "Câu hỏi ôn tập" (đề random)</label>
-          <input type="text" id="subj-mock-slug" placeholder="vd: buoi9-100-cau">
-        </div>
-        <div>
-          <label>Số câu random</label>
-          <input type="text" id="subj-mock-count" placeholder="35">
-        </div>
-      </div>
-      <button class="btn-primary" style="margin-top:12px;" onclick="createSubject()">+ Tạo / cập nhật môn học</button>
-      <div id="subj-msg"></div>
-
-      <h2 style="margin-top:18px;">Danh sách môn học</h2>
-      <div id="subjects-table"><span class="muted">Đang tải...</span></div>
-
-      <div id="lessons-panel"></div>
     </div>
 
-    <div class="card">
-      <h2>⚙️ Cấu hình hỗ trợ (hiển thị khi từ chối duyệt)</h2>
-      <div class="row">
-        <div>
-          <label>SĐT hỗ trợ</label>
-          <input type="text" id="settings-phone" placeholder="VD: 0912345678">
+    <div id="tab-students" class="tab-content hidden">
+      <div class="card">
+        <h2>👤 Tài khoản học viên đã đăng ký (SĐT + email)</h2>
+        <div class="row" style="align-items:end;">
+          <div>
+            <label>Tìm theo tên / SĐT / email / ID môi giới</label>
+            <input type="text" id="stu-search" placeholder="Gõ để tìm..." oninput="debounceSearchStudents()">
+          </div>
+          <div>
+            <label>Trạng thái duyệt</label>
+            <select id="stu-status" onchange="loadStudents(0)">
+              <option value="all">Tất cả</option>
+              <option value="pending">⏳ Chờ duyệt</option>
+              <option value="approved">✅ Đã duyệt</option>
+              <option value="rejected">❌ Từ chối</option>
+              <option value="none">Chưa yêu cầu</option>
+            </select>
+          </div>
+          <div><button class="btn-secondary" type="button" onclick="loadStudents(0)">Làm mới</button></div>
         </div>
-        <div>
-          <label>Link điền thông tin mở ID CTV (nếu có)</label>
-          <input type="text" id="settings-ctv" placeholder="https://...">
-        </div>
+        <div id="students-table" style="margin-top:10px;"><span class="muted">Đang tải...</span></div>
+        <div id="students-pager" style="margin-top:10px;"></div>
       </div>
-      <button class="btn-primary" style="margin-top:12px;" onclick="saveSettings()">Lưu cấu hình</button>
-      <div id="settings-msg"></div>
     </div>
 
-    <div class="card">
-      <h2>👤 Tài khoản học viên đã đăng ký (SĐT + email)</h2>
-      <div class="row" style="align-items:end;">
-        <div>
-          <label>Tìm theo tên / SĐT / email / ID môi giới</label>
-          <input type="text" id="stu-search" placeholder="Gõ để tìm..." oninput="debounceSearchStudents()">
+    <div id="tab-settings" class="tab-content hidden">
+      <div class="card">
+        <h2>⚙️ Cấu hình hỗ trợ (hiển thị khi từ chối duyệt)</h2>
+        <div class="row">
+          <div>
+            <label>SĐT hỗ trợ</label>
+            <input type="text" id="settings-phone" placeholder="VD: 0912345678">
+          </div>
+          <div>
+            <label>Link điền thông tin mở ID CTV (nếu có)</label>
+            <input type="text" id="settings-ctv" placeholder="https://...">
+          </div>
         </div>
-        <div>
-          <label>Trạng thái duyệt</label>
-          <select id="stu-status" onchange="loadStudents(0)">
-            <option value="all">Tất cả</option>
-            <option value="pending">⏳ Chờ duyệt</option>
-            <option value="approved">✅ Đã duyệt</option>
-            <option value="rejected">❌ Từ chối</option>
-            <option value="none">Chưa yêu cầu</option>
-          </select>
-        </div>
-        <div><button class="btn-secondary" type="button" onclick="loadStudents(0)">Làm mới</button></div>
+        <button class="btn-primary" style="margin-top:12px;" onclick="saveSettings()">Lưu cấu hình</button>
+        <div id="settings-msg"></div>
       </div>
-      <div id="students-table" style="margin-top:10px;"><span class="muted">Đang tải...</span></div>
-      <div id="students-pager" style="margin-top:10px;"></div>
+
+      <div class="card">
+        <h2>✏️ Nội dung popup "Mở khoá bài học"</h2>
+        <p class="muted">Popup này hiện ra khi học viên bấm vào bài bị khoá, để nhập ID môi giới + phòng.</p>
+        <label>Tiêu đề popup</label>
+        <input type="text" id="settings-req-title" placeholder="🔓 Mở khoá toàn bộ bài học">
+        <label>Mô tả (dưới tiêu đề)</label>
+        <textarea id="settings-req-desc" rows="2" placeholder="Nhập thông tin để được duyệt truy cập đầy đủ nội dung khoá học."></textarea>
+        <button class="btn-primary" style="margin-top:12px;" onclick="saveSettings()">Lưu cấu hình</button>
+        <div id="settings-req-msg"></div>
+      </div>
+
+      <div class="card">
+        <h2>✏️ Nội dung popup "Đang chờ duyệt / Bị từ chối"</h2>
+        <label>Nội dung khi đang chờ duyệt</label>
+        <p class="muted" style="margin:2px 0 6px;">Có thể dùng <code>{broker_id}</code> và <code>{department}</code>, hệ thống sẽ tự thay bằng thông tin học viên đã gửi.</p>
+        <textarea id="settings-pending-text" rows="2" placeholder="Yêu cầu mở khoá của bạn (ID môi giới: {broker_id}, phòng: {department}) đã được gửi và đang chờ duyệt. Vui lòng quay lại sau."></textarea>
+        <label>Nội dung khi bị từ chối (hiện phía trên SĐT hỗ trợ)</label>
+        <textarea id="settings-rejected-text" rows="2" placeholder="Thông tin bạn cung cấp chưa xác nhận thuộc phòng đăng ký học."></textarea>
+        <button class="btn-primary" style="margin-top:12px;" onclick="saveSettings()">Lưu cấu hình</button>
+        <div id="settings-reject-msg"></div>
+      </div>
     </div>
   `;
   renderSetsTable();
   loadSubjects();
   loadStudents(0);
   loadSettings();
+  showTab(sessionStorage.getItem("quiz_admin_tab") || "tab-quiz");
+}
+
+function showTab(id){
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  const panel = document.getElementById(id);
+  const btn = document.querySelector(`.tab-btn[data-tab="${id}"]`);
+  if(panel) panel.classList.remove("hidden");
+  if(btn) btn.classList.add("active");
+  sessionStorage.setItem("quiz_admin_tab", id);
 }
 
 let allQuizSlugs = [];
@@ -639,17 +692,39 @@ async function loadSettings(){
   if(data && data.status === "ok"){
     document.getElementById("settings-phone").value = data.support_phone || "";
     document.getElementById("settings-ctv").value = data.ctv_signup_url || "";
+    const reqTitle = document.getElementById("settings-req-title");
+    const reqDesc = document.getElementById("settings-req-desc");
+    const pendingText = document.getElementById("settings-pending-text");
+    const rejectedText = document.getElementById("settings-rejected-text");
+    if(reqTitle) reqTitle.value = data.access_request_title || "";
+    if(reqDesc) reqDesc.value = data.access_request_desc || "";
+    if(pendingText) pendingText.value = data.access_pending_text || "";
+    if(rejectedText) rejectedText.value = data.access_rejected_text || "";
   }
 }
 async function saveSettings(){
   const phone = document.getElementById("settings-phone").value.trim();
   const ctv = document.getElementById("settings-ctv").value.trim();
+  const reqTitle = document.getElementById("settings-req-title").value.trim();
+  const reqDesc = document.getElementById("settings-req-desc").value.trim();
+  const pendingText = document.getElementById("settings-pending-text").value.trim();
+  const rejectedText = document.getElementById("settings-rejected-text").value.trim();
   const msgEl = document.getElementById("settings-msg");
-  const data = await callRpc("admin_update_portal_settings", { p_password: PASSWORD, p_support_phone: phone, p_ctv_signup_url: ctv });
+  const data = await callRpc("admin_update_portal_settings", {
+    p_password: PASSWORD, p_support_phone: phone, p_ctv_signup_url: ctv,
+    p_access_request_title: reqTitle, p_access_request_desc: reqDesc,
+    p_access_pending_text: pendingText, p_access_rejected_text: rejectedText
+  });
+  const okMsg = `<div class="msg ok">Đã lưu cấu hình.</div>`;
   if(data && data.status === "ok"){
-    msgEl.innerHTML = `<div class="msg ok">Đã lưu cấu hình.</div>`;
+    msgEl.innerHTML = okMsg;
+    document.getElementById("settings-req-msg").innerHTML = okMsg;
+    document.getElementById("settings-reject-msg").innerHTML = okMsg;
   } else {
-    msgEl.innerHTML = `<div class="msg err">Lỗi: ${esc(data && data.status)}</div>`;
+    const errMsg = `<div class="msg err">Lỗi: ${esc(data && data.status)}</div>`;
+    msgEl.innerHTML = errMsg;
+    document.getElementById("settings-req-msg").innerHTML = errMsg;
+    document.getElementById("settings-reject-msg").innerHTML = errMsg;
   }
 }
 
