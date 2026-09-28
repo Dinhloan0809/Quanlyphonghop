@@ -312,7 +312,7 @@ async function loadSubjects(){
   if(subs.length === 0){ el.innerHTML = `<p class="muted">Chưa có môn học nào.</p>`; return; }
   el.innerHTML = `
     <table>
-      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th>Thời gian làm bài</th><th></th></tr>
+      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th>Thời gian làm bài</th><th></th><th></th></tr>
       ${subs.map(s => `
         <tr>
           <td><b>${esc(s.title)}</b><br><span class="muted">${esc(s.slug)}</span></td>
@@ -322,6 +322,7 @@ async function loadSubjects(){
             <input type="text" id="time-${esc(s.slug)}" value="${timeLimits[s.slug] != null ? timeLimits[s.slug] : ""}" placeholder="Không giới hạn" style="width:110px;display:inline-block;">
             <button class="btn-secondary" onclick="saveExamTimeLimit('${s.slug.replace(/'/g,"\\'")}')">Lưu</button>
           </td>
+          <td><button class="btn-primary" onclick="manageMockExamQuestions('${(s.mock_exam_quiz_slug||"").replace(/'/g,"\\'")}')">📥 Câu hỏi ôn tập</button></td>
           <td><button class="btn-secondary" onclick="openLessons('${s.slug.replace(/'/g,"\\'")}')">Quản lý bài học</button></td>
         </tr>
       `).join("")}
@@ -341,6 +342,23 @@ async function saveExamTimeLimit(slug){
   const data = await callRpc("admin_set_mock_exam_time_limit", { p_password: PASSWORD, p_subject_slug: slug, p_minutes: minutes });
   if(!data || data.status !== "ok"){ alert("Lỗi khi lưu: " + (data && data.status)); return; }
   loadSubjects();
+}
+
+function manageMockExamQuestions(slug){
+  if(!slug){
+    alert("Môn này chưa gán bộ đề cho \"Câu hỏi ôn tập\". Vào phần tạo/cập nhật môn học ở trên, điền ô \"Slug bộ đề dùng cho Câu hỏi ôn tập\" trước nhé.");
+    return;
+  }
+  if(!quizSets.some(s => s.slug === slug)){
+    alert(`Không tìm thấy bộ đề "${slug}" trong danh sách bộ đề. Kiểm tra lại slug đã gán cho môn học này.`);
+    return;
+  }
+  showTab("tab-quiz");
+  openDetail(slug);
+  setTimeout(() => {
+    const panel = document.getElementById("detail-panel");
+    if(panel) panel.scrollIntoView({ behavior: "smooth" });
+  }, 100);
 }
 
 async function createSubject(){
