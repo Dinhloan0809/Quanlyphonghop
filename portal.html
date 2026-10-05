@@ -296,6 +296,12 @@ function videoEmbedUrl(url){
 function isVideoFileUrl(url){ return /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url||""); }
 function isImageUrl(url){ return /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(url||""); }
 
+/* So khớp đáp án: chuẩn hoá Unicode NFC + khoảng trắng không ngắt dòng + khoảng trắng thừa,
+   để câu nào lỡ bị lệch nhẹ (dán từ Word, 2 cách gõ dấu tiếng Việt khác nhau...) vẫn chấm đúng. */
+function normAnswer(s){
+  return String(s||"").normalize("NFC").replace(/ /g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
 /* ---------- Xem mindmap phóng to (zoom bằng lăn chuột / chụm 2 ngón, kéo để di chuyển) ---------- */
 let mindmapState = { scale: 1, x: 0, y: 0, dragging: false, lastX: 0, lastY: 0 };
 
@@ -1024,7 +1030,7 @@ async function submitExamAnswers(isAutoSubmit){
   quizCtx.questions.forEach(q => {
     const block = document.querySelector(`.q-block[data-qid="${q.id}"]`);
     if(!block) return;
-    const correctKey = ["a","b","c","d"].find(k => (q["option_"+k]||"").trim().toLowerCase() === (q.correct_answer||"").trim().toLowerCase());
+    const correctKey = ["a","b","c","d"].find(k => normAnswer(q["option_"+k]) === normAnswer(q.correct_answer));
     const chosenKey = quizCtx.userAnswers[q.id];
     const isCorrect = chosenKey && chosenKey === correctKey;
     if(isCorrect) score++;
@@ -1093,11 +1099,11 @@ function pickAnswer(qid, el){
 
   const q = quizCtx.questions.find(x => x.id === qid);
   const selectedVal = el.dataset.val;
-  const isCorrect = selectedVal.trim().toLowerCase() === (q.correct_answer||"").trim().toLowerCase();
+  const isCorrect = normAnswer(selectedVal) === normAnswer(q.correct_answer);
 
   block.querySelectorAll(".opt").forEach(o => {
     o.classList.add("disabled");
-    if(o.dataset.val.trim().toLowerCase() === (q.correct_answer||"").trim().toLowerCase()) o.classList.add("correct");
+    if(normAnswer(o.dataset.val) === normAnswer(q.correct_answer)) o.classList.add("correct");
     else if(o === el && !isCorrect) o.classList.add("wrong");
   });
 

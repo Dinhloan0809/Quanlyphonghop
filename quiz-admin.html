@@ -145,6 +145,13 @@ function renderMain(sets){
       </div>
 
       <div class="card">
+        <h2>🔍 Kiểm tra lỗi đáp án (áp dụng cho câu hỏi đã nhập từ trước)</h2>
+        <p class="muted" style="margin-top:-6px;">Quét toàn bộ câu hỏi ở mọi bộ đề, tìm câu nào cột "Đáp án đúng" không khớp đúng 1 trong 4 lựa chọn (gõ sai/thừa khoảng trắng từ trước khi có cơ chế chọn A/B/C/D) — không cần đoán xem có bị hay không.</p>
+        <button class="btn-secondary" id="audit-answers-btn" onclick="auditAllAnswers()">Quét toàn bộ</button>
+        <div id="audit-answers-result" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card">
         <h2>Danh sách bộ đề</h2>
         <div id="sets-table"></div>
       </div>
@@ -868,9 +875,15 @@ async function deleteFeedback(id){
 
 let setsViewMode = "grouped"; // "grouped" | "flat"
 let lessonsBySubjectCache = {};
+let selectedGroupSubjectSlug = null;
 
 function setSetsView(mode){
   setsViewMode = mode;
+  renderSetsTable();
+}
+
+function onSelectGroupSubject(slug){
+  selectedGroupSubjectSlug = slug || null;
   renderSetsTable();
 }
 
@@ -947,13 +960,47 @@ async function renderSetsTable(){
       groups[u.subjSlug].items.push({ set, label: u.label });
     });
   });
+  const UNASSIGNED_KEY = "__unassigned__";
 
-  let html = toggleHtml;
-  lastLoadedSubjects.map(s => s.slug).forEach(slug => {
-    const g = groups[slug];
-    if(!g || !g.items.length) return;
+  // Danh sách môn để chọn, chỉ liệt kê môn có ít nhất 1 bộ đề + mục "chưa gán"
+  const options = lastLoadedSubjects
+    .filter(s => groups[s.slug] && groups[s.slug].items.length)
+    .map(s => ({ slug: s.slug, label: `${s.title} (${groups[s.slug].items.length})` }));
+  if(unassigned.length) options.push({ slug: UNASSIGNED_KEY, label: `⚠️ Chưa gán vào môn học nào (${unassigned.length})` });
+
+  if(!selectedGroupSubjectSlug || !options.some(o => o.slug === selectedGroupSubjectSlug)){
+    selectedGroupSubjectSlug = options.length ? options[0].slug : null;
+  }
+
+  const selectHtml = `
+    <div style="margin-bottom:14px;max-width:420px;">
+      <label style="font-weight:600;font-size:.88rem;display:block;margin-bottom:5px;">Chọn môn học</label>
+      <select onchange="onSelectGroupSubject(this.value)" style="width:100%;padding:10px 12px;border:1px solid #ccd3e8;border-radius:8px;font-size:.95rem;">
+        ${options.map(o => `<option value="${esc(o.slug)}" ${o.slug===selectedGroupSubjectSlug?"selected":""}>${esc(o.label)}</option>`).join("")}
+      </select>
+    </div>
+  `;
+
+  let html = toggleHtml + selectHtml;
+
+  if(!options.length){
+    html += `<p class="muted">Chưa có bộ đề nào.</p>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  if(selectedGroupSubjectSlug === UNASSIGNED_KEY){
     html += `
-      <div class="card" style="background:#f7f9ff;margin-bottom:10px;padding:14px;">
+      <div class="card" style="background:#fff7f0;padding:14px;">
+        <h3 style="margin:0 0 8px;">⚠️ Chưa gán vào môn học nào</h3>
+        <p class="muted" style="margin-top:-4px;">Bộ đề này chưa được chọn làm "Câu hỏi ôn tập" hay Quizzi của bài học nào. Vào tab "Môn học &amp; bài học" để gán.</p>
+        ${renderFlatSetsTable(unassigned)}
+      </div>
+    `;
+  } else {
+    const g = groups[selectedGroupSubjectSlug];
+    html += `
+      <div class="card" style="background:#f7f9ff;padding:14px;">
         <h3 style="margin:0 0 8px;">${esc(g.title)}</h3>
         <table>
           <tr><th>Dùng cho</th><th>Bộ đề</th><th>Số câu</th><th>Lượt làm</th><th>Trạng thái</th><th></th></tr>
@@ -968,15 +1015,6 @@ async function renderSetsTable(){
             </tr>
           `).join("")}
         </table>
-      </div>
-    `;
-  });
-  if(unassigned.length){
-    html += `
-      <div class="card" style="background:#fff7f0;margin-bottom:10px;padding:14px;">
-        <h3 style="margin:0 0 8px;">⚠️ Chưa gán vào môn học nào (${unassigned.length})</h3>
-        <p class="muted" style="margin-top:-4px;">Bộ đề này chưa được chọn làm "Câu hỏi ôn tập" hay Quizzi của bài học nào. Vào tab "Môn học &amp; bài học" để gán.</p>
-        ${renderFlatSetsTable(unassigned)}
       </div>
     `;
   }
@@ -1016,7 +1054,7 @@ async function openDetail(slug){
       </div>
 
       <h2 style="margin-top:18px;">Nhập câu hỏi từ Excel</h2>
-      <p class="muted">File .xlsx cần đúng thứ tự cột (dòng đầu là tiêu đề, sẽ bị bỏ qua): <b>STT, Câu hỏi, Lựa chọn 1, Lựa chọn 2, Lựa chọn 3, Lựa chọn 4, Đáp án đúng, Giải thích, Chương/Chủ đề</b>. Cột "Đáp án đúng" phải ghi đúng nguyên văn 1 trong 4 lựa chọn. Import lại cùng STT sẽ ghi đè câu cũ (dùng để sửa/cập nhật).</p>
+      <p class="muted">File .xlsx cần đúng thứ tự cột (dòng đầu là tiêu đề, sẽ bị bỏ qua): <b>STT, Câu hỏi, Lựa chọn 1, Lựa chọn 2, Lựa chọn 3, Lựa chọn 4, Đáp án đúng, Giải thích, Chương/Chủ đề</b>. Cột "Đáp án đúng" ghi <b>chữ cái A/B/C/D</b> (hoặc số 1-4) tương ứng vị trí lựa chọn đúng — khỏi cần chép lại cả câu nên không sợ gõ sai/thừa khoảng trắng; vẫn chấp nhận chép nguyên văn lựa chọn như trước nếu quen làm vậy. Import lại cùng STT sẽ ghi đè câu cũ (dùng để sửa/cập nhật). Câu nào hệ thống không xác định được đáp án đúng sẽ bị bỏ qua và báo lỗi rõ dòng nào, không nhập vào.</p>
       <input type="file" id="excel-file" accept=".xlsx,.xls,.csv">
       <button class="btn-primary" style="margin-top:10px;" onclick="importExcel()">Nhập câu hỏi</button>
       <div id="import-msg"></div>
@@ -1193,6 +1231,96 @@ function readExcelFile(file){
   });
 }
 
+/* Chuẩn hoá chữ để so khớp "Đáp án đúng" với 4 lựa chọn, tránh lỗi do:
+   - thừa khoảng trắng / khoảng trắng không ngắt dòng (dán từ Word/PDF)
+   - chữ hoa/thường khác nhau
+   - 2 cách gõ dấu tiếng Việt khác nhau (Unicode tổ hợp) trông giống hệt nhau nhưng là chuỗi khác nhau */
+function normalizeAnswerText(s){
+  return String(s||"")
+    .normalize("NFC")
+    .replace(/ /g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+function stripLetterPrefix(s){
+  return String(s||"").replace(/^\s*[A-DĐa-dđ]\s*[\.\)\-:]\s*/, "").trim();
+}
+// Khớp "Đáp án đúng" với 1 trong 4 lựa chọn. Trả về { text } nếu khớp được đúng 1 lựa chọn,
+// hoặc { error } nếu không xác định được (đáp án đúng này sẽ bị bỏ qua, không nhập vào).
+function resolveCorrectAnswer(rawAnswer, options){
+  const raw = String(rawAnswer||"").trim();
+  if(!raw) return { error: `cột "Đáp án đúng" đang để trống` };
+
+  // Cho phép gõ tắt chữ cái A/B/C/D (hoặc số 1-4) thay vì chép lại cả câu — tránh hẳn lỗi gõ sai/thừa khoảng trắng.
+  const letterMatch = raw.match(/^([A-Da-d]|[1-4])[\.\)]?$/);
+  if(letterMatch){
+    const map = { "1":"a","2":"b","3":"c","4":"d", a:"a",b:"b",c:"c",d:"d" };
+    const key = map[letterMatch[1].toLowerCase()];
+    const opt = options.find(o => o.key === key);
+    if(opt && opt.text) return { text: opt.text };
+    return { error: `chọn đáp án ${raw.toUpperCase()} nhưng lựa chọn ${key ? key.toUpperCase() : raw.toUpperCase()} đang để trống` };
+  }
+
+  const normAnswer = normalizeAnswerText(stripLetterPrefix(raw));
+  const matches = options.filter(o => o.text && normalizeAnswerText(stripLetterPrefix(o.text)) === normAnswer);
+  if(matches.length === 1) return { text: matches[0].text };
+  if(matches.length > 1) return { error: `nội dung "Đáp án đúng" trùng với ${matches.length} lựa chọn cùng lúc, không xác định được chọn lựa chọn nào` };
+  return { error: `nội dung "Đáp án đúng" không khớp với lựa chọn nào trong 4 lựa chọn (có thể gõ sai chính tả hoặc thừa khoảng trắng). Mẹo: có thể gõ luôn chữ cái A/B/C/D thay vì chép lại cả câu` };
+}
+
+async function auditAllAnswers(){
+  const btn = document.getElementById("audit-answers-btn");
+  const resultEl = document.getElementById("audit-answers-result");
+  if(!quizSets.length){ resultEl.innerHTML = `<p class="muted">Chưa có bộ đề nào.</p>`; return; }
+  btn.disabled = true; btn.innerText = `Đang quét ${quizSets.length} bộ đề...`;
+  resultEl.innerHTML = "";
+
+  const results = await Promise.all(quizSets.map(s => callRpc("admin_list_quiz_questions", { p_password: PASSWORD, p_quiz_slug: s.slug }).catch(() => null)));
+
+  const problems = [];
+  quizSets.forEach((s,i) => {
+    const data = results[i];
+    if(!data || data.status !== "ok") return;
+    (data.questions || []).forEach(q => {
+      const options = [
+        { text: (q.option_a||"").trim() }, { text: (q.option_b||"").trim() },
+        { text: (q.option_c||"").trim() }, { text: (q.option_d||"").trim() }
+      ];
+      const norm = normalizeAnswerText(q.correct_answer);
+      const matches = options.filter(o => o.text && normalizeAnswerText(o.text) === norm);
+      if(matches.length !== 1){
+        problems.push({
+          setTitle: s.title, setSlug: s.slug, stt: q.stt, question: q.question || "",
+          reason: matches.length === 0 ? "đáp án đúng không khớp với lựa chọn nào" : `đáp án đúng trùng ${matches.length} lựa chọn cùng lúc`
+        });
+      }
+    });
+  });
+
+  btn.disabled = false; btn.innerText = "Quét toàn bộ";
+
+  if(!problems.length){
+    resultEl.innerHTML = `<div class="msg ok">✅ Không phát hiện câu nào bị lỗi đáp án trong toàn bộ ${quizSets.length} bộ đề. Các file đã nhập trước đây không cần sửa lại.</div>`;
+    return;
+  }
+  resultEl.innerHTML = `
+    <div class="msg err">⚠️ Phát hiện ${problems.length} câu có đáp án đúng không khớp chuẩn — những câu này đang chấm sai hoặc không chấm được điểm cho học viên, cần sửa lại:</div>
+    <table style="margin-top:8px;">
+      <tr><th>Bộ đề</th><th>STT</th><th>Câu hỏi</th><th>Lỗi</th><th></th></tr>
+      ${problems.map(p => `
+        <tr>
+          <td><b>${esc(p.setTitle)}</b><br><span class="muted">${esc(p.setSlug)}</span></td>
+          <td>${p.stt != null ? p.stt : "—"}</td>
+          <td>${esc(p.question.length > 90 ? p.question.slice(0,90)+"..." : p.question)}</td>
+          <td>${esc(p.reason)}</td>
+          <td><button class="btn-secondary" onclick="setSetsView('flat');openDetail('${p.setSlug.replace(/'/g,"\\'")}')">Mở bộ đề</button></td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+
 async function importExcel(){
   const fileInput = document.getElementById("excel-file");
   const msgEl = document.getElementById("import-msg");
@@ -1207,36 +1335,63 @@ async function importExcel(){
   if(rows.length && isNaN(parseInt(rows[0][0]))) startRow = 1;
 
   const questions = [];
+  const rowErrors = [];
   for(let i = startRow; i < rows.length; i++){
     const r = rows[i];
     if(!r || r.length === 0 || (!r[1] && !r[1+0])) continue;
     const stt = parseInt(r[0]);
     const question = String(r[1]||"").trim();
     if(!question) continue;
+
+    const options = [
+      { key: "a", text: String(r[2]||"").trim() },
+      { key: "b", text: String(r[3]||"").trim() },
+      { key: "c", text: String(r[4]||"").trim() },
+      { key: "d", text: String(r[5]||"").trim() }
+    ];
+    const resolved = resolveCorrectAnswer(r[6], options);
+    if(resolved.error){
+      rowErrors.push(`Dòng ${i+1}${isNaN(stt)?"":" (STT "+stt+")"}: ${resolved.error}`);
+      continue; // bỏ qua câu này, không nhập, để tránh lưu 1 câu không chấm được điểm
+    }
+
     questions.push({
       stt: isNaN(stt) ? undefined : stt,
       question,
-      option_a: String(r[2]||"").trim(),
-      option_b: String(r[3]||"").trim(),
-      option_c: String(r[4]||"").trim(),
-      option_d: String(r[5]||"").trim(),
-      correct_answer: String(r[6]||"").trim(),
+      option_a: options[0].text,
+      option_b: options[1].text,
+      option_c: options[2].text,
+      option_d: options[3].text,
+      correct_answer: resolved.text, // luôn lưu đúng nguyên văn lựa chọn đã khớp, đảm bảo khớp tuyệt đối khi chấm điểm
       explanation: String(r[7]||"").trim(),
       topic: String(r[8]||"").trim()
     });
   }
 
-  if(questions.length === 0){ msgEl.innerHTML = `<div class="msg err">Không tìm thấy câu hỏi hợp lệ trong file.</div>`; return; }
+  if(questions.length === 0 && rowErrors.length === 0){ msgEl.innerHTML = `<div class="msg err">Không tìm thấy câu hỏi hợp lệ trong file.</div>`; return; }
 
-  msgEl.innerHTML = `<div class="msg">Đang nhập ${questions.length} câu hỏi...</div>`;
-  const data = await callRpc("admin_bulk_upsert_quiz_questions", { p_password: PASSWORD, p_quiz_slug: currentSlug, p_questions: questions });
-  if(data && data.status === "ok"){
-    msgEl.innerHTML = `<div class="msg ok">Đã nhập/cập nhật ${data.upserted} câu hỏi.</div>`;
+  let upsertedCount = 0;
+  if(questions.length){
+    msgEl.innerHTML = `<div class="msg">Đang nhập ${questions.length} câu hỏi...</div>`;
+    const data = await callRpc("admin_bulk_upsert_quiz_questions", { p_password: PASSWORD, p_quiz_slug: currentSlug, p_questions: questions });
+    if(!data || data.status !== "ok"){
+      msgEl.innerHTML = `<div class="msg err">Lỗi khi nhập: ${esc(data && data.status)}</div>`;
+      return;
+    }
+    upsertedCount = data.upserted;
+  }
+
+  const okPart = upsertedCount ? `<div class="msg ok">Đã nhập/cập nhật ${upsertedCount} câu hỏi.</div>` : "";
+  const errPart = rowErrors.length ? `
+    <div class="msg err">
+      ⚠️ ${rowErrors.length} câu bị <b>bỏ qua</b> do không xác định được đáp án đúng — sửa lại trong Excel rồi nhập lại riêng các câu đó:
+      <ul style="margin:6px 0 0 18px;padding:0;">${rowErrors.map(e => `<li>${esc(e)}</li>`).join("")}</ul>
+    </div>` : "";
+  msgEl.innerHTML = okPart + errPart;
+  if(upsertedCount){
     fileInput.value = "";
     loadQuestions(currentSlug);
     refreshSets();
-  } else {
-    msgEl.innerHTML = `<div class="msg err">Lỗi khi nhập: ${esc(data && data.status)}</div>`;
   }
 }
 
