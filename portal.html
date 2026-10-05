@@ -69,8 +69,21 @@
   .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;}
   .doc-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid #e3e7f5;border-radius:9px;text-decoration:none;color:var(--dark);margin-bottom:8px;font-weight:600;font-size:.9rem;}
   .doc-btn:hover{border-color:var(--navy);background:var(--light);}
-  .mindmap-img{max-width:100%;border-radius:8px;border:1px solid #e3e7f5;}
+  .mindmap-img{max-width:100%;border-radius:8px;border:1px solid #e3e7f5;cursor:zoom-in;display:block;}
+  .mindmap-hint{margin-top:8px;font-size:.8rem;color:#888;}
   .mindmap-link{display:inline-block;padding:11px 16px;background:var(--navy);color:var(--white);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem;}
+
+  /* ---------- Xem mindmap phóng to (zoom/pan) ---------- */
+  .mindmap-viewer-overlay{position:fixed;inset:0;background:rgba(10,10,20,.92);display:none;align-items:center;justify-content:center;z-index:300;}
+  .mindmap-viewer-overlay.open{display:flex;}
+  .mindmap-viewer-stage{position:relative;width:100%;height:100%;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;}
+  .mindmap-viewer-stage.dragging{cursor:grabbing;}
+  .mindmap-viewer-img{max-width:92vw;max-height:88vh;user-select:none;-webkit-user-drag:none;will-change:transform;}
+  .mindmap-viewer-controls{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:8px;background:rgba(255,255,255,.14);backdrop-filter:blur(6px);padding:8px;border-radius:12px;}
+  .mindmap-viewer-controls button{width:42px;height:42px;border-radius:9px;border:none;background:rgba(255,255,255,.92);color:var(--navy);font-size:1.15rem;font-weight:700;cursor:pointer;padding:0;}
+  .mindmap-viewer-close{position:absolute;top:16px;right:18px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.92);color:var(--navy);font-size:1.25rem;cursor:pointer;padding:0;}
+  .mindmap-viewer-hint{position:absolute;top:22px;left:20px;color:rgba(255,255,255,.75);font-size:.78rem;}
+  @media(max-width:640px){ .mindmap-viewer-hint{display:none;} }
   input[type=text]{width:100%;padding:11px 12px;border:1px solid #ccd3e8;border-radius:8px;font-size:1rem;}
   button{cursor:pointer;border:none;border-radius:8px;font-size:.92rem;font-weight:600;padding:11px 18px;}
   .btn-primary{background:var(--navy);color:var(--white);}
@@ -130,6 +143,9 @@
   .auth-card .err{color:var(--red);font-size:.82rem;margin-top:10px;display:none;}
   .auth-card button{width:100%;margin-top:18px;}
   .auth-card .note{margin-top:12px;font-size:.76rem;color:#999;line-height:1.4;}
+  .auth-tabs{display:flex;background:var(--light);border-radius:9px;padding:3px;margin-bottom:18px;}
+  .auth-tab-btn{flex:1;border:none;background:none;padding:9px 0;border-radius:7px;font-weight:700;font-size:.88rem;color:#888;cursor:pointer;width:auto;margin:0;}
+  .auth-tab-btn.active{background:var(--white);color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,.08);}
   .app-shell{display:none;}
 
   /* ---------- Bài học khoá (cần duyệt ID môi giới + phòng) ---------- */
@@ -160,16 +176,33 @@
 
 <div class="auth-gate" id="auth-gate">
   <div class="auth-card">
-    <h2>Đăng ký vào học</h2>
-    <p class="sub">Nhập số điện thoại và email để bắt đầu ôn tập. Lần sau mở lại trên trình duyệt này sẽ không cần nhập lại.</p>
-    <label>Họ và tên</label>
-    <input type="text" id="reg-name" placeholder="VD: Nguyễn Văn A">
-    <label>Số điện thoại</label>
-    <input type="tel" id="reg-phone" placeholder="VD: 0912345678">
-    <label>Email</label>
-    <input type="email" id="reg-email" placeholder="VD: [email protected]">
-    <div class="err" id="reg-err"></div>
-    <button class="btn-primary" onclick="submitRegister()">Vào học</button>
+    <div class="auth-tabs">
+      <button type="button" id="auth-tab-login" class="auth-tab-btn active" onclick="switchAuthTab('login')">Đăng nhập</button>
+      <button type="button" id="auth-tab-register" class="auth-tab-btn" onclick="switchAuthTab('register')">Đăng ký</button>
+    </div>
+
+    <div id="auth-panel-login">
+      <h2>Đăng nhập</h2>
+      <p class="sub">Nhập số điện thoại đã đăng ký để vào học.</p>
+      <label>Số điện thoại</label>
+      <input type="tel" id="login-phone" placeholder="VD: 0912345678">
+      <div class="err" id="login-err"></div>
+      <button class="btn-primary" onclick="submitLogin()">Đăng nhập</button>
+    </div>
+
+    <div id="auth-panel-register" style="display:none;">
+      <h2>Đăng ký</h2>
+      <p class="sub">Dành cho học viên chưa có tài khoản. Lần sau chỉ cần đăng nhập bằng số điện thoại.</p>
+      <label>Họ và tên</label>
+      <input type="text" id="reg-name" placeholder="VD: Nguyễn Văn A">
+      <label>Số điện thoại</label>
+      <input type="tel" id="reg-phone" placeholder="VD: 0912345678">
+      <label>Email</label>
+      <input type="email" id="reg-email" placeholder="VD: [email protected]">
+      <div class="err" id="reg-err"></div>
+      <button class="btn-primary" onclick="submitRegister()">Đăng ký &amp; vào học</button>
+    </div>
+
     <div class="note">Thông tin của bạn chỉ dùng để quản lý lớp học, không chia sẻ cho bên thứ ba.</div>
   </div>
 </div>
@@ -180,6 +213,19 @@
 
 <div class="access-modal" id="feedback-modal">
   <div class="access-card" id="feedback-card"><!-- nội dung được render động bởi renderFeedbackForm() --></div>
+</div>
+
+<div class="mindmap-viewer-overlay" id="mindmap-viewer-overlay" onclick="if(event.target===this) closeMindmapViewer()">
+  <button type="button" class="mindmap-viewer-close" onclick="closeMindmapViewer()">✕</button>
+  <div class="mindmap-viewer-hint">Lăn chuột / chụm 2 ngón để zoom · kéo để di chuyển · bấm đúp để zoom nhanh</div>
+  <div class="mindmap-viewer-stage" id="mindmap-viewer-stage">
+    <img class="mindmap-viewer-img" id="mindmap-viewer-img" src="" draggable="false" alt="Mindmap">
+  </div>
+  <div class="mindmap-viewer-controls">
+    <button type="button" onclick="mindmapZoom(-0.3)">−</button>
+    <button type="button" onclick="mindmapZoomReset()">⟳</button>
+    <button type="button" onclick="mindmapZoom(0.3)">+</button>
+  </div>
 </div>
 
 <div class="app-shell" id="app-shell">
@@ -200,7 +246,6 @@
     <span class="user-chevron">⌄</span>
     <div class="user-menu" id="user-menu" style="display:none;">
       <button type="button" onclick="changeDisplayName(event)">✏️ Đổi tên hiển thị</button>
-      <a href="quiz-admin.html" style="display:block;width:100%;text-align:left;background:none;border:none;padding:9px 10px;border-radius:7px;font-size:.85rem;font-weight:600;color:var(--dark);text-decoration:none;box-sizing:border-box;" onmouseover="this.style.background='var(--light)'" onmouseout="this.style.background='none'">⚙️ Trang quản trị</a>
       <button type="button" onclick="logoutStudent(event)">🚪 Đăng xuất</button>
     </div>
   </div>
@@ -250,6 +295,96 @@ function videoEmbedUrl(url){
 }
 function isVideoFileUrl(url){ return /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url||""); }
 function isImageUrl(url){ return /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(url||""); }
+
+/* ---------- Xem mindmap phóng to (zoom bằng lăn chuột / chụm 2 ngón, kéo để di chuyển) ---------- */
+let mindmapState = { scale: 1, x: 0, y: 0, dragging: false, lastX: 0, lastY: 0 };
+
+function applyMindmapTransform(){
+  const img = document.getElementById("mindmap-viewer-img");
+  if(img) img.style.transform = `translate(${mindmapState.x}px, ${mindmapState.y}px) scale(${mindmapState.scale})`;
+}
+function openMindmapViewer(url){
+  mindmapState = { scale: 1, x: 0, y: 0, dragging: false, lastX: 0, lastY: 0 };
+  document.getElementById("mindmap-viewer-img").src = url;
+  applyMindmapTransform();
+  document.getElementById("mindmap-viewer-overlay").classList.add("open");
+}
+function closeMindmapViewer(){
+  document.getElementById("mindmap-viewer-overlay").classList.remove("open");
+}
+function mindmapZoom(delta){
+  mindmapState.scale = Math.min(6, Math.max(1, mindmapState.scale + delta));
+  if(mindmapState.scale === 1){ mindmapState.x = 0; mindmapState.y = 0; }
+  applyMindmapTransform();
+}
+function mindmapZoomReset(){
+  mindmapState.scale = 1; mindmapState.x = 0; mindmapState.y = 0;
+  applyMindmapTransform();
+}
+
+(function setupMindmapViewer(){
+  const overlay = document.getElementById("mindmap-viewer-overlay");
+  const stage = document.getElementById("mindmap-viewer-stage");
+  if(!overlay || !stage) return;
+
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && overlay.classList.contains("open")) closeMindmapViewer();
+  });
+
+  stage.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    mindmapZoom(e.deltaY < 0 ? 0.25 : -0.25);
+  }, { passive: false });
+
+  stage.addEventListener("dblclick", () => {
+    if(mindmapState.scale > 1) mindmapZoomReset();
+    else { mindmapState.scale = 2.5; applyMindmapTransform(); }
+  });
+
+  stage.addEventListener("mousedown", (e) => {
+    if(mindmapState.scale <= 1) return;
+    mindmapState.dragging = true;
+    mindmapState.lastX = e.clientX; mindmapState.lastY = e.clientY;
+    stage.classList.add("dragging");
+  });
+  window.addEventListener("mousemove", (e) => {
+    if(!mindmapState.dragging) return;
+    mindmapState.x += e.clientX - mindmapState.lastX;
+    mindmapState.y += e.clientY - mindmapState.lastY;
+    mindmapState.lastX = e.clientX; mindmapState.lastY = e.clientY;
+    applyMindmapTransform();
+  });
+  window.addEventListener("mouseup", () => { mindmapState.dragging = false; stage.classList.remove("dragging"); });
+
+  // Cảm ứng: 1 ngón kéo (khi đã zoom), 2 ngón chụm để zoom
+  let touchMode = null, startDist = 0, startScale = 1, startBase = {x:0,y:0}, startTouch = {x:0,y:0};
+  function touchDist(t0, t1){ return Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY); }
+  stage.addEventListener("touchstart", (e) => {
+    if(e.touches.length === 2){
+      touchMode = "pinch";
+      startDist = touchDist(e.touches[0], e.touches[1]);
+      startScale = mindmapState.scale;
+    } else if(e.touches.length === 1 && mindmapState.scale > 1){
+      touchMode = "pan";
+      startTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      startBase = { x: mindmapState.x, y: mindmapState.y };
+    }
+  }, { passive: true });
+  stage.addEventListener("touchmove", (e) => {
+    if(touchMode === "pinch" && e.touches.length === 2){
+      e.preventDefault();
+      mindmapState.scale = Math.min(6, Math.max(1, startScale * (touchDist(e.touches[0], e.touches[1]) / startDist)));
+      if(mindmapState.scale === 1){ mindmapState.x = 0; mindmapState.y = 0; }
+      applyMindmapTransform();
+    } else if(touchMode === "pan" && e.touches.length === 1){
+      e.preventDefault();
+      mindmapState.x = startBase.x + (e.touches[0].clientX - startTouch.x);
+      mindmapState.y = startBase.y + (e.touches[0].clientY - startTouch.y);
+      applyMindmapTransform();
+    }
+  }, { passive: false });
+  stage.addEventListener("touchend", () => { touchMode = null; });
+})();
 function renderVideoBlock(v){
   const embedUrl = videoEmbedUrl(v.url);
   if(embedUrl){
@@ -296,6 +431,39 @@ function showGate(){
   document.getElementById("auth-gate").style.display = "flex";
 }
 
+function switchAuthTab(tab){
+  document.getElementById("auth-panel-login").style.display = tab === "login" ? "block" : "none";
+  document.getElementById("auth-panel-register").style.display = tab === "register" ? "block" : "none";
+  document.getElementById("auth-tab-login").classList.toggle("active", tab === "login");
+  document.getElementById("auth-tab-register").classList.toggle("active", tab === "register");
+}
+
+async function submitLogin(){
+  const phoneEl = document.getElementById("login-phone");
+  const errEl = document.getElementById("login-err");
+  const phone = phoneEl.value.trim();
+  errEl.style.display = "none";
+  if(!phone || phone.replace(/[^0-9]/g,"").length < 9){
+    errEl.innerText = "Vui lòng nhập số điện thoại hợp lệ.";
+    errEl.style.display = "block";
+    return;
+  }
+  const btn = document.querySelector("#auth-panel-login .btn-primary");
+  btn.disabled = true; btn.innerText = "Đang kiểm tra...";
+  const data = await callRpc("get_student_status_public", { p_phone: phone });
+  btn.disabled = false; btn.innerText = "Đăng nhập";
+  if(data && data.status === "ok" && data.student && data.student.phone){
+    currentStudent = data.student;
+    localStorage.setItem("cchn_student", JSON.stringify(currentStudent));
+    displayName = currentStudent.full_name;
+    localStorage.setItem("cchn_display_name", displayName);
+    showApp();
+  } else {
+    errEl.innerText = "Không tìm thấy số điện thoại này. Vui lòng bấm \"Đăng ký\" nếu bạn chưa có tài khoản.";
+    errEl.style.display = "block";
+  }
+}
+
 async function submitRegister(){
   const nameEl = document.getElementById("reg-name");
   const phoneEl = document.getElementById("reg-phone");
@@ -310,10 +478,10 @@ async function submitRegister(){
     errEl.style.display = "block";
     return;
   }
-  const btn = document.querySelector("#auth-gate .btn-primary");
+  const btn = document.querySelector("#auth-panel-register .btn-primary");
   btn.disabled = true; btn.innerText = "Đang xử lý...";
   const data = await callRpc("register_student", { p_full_name: name, p_phone: phone, p_email: email });
-  btn.disabled = false; btn.innerText = "Vào học";
+  btn.disabled = false; btn.innerText = "Đăng ký & vào học";
   if(data && data.status === "ok"){
     currentStudent = data.student;
     localStorage.setItem("cchn_student", JSON.stringify(currentStudent));
@@ -608,7 +776,7 @@ async function selectLesson(slug){
     </div>
     <div class="card">
       <h2>🧠 Mindmap</h2>
-      ${data.mindmap_url ? (isImageUrl(data.mindmap_url) ? `<img class="mindmap-img" src="${esc(data.mindmap_url)}">` : `<a class="mindmap-link" href="${esc(data.mindmap_url)}" target="_blank" rel="noopener">Xem mindmap</a>`) : `<div class="empty">Mindmap sẽ được cập nhật sau.</div>`}
+      ${data.mindmap_url ? (isImageUrl(data.mindmap_url) ? `<img class="mindmap-img" src="${esc(data.mindmap_url)}" onclick="openMindmapViewer('${esc(data.mindmap_url).replace(/'/g,"\\'")}')"><div class="mindmap-hint">👆 Bấm vào ảnh để xem phóng to, zoom to/nhỏ cho dễ nhìn</div>` : `<a class="mindmap-link" href="${esc(data.mindmap_url)}" target="_blank" rel="noopener">Xem mindmap</a>`) : `<div class="empty">Mindmap sẽ được cập nhật sau.</div>`}
     </div>
     <div class="card" id="quiz-card">
       <h2>❓ Quizzi – Kiểm tra kiến thức</h2>
@@ -710,6 +878,53 @@ async function selectExam(){
   `;
 }
 
+function shuffleArray(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/* Chọn ngẫu nhiên nhưng rải đều theo chủ đề (q.topic), tránh tình trạng
+   lấy trúng toàn câu lý thuyết hoặc toàn câu bài tập của 1-2 chủ đề.
+   Phân bổ số câu mỗi chủ đề theo tỉ lệ số câu có sẵn (số dư lớn nhất),
+   rồi random trong từng chủ đề, cuối cùng tráo lại vị trí toàn bộ. */
+function stratifiedSample(allQuestions, count){
+  const total = allQuestions.length;
+  if(total <= count) return shuffleArray(allQuestions.slice());
+
+  const groups = {};
+  allQuestions.forEach(q => {
+    const key = (q.topic && String(q.topic).trim()) || "__khac__";
+    (groups[key] = groups[key] || []).push(q);
+  });
+  const keys = Object.keys(groups);
+  if(keys.length <= 1) return shuffleArray(allQuestions.slice()).slice(0, count);
+
+  const exact = keys.map(k => groups[k].length / total * count);
+  const allocated = exact.map(Math.floor);
+  let remaining = count - allocated.reduce((a,b) => a + b, 0);
+  const remainders = exact.map((e,i) => ({ i, rem: e - allocated[i] })).sort((a,b) => b.rem - a.rem);
+  for(let i = 0; i < remaining; i++){
+    allocated[remainders[i % remainders.length].i]++;
+  }
+
+  let picked = [];
+  let leftoverPool = [];
+  keys.forEach((k,i) => {
+    const group = shuffleArray(groups[k].slice());
+    const take = Math.min(allocated[i], group.length);
+    picked = picked.concat(group.slice(0, take));
+    leftoverPool = leftoverPool.concat(group.slice(take));
+  });
+  const shortage = count - picked.length;
+  if(shortage > 0){
+    picked = picked.concat(shuffleArray(leftoverPool).slice(0, shortage));
+  }
+  return shuffleArray(picked);
+}
+
 async function startExamQuiz(){
   const nameEl = document.getElementById("taker-name");
   const name = nameEl.value.trim();
@@ -718,10 +933,10 @@ async function startExamQuiz(){
 
   const area = document.getElementById("quiz-area");
   area.innerHTML = `<div class="empty">Đang chọn câu hỏi ngẫu nhiên...</div>`;
-  const data = await callRpc("get_random_quiz_questions_full", { p_slug: quizCtx.slug, p_count: quizCtx.examCount });
-  if(!data || data.status !== "ok"){ area.innerHTML = `<div class="empty">Không tải được câu hỏi.</div>`; return; }
+  const data = await callRpc("get_quiz_set_questions_full", { p_slug: quizCtx.slug });
+  if(!data || data.status !== "ok" || !data.questions || !data.questions.length){ area.innerHTML = `<div class="empty">Không tải được câu hỏi.</div>`; return; }
 
-  quizCtx.questions = data.questions;
+  quizCtx.questions = stratifiedSample(data.questions, quizCtx.examCount);
   quizCtx.userAnswers = {};
   window.__takerName = name;
   renderExamQuestions(area);

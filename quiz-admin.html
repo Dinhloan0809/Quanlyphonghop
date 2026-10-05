@@ -644,6 +644,7 @@ async function saveLesson(){
     currentLessonVideos = []; renderVideosList();
     loadLessonsTable(currentSubjectSlug);
     loadSubjects();
+    delete lessonsBySubjectCache[currentSubjectSlug];
   } else {
     msgEl.innerHTML = `<div class="msg err">Lỗi: ${esc(data.status)} ${esc(data.message||"")}</div>`;
   }
@@ -668,6 +669,7 @@ async function deleteLesson(lessonSlug){
   await callRpc("admin_delete_lesson", { p_password: PASSWORD, p_subject_slug: currentSubjectSlug, p_lesson_slug: lessonSlug });
   loadLessonsTable(currentSubjectSlug);
   loadSubjects();
+  delete lessonsBySubjectCache[currentSubjectSlug];
 }
 
 /* ---------- Tài khoản học viên (đăng ký SĐT + email) ---------- */
@@ -864,14 +866,19 @@ async function deleteFeedback(id){
   loadFeedback(feedbackOffset);
 }
 
-function renderSetsTable(){
-  const el = document.getElementById("sets-table");
-  if(!el) return;
-  if(quizSets.length === 0){ el.innerHTML = `<p class="muted">Chưa có bộ đề nào.</p>`; return; }
-  el.innerHTML = `
+let setsViewMode = "grouped"; // "grouped" | "flat"
+let lessonsBySubjectCache = {};
+
+function setSetsView(mode){
+  setsViewMode = mode;
+  renderSetsTable();
+}
+
+function renderFlatSetsTable(sets){
+  return `
     <table>
       <tr><th>Bộ đề</th><th>Số câu</th><th>Lượt làm</th><th>Trạng thái</th><th></th></tr>
-      ${quizSets.map(s => `
+      ${sets.map(s => `
         <tr>
           <td><b>${esc(s.title)}</b><br><span class="muted">${esc(s.slug)}</span></td>
           <td>${s.question_count}</td>
@@ -884,6 +891,96 @@ function renderSetsTable(){
       `).join("")}
     </table>
   `;
+}
+
+async function ensureLessonsForGrouping(){
+  if(!lastLoadedSubjects.length){
+    const data = await callRpc("admin_list_subjects", { p_password: PASSWORD });
+    if(data && data.status === "ok") lastLoadedSubjects = data.subjects;
+  }
+  const slugs = lastLoadedSubjects.map(s => s.slug).filter(s => !(s in lessonsBySubjectCache));
+  if(slugs.length){
+    const results = await Promise.all(slugs.map(s => callRpc("admin_list_lessons", { p_password: PASSWORD, p_subject_slug: s }).catch(() => null)));
+    slugs.forEach((s,i) => { lessonsBySubjectCache[s] = (results[i] && results[i].status === "ok") ? results[i].lessons : []; });
+  }
+}
+
+async function renderSetsTable(){
+  const el = document.getElementById("sets-table");
+  if(!el) return;
+  if(quizSets.length === 0){ el.innerHTML = `<p class="muted">Chưa có bộ đề nào.</p>`; return; }
+
+  const toggleHtml = `
+    <div style="margin-bottom:10px;">
+      <button class="btn-secondary" onclick="setSetsView('grouped')" style="${setsViewMode==='grouped'?'background:#CADCFC;':''}">📚 Theo môn học</button>
+      <button class="btn-secondary" onclick="setSetsView('flat')" style="${setsViewMode==='flat'?'background:#CADCFC;':''}">📋 Tất cả (${quizSets.length})</button>
+    </div>
+  `;
+
+  if(setsViewMode === "flat"){
+    el.innerHTML = toggleHtml + renderFlatSetsTable(quizSets);
+    return;
+  }
+
+  el.innerHTML = toggleHtml + `<p class="muted">Đang nhóm theo môn học...</p>`;
+  await ensureLessonsForGrouping();
+  // Nếu khi chờ tải xong mà người dùng đã bấm chuyển view khác thì thôi, không ghi đè.
+  if(setsViewMode !== "grouped") return;
+
+  const usageBySlug = {};
+  function addUsage(slug, subjTitle, subjSlug, label){
+    if(!slug) return;
+    (usageBySlug[slug] = usageBySlug[slug] || []).push({ subjTitle, subjSlug, label });
+  }
+  lastLoadedSubjects.forEach(s => {
+    addUsage(s.mock_exam_quiz_slug, s.title, s.slug, "⭐ Câu hỏi ôn tập");
+    (lessonsBySubjectCache[s.slug] || []).forEach(l => addUsage(l.quiz_slug, s.title, s.slug, `📘 ${esc(l.title)}`));
+  });
+
+  const groups = {};
+  const unassigned = [];
+  quizSets.forEach(set => {
+    const usages = usageBySlug[set.slug];
+    if(!usages || !usages.length){ unassigned.push(set); return; }
+    usages.forEach(u => {
+      groups[u.subjSlug] = groups[u.subjSlug] || { title: u.subjTitle, items: [] };
+      groups[u.subjSlug].items.push({ set, label: u.label });
+    });
+  });
+
+  let html = toggleHtml;
+  lastLoadedSubjects.map(s => s.slug).forEach(slug => {
+    const g = groups[slug];
+    if(!g || !g.items.length) return;
+    html += `
+      <div class="card" style="background:#f7f9ff;margin-bottom:10px;padding:14px;">
+        <h3 style="margin:0 0 8px;">${esc(g.title)}</h3>
+        <table>
+          <tr><th>Dùng cho</th><th>Bộ đề</th><th>Số câu</th><th>Lượt làm</th><th>Trạng thái</th><th></th></tr>
+          ${g.items.map(({set,label}) => `
+            <tr>
+              <td>${label}</td>
+              <td><b>${esc(set.title)}</b><br><span class="muted">${esc(set.slug)}</span></td>
+              <td>${set.question_count}</td>
+              <td>${set.attempt_count}</td>
+              <td><span class="pill" style="background:${set.is_active ? '#CADCFC' : '#eee'};">${set.is_active ? 'Đang mở' : 'Đã ẩn'}</span></td>
+              <td><button class="btn-secondary" onclick="openDetail('${set.slug.replace(/'/g,"\\'")}')">Quản lý</button></td>
+            </tr>
+          `).join("")}
+        </table>
+      </div>
+    `;
+  });
+  if(unassigned.length){
+    html += `
+      <div class="card" style="background:#fff7f0;margin-bottom:10px;padding:14px;">
+        <h3 style="margin:0 0 8px;">⚠️ Chưa gán vào môn học nào (${unassigned.length})</h3>
+        <p class="muted" style="margin-top:-4px;">Bộ đề này chưa được chọn làm "Câu hỏi ôn tập" hay Quizzi của bài học nào. Vào tab "Môn học &amp; bài học" để gán.</p>
+        ${renderFlatSetsTable(unassigned)}
+      </div>
+    `;
+  }
+  el.innerHTML = html;
 }
 
 async function createSet(){
@@ -947,25 +1044,34 @@ async function deleteSet(slug){
   await refreshSets();
 }
 
+let lastLoadedQuestions = [];
+let editingQuestionId = null;
+
 async function loadQuestions(slug){
   const data = await callRpc("admin_list_quiz_questions", { p_password: PASSWORD, p_quiz_slug: slug });
   const el = document.getElementById("questions-table");
   if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
   const qs = data.questions;
+  lastLoadedQuestions = qs;
+  editingQuestionId = null;
   if(qs.length === 0){ el.innerHTML = `<p class="muted">Chưa có câu hỏi nào.</p>`; return; }
   el.innerHTML = `
     <table>
       <tr><th>#</th><th>Câu hỏi</th><th>Đáp án đúng</th><th>Chủ đề</th><th></th></tr>
-      ${qs.map(q => `
+      ${qs.map((q,i) => `
         <tr>
           <td>${q.stt}</td>
           <td>${esc(q.question)}</td>
           <td>${esc(q.correct_answer)}</td>
           <td>${esc(q.topic||"")}</td>
-          <td><button class="btn-danger" onclick="deleteQuestion(${q.id},'${slug.replace(/'/g,"\\'")}')">Xoá</button></td>
+          <td style="white-space:nowrap;">
+            <button class="btn-secondary" onclick="editQuestion(${i})">Sửa</button>
+            <button class="btn-danger" onclick="deleteQuestion(${q.id},'${slug.replace(/'/g,"\\'")}')">Xoá</button>
+          </td>
         </tr>
       `).join("")}
     </table>
+    <div id="question-edit-area"></div>
   `;
 }
 async function deleteQuestion(id, slug){
@@ -973,6 +1079,86 @@ async function deleteQuestion(id, slug){
   await callRpc("admin_delete_quiz_question", { p_password: PASSWORD, p_id: id });
   loadQuestions(slug);
   refreshSets();
+}
+
+function editQuestion(i){
+  const q = lastLoadedQuestions[i];
+  if(!q) return;
+  editingQuestionId = q.id;
+  const area = document.getElementById("question-edit-area");
+  if(!area) return;
+  const hasOptions = [q.option_a, q.option_b, q.option_c, q.option_d].some(o => o !== undefined && o !== null && o !== "");
+  area.innerHTML = `
+    <div class="card" style="background:#f7f9ff;margin-top:12px;">
+      <h3 style="margin-top:0;">✏️ Sửa câu ${esc(String(q.stt))}</h3>
+      ${!hasOptions ? `<div class="msg err">Không lấy được 4 đáp án gốc của câu này qua danh sách — hãy nhập lại đầy đủ cả 4 lựa chọn bên dưới trước khi lưu để khỏi mất dữ liệu (hoặc sửa trực tiếp qua file Excel rồi nhập lại nếu không chắc nội dung gốc).</div>` : ""}
+      <label>Câu hỏi</label>
+      <textarea id="eq-question" rows="2">${esc(q.question||"")}</textarea>
+      <div class="row">
+        <div><label>Lựa chọn A</label><input type="text" id="eq-a" value="${esc(q.option_a||"")}" oninput="refreshCorrectAnswerOptions()"></div>
+        <div><label>Lựa chọn B</label><input type="text" id="eq-b" value="${esc(q.option_b||"")}" oninput="refreshCorrectAnswerOptions()"></div>
+      </div>
+      <div class="row">
+        <div><label>Lựa chọn C</label><input type="text" id="eq-c" value="${esc(q.option_c||"")}" oninput="refreshCorrectAnswerOptions()"></div>
+        <div><label>Lựa chọn D</label><input type="text" id="eq-d" value="${esc(q.option_d||"")}" oninput="refreshCorrectAnswerOptions()"></div>
+      </div>
+      <label>Đáp án đúng</label>
+      <select id="eq-correct"></select>
+      <label>Giải thích (hiện cho học viên sau khi trả lời, có thể để trống)</label>
+      <textarea id="eq-explain" rows="2">${esc(q.explanation||"")}</textarea>
+      <label>Chủ đề / Chương</label>
+      <input type="text" id="eq-topic" value="${esc(q.topic||"")}">
+      <div class="row" style="margin-top:10px;">
+        <button class="btn-primary" type="button" onclick="saveQuestionEdit('${currentSlug.replace(/'/g,"\\'")}')">💾 Lưu câu hỏi</button>
+        <button class="btn-secondary" type="button" onclick="document.getElementById('question-edit-area').innerHTML=''">Huỷ</button>
+      </div>
+      <div id="eq-msg"></div>
+    </div>
+  `;
+  refreshCorrectAnswerOptions(q.correct_answer);
+  area.scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+function refreshCorrectAnswerOptions(selectedValue){
+  const sel = document.getElementById("eq-correct");
+  if(!sel) return;
+  const prev = selectedValue !== undefined ? selectedValue : sel.value;
+  const opts = [
+    document.getElementById("eq-a").value,
+    document.getElementById("eq-b").value,
+    document.getElementById("eq-c").value,
+    document.getElementById("eq-d").value
+  ];
+  sel.innerHTML = opts.map(o => `<option value="${esc(o)}" ${o===prev ? "selected" : ""}>${esc(o || "(trống)")}</option>`).join("");
+}
+
+async function saveQuestionEdit(slug){
+  const q = lastLoadedQuestions.find(x => x.id === editingQuestionId);
+  const msgEl = document.getElementById("eq-msg");
+  if(!q){ if(msgEl) msgEl.innerHTML = `<div class="msg err">Có lỗi, hãy tải lại trang.</div>`; return; }
+  const question = document.getElementById("eq-question").value.trim();
+  const a = document.getElementById("eq-a").value.trim();
+  const b = document.getElementById("eq-b").value.trim();
+  const c = document.getElementById("eq-c").value.trim();
+  const d = document.getElementById("eq-d").value.trim();
+  const correct = document.getElementById("eq-correct").value;
+  const explain = document.getElementById("eq-explain").value.trim();
+  const topic = document.getElementById("eq-topic").value.trim();
+  if(!question || !a || !b || !c || !d || !correct){
+    msgEl.innerHTML = `<div class="msg err">Cần nhập đủ nội dung câu hỏi, cả 4 lựa chọn và chọn đáp án đúng.</div>`;
+    return;
+  }
+  msgEl.innerHTML = `<div class="msg">Đang lưu...</div>`;
+  const data = await callRpc("admin_bulk_upsert_quiz_questions", {
+    p_password: PASSWORD, p_quiz_slug: slug,
+    p_questions: [{ stt: q.stt, question, option_a: a, option_b: b, option_c: c, option_d: d, correct_answer: correct, explanation: explain, topic }]
+  });
+  if(data && data.status === "ok"){
+    msgEl.innerHTML = `<div class="msg ok">Đã lưu câu hỏi.</div>`;
+    loadQuestions(slug);
+  } else {
+    msgEl.innerHTML = `<div class="msg err">Lỗi khi lưu: ${esc(data && data.status)}</div>`;
+  }
 }
 
 async function loadAttempts(slug){
