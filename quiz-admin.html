@@ -317,10 +317,10 @@ function editSubject(i){
 }
 
 async function loadSubjects(){
-  const [data, timeData, hoursData] = await Promise.all([
+  const [data, timeData, videoHoursData] = await Promise.all([
     callRpc("admin_list_subjects", { p_password: PASSWORD }),
     callRpc("admin_list_mock_exam_time_limits", { p_password: PASSWORD }).catch(() => null),
-    callRpc("admin_list_subject_hours", { p_password: PASSWORD }).catch(() => null)
+    callRpc("list_subject_video_hours_public", {}).catch(() => null)
   ]);
   const el = document.getElementById("subjects-table");
   if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
@@ -330,16 +330,19 @@ async function loadSubjects(){
   if(timeData && timeData.status === "ok"){
     (timeData.items||[]).forEach(it => { timeLimits[it.slug] = it.mock_exam_time_limit_minutes; });
   }
-  const subjectHours = {};
-  if(hoursData && hoursData.status === "ok"){
-    (hoursData.items||[]).forEach(it => { subjectHours[it.slug] = it.estimated_hours; });
+  const videoHours = {};
+  if(videoHoursData && videoHoursData.status === "ok"){
+    (videoHoursData.items||[]).forEach(it => { videoHours[it.slug] = it; });
   }
   lastLoadedSubjects = subs;
   if(subs.length === 0){ el.innerHTML = `<p class="muted">Chưa có môn học nào.</p>`; return; }
   el.innerHTML = `
     <table>
-      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th>Thời gian làm bài</th><th>Tổng số giờ học</th><th></th><th></th><th></th></tr>
-      ${subs.map((s,i) => `
+      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th>Thời gian làm bài</th><th>Tổng thời lượng video</th><th></th><th></th><th></th></tr>
+      ${subs.map((s,i) => {
+        const vh = videoHours[s.slug];
+        const hoursLabel = (vh && vh.total_minutes > 0) ? `${vh.total_hours.toLocaleString("vi-VN")} giờ (${vh.total_minutes.toLocaleString("vi-VN")} phút)` : "—";
+        return `
         <tr>
           <td><b>${esc(s.title)}</b><br><span class="muted">${esc(s.slug)}</span></td>
           <td>${s.lesson_count}</td>
@@ -348,32 +351,16 @@ async function loadSubjects(){
             <input type="text" id="time-${esc(s.slug)}" value="${timeLimits[s.slug] != null ? timeLimits[s.slug] : ""}" placeholder="Không giới hạn" style="width:110px;display:inline-block;">
             <button class="btn-secondary" onclick="saveExamTimeLimit('${s.slug.replace(/'/g,"\\'")}')">Lưu</button>
           </td>
-          <td style="white-space:nowrap;">
-            <input type="text" id="hours-${esc(s.slug)}" value="${subjectHours[s.slug] != null ? subjectHours[s.slug] : ""}" placeholder="VD: 6" style="width:80px;display:inline-block;">
-            <button class="btn-secondary" onclick="saveSubjectHours('${s.slug.replace(/'/g,"\\'")}')">Lưu</button>
-          </td>
+          <td style="white-space:nowrap;">${hoursLabel}</td>
           <td><button class="btn-primary" onclick="manageMockExamQuestions('${(s.mock_exam_quiz_slug||"").replace(/'/g,"\\'")}')">📥 Câu hỏi ôn tập</button></td>
           <td><button class="btn-secondary" onclick="openLessons('${s.slug.replace(/'/g,"\\'")}')">Quản lý bài học</button></td>
           <td><button class="btn-secondary" onclick="editSubject(${i})">Sửa</button></td>
         </tr>
-      `).join("")}
+      `;}).join("")}
     </table>
     <p class="muted" style="margin-top:8px;">Thời gian làm bài tính bằng phút, để trống = không giới hạn thời gian (đáp án vẫn ẩn tới khi nộp bài).<br>
-    Tổng số giờ học là số giờ ước tính để học xong toàn bộ môn (hiện cho học viên ngay dưới tên môn); để trống = không hiển thị.</p>
+    "Tổng thời lượng video" tự cộng từ thời lượng các video bài giảng của môn (vào "Quản lý bài học" để nhập/kiểm tra thời lượng từng video) — hiện cho học viên ngay dưới tên môn.</p>
   `;
-}
-
-async function saveSubjectHours(slug){
-  const input = document.getElementById(`hours-${slug}`);
-  const raw = input.value.trim();
-  const hours = raw === "" ? null : parseFloat(raw.replace(",", "."));
-  if(raw !== "" && (isNaN(hours) || hours <= 0)){
-    alert("Số giờ phải là số dương (có thể có phần lẻ, vd 4.5), hoặc để trống nếu không muốn hiển thị.");
-    return;
-  }
-  const data = await callRpc("admin_set_subject_hours", { p_password: PASSWORD, p_subject_slug: slug, p_hours: hours });
-  if(!data || data.status !== "ok"){ alert("Lỗi khi lưu: " + (data && data.status)); return; }
-  loadSubjects();
 }
 
 async function saveExamTimeLimit(slug){
@@ -449,13 +436,14 @@ async function openLessons(subjectSlug){
     <div class="row" style="align-items:end;">
       <div><label>Tên video</label><input type="text" id="les-video-label" placeholder="vd: Video bài 1 - Phần 1"></div>
       <div><label>Dán link (YouTube / Google Drive)</label><input type="text" id="les-video-url" placeholder="https://..."></div>
+      <div><label>Thời lượng (phút)</label><input type="text" id="les-video-duration" placeholder="vd: 12.5" style="width:90px;"></div>
       <div><button class="btn-secondary" type="button" onclick="addVideoLink()">+ Thêm link</button></div>
     </div>
     <div class="row" style="align-items:end;">
-      <div><label>...hoặc tải file video lên trực tiếp</label><input type="file" id="les-video-file" accept="video/*"></div>
+      <div><label>...hoặc tải file video lên trực tiếp (tự nhận thời lượng)</label><input type="file" id="les-video-file" accept="video/*"></div>
       <div><button class="btn-secondary" type="button" onclick="uploadVideoFile()">⬆️ Tải video lên & thêm</button></div>
     </div>
-    <p class="muted">Lưu ý file video tải trực tiếp sẽ chiếm dung lượng lưu trữ — nếu video lớn, nên ưu tiên dán link YouTube/Google Drive (nhớ đổi quyền chia sẻ Drive thành "Anyone with the link").</p>
+    <p class="muted">Lưu ý file video tải trực tiếp sẽ chiếm dung lượng lưu trữ — nếu video lớn, nên ưu tiên dán link YouTube/Google Drive (nhớ đổi quyền chia sẻ Drive thành "Anyone with the link"). Nhập thời lượng (phút) cho link dán vào để hệ thống tự cộng tổng thời lượng môn học — video tải trực tiếp lên sẽ tự nhận thời lượng, không cần nhập tay. Để trống = tính là 0 phút.</p>
     <div id="les-video-msg"></div>
 
     <label>Mindmap</label>
@@ -502,23 +490,45 @@ function renderVideosList(){
   if(!currentLessonVideos.length){ el.innerHTML = `<p class="muted">Chưa có video nào cho bài này.</p>`; return; }
   el.innerHTML = currentLessonVideos.map((v,i) => `
     <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #eceff8;">
-      <a href="${esc(v.url)}" target="_blank" rel="noopener" style="flex:1;font-weight:600;font-size:.88rem;">▶️ ${esc(v.label)}</a>
+      <a href="${esc(v.url)}" target="_blank" rel="noopener" style="flex:1;font-weight:600;font-size:.88rem;">▶️ ${esc(v.label)} ${v.duration_seconds ? `<span class="muted" style="font-weight:400;">(${formatMinutes(v.duration_seconds/60)} phút)</span>` : ""}</a>
       <button class="btn-danger" type="button" onclick="removeVideo(${i})">Xoá</button>
     </div>
   `).join("");
 }
 function removeVideo(i){ currentLessonVideos.splice(i,1); renderVideosList(); }
 
+function formatMinutes(m){
+  return (Math.round(m*10)/10).toLocaleString("vi-VN");
+}
+
+function readVideoDuration(file){
+  return new Promise((resolve) => {
+    try{
+      const videoEl = document.createElement("video");
+      videoEl.preload = "metadata";
+      videoEl.onloadedmetadata = () => {
+        URL.revokeObjectURL(videoEl.src);
+        resolve(isFinite(videoEl.duration) ? videoEl.duration : null);
+      };
+      videoEl.onerror = () => resolve(null);
+      videoEl.src = URL.createObjectURL(file);
+    } catch(e){ resolve(null); }
+  });
+}
+
 function addVideoLink(){
   const labelEl = document.getElementById("les-video-label");
   const urlEl = document.getElementById("les-video-url");
+  const durationEl = document.getElementById("les-video-duration");
   const msgEl = document.getElementById("les-video-msg");
   const label = labelEl.value.trim();
   const url = urlEl.value.trim();
+  const durationMin = parseFloat((durationEl.value||"").trim().replace(",", "."));
+  const duration_seconds = (!isNaN(durationMin) && durationMin > 0) ? Math.round(durationMin * 60) : null;
   if(!label || !url){ msgEl.innerHTML = `<div class="msg err">Nhập tên video và dán link trước.</div>`; return; }
-  currentLessonVideos.push({ label, url });
+  currentLessonVideos.push({ label, url, duration_seconds });
   renderVideosList();
-  labelEl.value = ""; urlEl.value = "";
+  labelEl.value = ""; urlEl.value = ""; durationEl.value = "";
   msgEl.innerHTML = `<div class="msg ok">Đã thêm "${esc(label)}".</div>`;
 }
 
@@ -531,14 +541,15 @@ async function uploadVideoFile(){
   if(!label || !file){ msgEl.innerHTML = `<div class="msg err">Nhập tên video và chọn file trước.</div>`; return; }
   msgEl.innerHTML = `<div class="msg">Đang tải video lên, có thể mất một lúc...</div>`;
   try{
+    const duration_seconds = await readVideoDuration(file);
     const lessonSlug = slugify(document.getElementById("les-slug").value);
     const safeName = file.name.replace(/[^\w.\-]/g, "_");
     const path = `${slugify(currentSubjectSlug)}/${lessonSlug}/video-${Date.now()}-${safeName}`;
     const url = await uploadToStorage(file, path);
-    currentLessonVideos.push({ label, url });
+    currentLessonVideos.push({ label, url, duration_seconds });
     renderVideosList();
     labelEl.value = ""; fileEl.value = "";
-    msgEl.innerHTML = `<div class="msg ok">Đã tải video "${esc(label)}" lên.</div>`;
+    msgEl.innerHTML = `<div class="msg ok">Đã tải video "${esc(label)}" lên${duration_seconds ? ` (${formatMinutes(duration_seconds/60)} phút)` : ""}.</div>`;
   } catch(err){
     msgEl.innerHTML = `<div class="msg err">Lỗi tải lên: ${esc(err.message)}</div>`;
   }
@@ -708,62 +719,67 @@ async function deleteLesson(lessonSlug){
 }
 
 /* ---------- Luyện tính toán chuyên sâu (mẫu + bài tập điền đáp án số, theo từng dạng) ---------- */
-let currentCalcGroups = [];
-let calcGroupFormOpenFor = null; // null | 'new' | group.id đang sửa
-let calcItemFormOpenFor = null;  // null | { groupId, itemId|null }
+let currentCalcSections = []; // mỗi phần có .groups (mỗi dạng có .items); phần id=null là nhóm "chưa phân loại"
+let calcSectionFormOpenFor = null; // null | 'new' | section.id
+let calcGroupFormOpenFor = null;   // null | 'new' | group.id đang sửa
+let calcItemFormOpenFor = null;    // null | { groupId, itemId|null }
 
 async function loadCalcPractice(subjectSlug){
   const data = await callRpc("admin_list_calc_practice", { p_password: PASSWORD, p_subject_slug: subjectSlug });
   const el = document.getElementById("calc-practice-panel");
   if(!el) return;
   if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
-  currentCalcGroups = data.groups || [];
+  currentCalcSections = data.sections || [];
   renderCalcPractice();
+}
+
+function findCalcGroupById(id){
+  for(const s of currentCalcSections){
+    const g = (s.groups||[]).find(x => x.id === id);
+    if(g) return { group: g, section: s };
+  }
+  return null;
 }
 
 function renderCalcPractice(){
   const el = document.getElementById("calc-practice-panel");
   if(!el) return;
-  let html = `<button class="btn-secondary" type="button" onclick="openCalcGroupForm('new')">+ Thêm dạng mới</button>`;
-  html += `<div id="calc-group-form-area"></div>`;
+  let html = `<button class="btn-secondary" type="button" onclick="openCalcSectionForm('new')">+ Thêm phần mới</button>`;
+  html += `<div id="calc-section-form-area"></div>`;
+  html += `
+    <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:14px;padding:14px;">
+      <h3 style="margin-top:0;">📥 Nhập hàng loạt từ Excel</h3>
+      <p class="muted">Mỗi dòng trong file = 1 câu (mẫu hoặc bài tập). Cột "Phần" và "Dạng" trùng tên (trong cùng file, hoặc trùng với phần/dạng đã có sẵn) sẽ tự gộp chung — không cần tạo phần/dạng trước, hệ thống tự tạo khi chưa có. Thứ tự các cột đúng theo file mẫu: <b>Phần, Thứ tự phần, Video phần (link), Tên video phần, Dạng, Thứ tự dạng, Loại câu (Mẫu/Bài tập), Thứ tự câu, Câu hỏi, Đáp án đúng, Sai số, Đơn vị, Lời giải chi tiết</b>. Dòng đầu là tiêu đề sẽ tự bỏ qua. Cột "Video phần" chỉ cần điền ở 1 dòng bất kỳ của phần đó (các dòng khác để trống cũng được).</p>
+      <input type="file" id="calc-excel-file" accept=".xlsx,.xls,.csv">
+      <button class="btn-primary" style="margin-top:10px;" onclick="importCalcPracticeExcel()">Nhập từ Excel</button>
+      <div id="calc-import-msg" style="margin-top:8px;"></div>
+    </div>
+  `;
 
-  if(!currentCalcGroups.length){
-    html += `<p class="muted" style="margin-top:10px;">Chưa có dạng tính toán nào cho môn này.</p>`;
+  if(!currentCalcSections.length){
+    html += `<p class="muted" style="margin-top:10px;">Chưa có phần nào cho môn này. Tạo "phần" trước (vd: Phần 1: Chứng khoán phái sinh cơ bản), mỗi phần có thể gắn 1 video hướng dẫn, rồi thêm các "dạng" bài tập vào trong.</p>`;
   } else {
-    currentCalcGroups.forEach(g => {
-      const items = g.items || [];
+    currentCalcSections.forEach(s => {
+      const isUnassigned = s.id === null;
+      const groups = s.groups || [];
       html += `
-        <div class="card" style="background:#f7f9ff;margin-top:12px;padding:14px;">
+        <div class="card" style="background:#eef1fb;margin-top:14px;padding:14px;border:1px solid #d7ddf5;">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-            <h3 style="margin:0;">#${g.order_index} · ${esc(g.title)} ${g.video_url ? `<span class="muted" style="font-size:.75rem;font-weight:400;">🎬 ${esc(g.video_label||"có video")}</span>` : ""}</h3>
-            <div>
-              <button class="btn-secondary" type="button" onclick="openCalcGroupForm(${g.id})">Sửa dạng</button>
-              <button class="btn-danger" type="button" onclick="deleteCalcGroup(${g.id})">Xoá dạng</button>
-            </div>
+            <h2 style="margin:0;">${isUnassigned ? "" : `#${s.order_index} · `}${esc(s.title)} ${s.video_url ? `<span class="muted" style="font-size:.75rem;font-weight:400;">🎬 ${esc(s.video_label||"có video")}</span>` : ""}</h2>
+            ${isUnassigned ? "" : `
+              <div>
+                <button class="btn-secondary" type="button" onclick="openCalcSectionForm(${s.id})">Sửa phần</button>
+                <button class="btn-danger" type="button" onclick="deleteCalcSection(${s.id})">Xoá phần</button>
+              </div>
+            `}
           </div>
-          <div id="calc-group-form-${g.id}"></div>
+          ${isUnassigned ? `<p class="muted" style="margin-top:4px;">Các dạng dưới đây chưa được gán vào phần nào — bấm "Sửa dạng" trong mỗi dạng để chọn phần cho nó.</p>` : ""}
+          <div id="calc-section-form-${s.id != null ? s.id : "none"}"></div>
 
-          ${items.length ? `
-            <table style="margin-top:10px;">
-              <tr><th>#</th><th>Loại</th><th>Câu hỏi</th><th>Đáp án đúng</th><th>Sai số</th><th></th></tr>
-              ${items.map(it => `
-                <tr>
-                  <td>${it.order_index}</td>
-                  <td>${it.item_type === "sample" ? "📘 Mẫu" : "✏️ Bài tập"}</td>
-                  <td>${esc((it.question||"").length > 70 ? it.question.slice(0,70)+"..." : (it.question||""))}</td>
-                  <td>${it.correct_value}${it.unit ? " "+esc(it.unit) : ""}</td>
-                  <td>${it.tolerance || 0}</td>
-                  <td style="white-space:nowrap;">
-                    <button class="btn-secondary" type="button" onclick="openCalcItemForm(${g.id}, ${it.id})">Sửa</button>
-                    <button class="btn-danger" type="button" onclick="deleteCalcItem(${it.id}, ${g.id})">Xoá</button>
-                  </td>
-                </tr>
-              `).join("")}
-            </table>
-          ` : `<p class="muted" style="margin-top:8px;">Dạng này chưa có câu nào.</p>`}
+          ${groups.map(g => renderCalcGroupCard(g)).join("")}
 
-          <button class="btn-secondary" type="button" style="margin-top:10px;" onclick="openCalcItemForm(${g.id}, null)">+ Thêm câu vào dạng này</button>
-          <div id="calc-item-form-${g.id}"></div>
+          ${!isUnassigned ? `<button class="btn-secondary" type="button" style="margin-top:10px;" onclick="openCalcGroupForm('new', ${s.id})">+ Thêm dạng vào phần này</button>` : ""}
+          <div id="calc-group-form-new-${s.id != null ? s.id : "none"}"></div>
         </div>
       `;
     });
@@ -771,21 +787,122 @@ function renderCalcPractice(){
   el.innerHTML = html;
 }
 
-function openCalcGroupForm(target){
-  calcGroupFormOpenFor = target;
+function renderCalcGroupCard(g){
+  const items = g.items || [];
+  return `
+    <div class="card" style="background:#fff;margin-top:10px;padding:12px;border:1px solid #e3e7f5;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <h3 style="margin:0;">#${g.order_index} · ${esc(g.title)}</h3>
+        <div>
+          <button class="btn-secondary" type="button" onclick="openCalcGroupForm(${g.id})">Sửa dạng</button>
+          <button class="btn-danger" type="button" onclick="deleteCalcGroup(${g.id})">Xoá dạng</button>
+        </div>
+      </div>
+      <div id="calc-group-form-${g.id}"></div>
+      ${items.length ? `
+        <table style="margin-top:10px;">
+          <tr><th>#</th><th>Loại</th><th>Câu hỏi</th><th>Đáp án đúng</th><th>Sai số</th><th></th></tr>
+          ${items.map(it => `
+            <tr>
+              <td>${it.order_index}</td>
+              <td>${it.item_type === "sample" ? "📘 Mẫu" : "✏️ Bài tập"}</td>
+              <td>${esc((it.question||"").length > 70 ? it.question.slice(0,70)+"..." : (it.question||""))}</td>
+              <td>${it.correct_value}${it.unit ? " "+esc(it.unit) : ""}</td>
+              <td>${it.tolerance || 0}</td>
+              <td style="white-space:nowrap;">
+                <button class="btn-secondary" type="button" onclick="openCalcItemForm(${g.id}, ${it.id})">Sửa</button>
+                <button class="btn-danger" type="button" onclick="deleteCalcItem(${it.id}, ${g.id})">Xoá</button>
+              </td>
+            </tr>
+          `).join("")}
+        </table>
+      ` : `<p class="muted" style="margin-top:8px;">Dạng này chưa có câu nào.</p>`}
+      <button class="btn-secondary" type="button" style="margin-top:10px;" onclick="openCalcItemForm(${g.id}, null)">+ Thêm câu vào dạng này</button>
+      <div id="calc-item-form-${g.id}"></div>
+    </div>
+  `;
+}
+
+function openCalcSectionForm(target){
+  calcSectionFormOpenFor = target;
   const isNew = target === "new";
-  const g = isNew ? null : currentCalcGroups.find(x => x.id === target);
+  const s = isNew ? null : currentCalcSections.find(x => x.id === target);
+  const realSectionCount = currentCalcSections.filter(x => x.id !== null).length;
   const formHtml = `
     <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:10px;padding:12px;">
       <div class="row">
-        <div><label>Tên dạng</label><input type="text" id="cg-title" placeholder="VD: Dạng 1: Tính EPS/P-E" value="${esc(g ? g.title : "")}"></div>
-        <div><label>Thứ tự</label><input type="text" id="cg-order" placeholder="1" value="${g ? g.order_index : (currentCalcGroups.length+1)}"></div>
+        <div><label>Tên phần</label><input type="text" id="cs-title" placeholder="VD: Phần 1: Chứng khoán phái sinh cơ bản" value="${esc(s ? s.title : "")}"></div>
+        <div><label>Thứ tự</label><input type="text" id="cs-order" placeholder="1" value="${s ? s.order_index : (realSectionCount+1)}"></div>
       </div>
       <div class="row">
-        <div><label>Link video hướng dẫn (tuỳ chọn)</label><input type="text" id="cg-video-url" placeholder="https://... (YouTube/Google Drive)" value="${esc(g ? (g.video_url||"") : "")}"></div>
-        <div><label>Tên video hiển thị</label><input type="text" id="cg-video-label" placeholder="VD: Hướng dẫn giải dạng 1-6" value="${esc(g ? (g.video_label||"") : "")}"></div>
+        <div><label>Link video hướng dẫn phần này (tuỳ chọn)</label><input type="text" id="cs-video-url" placeholder="https://... (YouTube/Google Drive)" value="${esc(s ? (s.video_url||"") : "")}"></div>
+        <div><label>Tên video hiển thị</label><input type="text" id="cs-video-label" placeholder="VD: Video tổng quan phần 1" value="${esc(s ? (s.video_label||"") : "")}"></div>
       </div>
-      <p class="muted" style="margin-top:-6px;">1 video có thể dùng chung cho nhiều dạng: chỉ cần dán đúng link này vào ô video của các dạng khác muốn gộp chung video hướng dẫn.</p>
+      <p class="muted" style="margin-top:-6px;">Video này hiện ngay đầu phần (giống video bài học) — học viên xem trước, sau đó luyện các dạng bài tập bên dưới.</p>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn-primary" type="button" onclick="saveCalcSection(${isNew ? "null" : s.id})">💾 Lưu phần</button>
+        <button class="btn-secondary" type="button" onclick="closeCalcSectionForm()">Huỷ</button>
+      </div>
+      <div id="cs-msg"></div>
+    </div>
+  `;
+  const targetEl = isNew ? document.getElementById("calc-section-form-area") : document.getElementById(`calc-section-form-${target}`);
+  if(targetEl) targetEl.innerHTML = formHtml;
+}
+function closeCalcSectionForm(){
+  calcSectionFormOpenFor = null;
+  const areaEl = document.getElementById("calc-section-form-area");
+  if(areaEl) areaEl.innerHTML = "";
+  currentCalcSections.forEach(s => { if(s.id !== null){ const e = document.getElementById(`calc-section-form-${s.id}`); if(e) e.innerHTML = ""; } });
+}
+async function saveCalcSection(id){
+  const title = document.getElementById("cs-title").value.trim();
+  const order = parseInt(document.getElementById("cs-order").value) || 0;
+  const videoUrl = document.getElementById("cs-video-url").value.trim();
+  const videoLabel = document.getElementById("cs-video-label").value.trim();
+  const msgEl = document.getElementById("cs-msg");
+  if(!title){ msgEl.innerHTML = `<div class="msg err">Nhập tên phần.</div>`; return; }
+  const data = await callRpc("admin_upsert_calc_practice_section", {
+    p_password: PASSWORD, p_subject_slug: currentSubjectSlug, p_id: id || null, p_title: title, p_order_index: order,
+    p_video_url: videoUrl || null, p_video_label: videoLabel || null
+  });
+  if(data && data.status === "ok"){
+    closeCalcSectionForm();
+    loadCalcPractice(currentSubjectSlug);
+  } else {
+    msgEl.innerHTML = `<div class="msg err">Lỗi: ${esc(data && data.status)}</div>`;
+  }
+}
+async function deleteCalcSection(id){
+  if(!confirm("Xoá cả phần này cùng toàn bộ dạng/câu bên trong?")) return;
+  await callRpc("admin_delete_calc_practice_section", { p_password: PASSWORD, p_id: id });
+  loadCalcPractice(currentSubjectSlug);
+}
+
+function openCalcGroupForm(target, newSectionId){
+  calcGroupFormOpenFor = target;
+  const isNew = target === "new";
+  let g = null, currentSectionId = isNew ? newSectionId : null;
+  if(!isNew){
+    const found = findCalcGroupById(target);
+    if(found){ g = found.group; currentSectionId = found.section.id; }
+  }
+  const realSections = currentCalcSections.filter(s => s.id !== null);
+  const sectionOptions = realSections.map(s =>
+    `<option value="${s.id}" ${currentSectionId === s.id ? "selected" : ""}>${esc(s.title)}</option>`
+  ).join("");
+  const formHtml = `
+    <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:10px;padding:12px;">
+      <div class="row">
+        <div><label>Tên dạng</label><input type="text" id="cg-title" placeholder="VD: Dạng 1.1: Tính EPS/P-E" value="${esc(g ? g.title : "")}"></div>
+        <div><label>Thứ tự trong phần</label><input type="text" id="cg-order" placeholder="1" value="${g ? g.order_index : 1}"></div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Thuộc phần</label>
+          <select id="cg-section">${sectionOptions || `<option value="">(chưa có phần nào — tạo phần trước)</option>`}</select>
+        </div>
+      </div>
       <div class="row" style="margin-top:10px;">
         <button class="btn-primary" type="button" onclick="saveCalcGroup(${isNew ? "null" : g.id})">💾 Lưu dạng</button>
         <button class="btn-secondary" type="button" onclick="closeCalcGroupForm()">Huỷ</button>
@@ -793,25 +910,28 @@ function openCalcGroupForm(target){
       <div id="cg-msg"></div>
     </div>
   `;
-  const targetEl = isNew ? document.getElementById("calc-group-form-area") : document.getElementById(`calc-group-form-${target}`);
+  const targetEl = isNew ? document.getElementById(`calc-group-form-new-${newSectionId}`) : document.getElementById(`calc-group-form-${target}`);
   if(targetEl) targetEl.innerHTML = formHtml;
 }
 function closeCalcGroupForm(){
   calcGroupFormOpenFor = null;
-  const areaEl = document.getElementById("calc-group-form-area");
-  if(areaEl) areaEl.innerHTML = "";
-  currentCalcGroups.forEach(g => { const e = document.getElementById(`calc-group-form-${g.id}`); if(e) e.innerHTML = ""; });
+  currentCalcSections.forEach(s => {
+    const newArea = document.getElementById(`calc-group-form-new-${s.id != null ? s.id : "none"}`);
+    if(newArea) newArea.innerHTML = "";
+    (s.groups||[]).forEach(g => { const e = document.getElementById(`calc-group-form-${g.id}`); if(e) e.innerHTML = ""; });
+  });
 }
 async function saveCalcGroup(id){
   const title = document.getElementById("cg-title").value.trim();
   const order = parseInt(document.getElementById("cg-order").value) || 0;
-  const videoUrl = document.getElementById("cg-video-url").value.trim();
-  const videoLabel = document.getElementById("cg-video-label").value.trim();
+  const sectionSelect = document.getElementById("cg-section");
+  const sectionId = (sectionSelect && sectionSelect.value) ? parseInt(sectionSelect.value) : null;
   const msgEl = document.getElementById("cg-msg");
   if(!title){ msgEl.innerHTML = `<div class="msg err">Nhập tên dạng.</div>`; return; }
+  if(!sectionId){ msgEl.innerHTML = `<div class="msg err">Chọn phần cho dạng này (tạo phần trước nếu chưa có phần nào).</div>`; return; }
   const data = await callRpc("admin_upsert_calc_practice_group", {
-    p_password: PASSWORD, p_subject_slug: currentSubjectSlug, p_id: id || null, p_title: title, p_order_index: order,
-    p_video_url: videoUrl || null, p_video_label: videoLabel || null
+    p_password: PASSWORD, p_subject_slug: currentSubjectSlug, p_id: id || null, p_title: title,
+    p_section_id: sectionId, p_order_index: order
   });
   if(data && data.status === "ok"){
     closeCalcGroupForm();
@@ -828,7 +948,8 @@ async function deleteCalcGroup(id){
 
 function openCalcItemForm(groupId, itemId){
   calcItemFormOpenFor = { groupId, itemId };
-  const g = currentCalcGroups.find(x => x.id === groupId);
+  const found = findCalcGroupById(groupId);
+  const g = found ? found.group : null;
   const it = (itemId && g) ? (g.items||[]).find(x => x.id === itemId) : null;
   const formHtml = `
     <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:10px;padding:12px;">
@@ -897,6 +1018,184 @@ async function deleteCalcItem(id, groupId){
   if(!confirm("Xoá câu này?")) return;
   await callRpc("admin_delete_calc_practice_item", { p_password: PASSWORD, p_id: id });
   loadCalcPractice(currentSubjectSlug);
+}
+
+/* ---------- Nhập hàng loạt "Luyện tính toán chuyên sâu" từ file Excel ---------- */
+// Cấu trúc 13 cột (dòng đầu là tiêu đề, sẽ tự bỏ qua):
+// 0 Phần | 1 Thứ tự phần | 2 Video phần (link) | 3 Tên video phần |
+// 4 Dạng | 5 Thứ tự dạng | 6 Loại câu (Mẫu/Bài tập) | 7 Thứ tự câu |
+// 8 Câu hỏi | 9 Đáp án đúng | 10 Sai số | 11 Đơn vị | 12 Lời giải chi tiết
+async function importCalcPracticeExcel(){
+  const fileInput = document.getElementById("calc-excel-file");
+  const msgEl = document.getElementById("calc-import-msg");
+  const file = fileInput && fileInput.files && fileInput.files[0];
+  if(!file){
+    msgEl.innerHTML = `<div class="msg err">Vui lòng chọn 1 file Excel (.xlsx/.xls/.csv) trước.</div>`;
+    return;
+  }
+  msgEl.innerHTML = `<div class="muted">Đang đọc file...</div>`;
+
+  let rows;
+  try{
+    rows = await readExcelFile(file);
+  } catch(err){
+    msgEl.innerHTML = `<div class="msg err">Không đọc được file: ${esc(err && err.message)}</div>`;
+    return;
+  }
+
+  // Bỏ dòng tiêu đề (dòng đầu) nếu cột "Phần" của nó không phải dữ liệu thật
+  // (chấp nhận luôn: coi dòng đầu là tiêu đề, bỏ qua).
+  const dataRows = rows.slice(1);
+
+  const parsed = [];
+  const rowErrors = [];
+  dataRows.forEach((r, idx) => {
+    const rowNum = idx + 2; // số dòng thật trong Excel (tính cả dòng tiêu đề)
+    const sectionTitle = String(r[0] || "").trim();
+    const sectionOrder = parseInt(r[1]) || 0;
+    const sectionVideoUrl = String(r[2] || "").trim();
+    const sectionVideoLabel = String(r[3] || "").trim();
+    const groupTitle = String(r[4] || "").trim();
+    const groupOrder = parseInt(r[5] || "") || 0;
+    const typeRaw = normalizeAnswerText(r[6] || "");
+    const itemOrder = parseInt(r[7] || "") || 0;
+    const question = String(r[8] || "").trim();
+    const correctValue = parseFloat(String(r[9] || "").replace(",", "."));
+    const tolerance = parseFloat(String(r[10] || "").replace(",", ".")) || 0;
+    const unit = String(r[11] || "").trim();
+    const solution = String(r[12] || "").trim();
+
+    // Bỏ qua hàng trống hoàn toàn
+    if(!sectionTitle && !groupTitle && !question) return;
+
+    if(!sectionTitle || !groupTitle || !question){
+      rowErrors.push(`Dòng ${rowNum}: thiếu "Phần"/"Dạng"/"Câu hỏi" — đã bỏ qua.`);
+      return;
+    }
+    if(isNaN(correctValue)){
+      rowErrors.push(`Dòng ${rowNum}: "Đáp án đúng" không phải là số — đã bỏ qua.`);
+      return;
+    }
+    const itemType = (typeRaw === "mẫu" || typeRaw === "mau" || typeRaw === "sample") ? "sample" : "practice";
+
+    parsed.push({
+      rowNum, sectionTitle, sectionOrder, sectionVideoUrl, sectionVideoLabel,
+      groupTitle, groupOrder, itemType, itemOrder, question, correctValue, tolerance, unit, solution
+    });
+  });
+
+  if(parsed.length === 0){
+    msgEl.innerHTML = `<div class="msg err">Không có dòng hợp lệ nào để nhập.${rowErrors.length ? "<br>" + rowErrors.map(esc).join("<br>") : ""}</div>`;
+    return;
+  }
+
+  msgEl.innerHTML = `<div class="muted">Đang tạo/khớp các phần...</div>`;
+
+  // --- Bước 1: tạo/khớp "Phần" theo tên (khớp với phần đã có sẵn, hoặc phần vừa tạo trong lượt import này) ---
+  const sectionIdByTitle = {}; // title (chuẩn hoá) -> id
+  (currentCalcSections || []).forEach(s => {
+    if(s.id !== null) sectionIdByTitle[normalizeAnswerText(s.title)] = s.id;
+  });
+  const sectionOrderCache = {}; // title chuẩn hoá -> thông tin phần trong file (để biết order/video cần lưu khi tạo mới)
+  parsed.forEach(p => {
+    const key = normalizeAnswerText(p.sectionTitle);
+    if(!sectionOrderCache[key]) sectionOrderCache[key] = p;
+  });
+
+  let sectionsCreated = 0;
+  for(const key of Object.keys(sectionOrderCache)){
+    if(sectionIdByTitle[key] !== undefined) continue; // đã có sẵn, không tạo mới
+    const info = sectionOrderCache[key];
+    const data = await callRpc("admin_upsert_calc_practice_section", {
+      p_password: PASSWORD, p_subject_slug: currentSubjectSlug, p_title: info.sectionTitle,
+      p_id: null, p_order_index: info.sectionOrder,
+      p_video_url: info.sectionVideoUrl || null, p_video_label: info.sectionVideoLabel || null
+    });
+    if(data && data.status === "ok"){
+      sectionIdByTitle[key] = data.id;
+      sectionsCreated++;
+    } else {
+      rowErrors.push(`Không tạo được phần "${info.sectionTitle}": ${esc(data && data.status)}`);
+    }
+  }
+
+  msgEl.innerHTML = `<div class="muted">Đang tạo/khớp các dạng...</div>`;
+
+  // --- Bước 2: tạo/khớp "Dạng" theo (phần, tên dạng) ---
+  const groupIdByKey = {}; // `${sectionId}::${titleChuanHoa}` -> id
+  (currentCalcSections || []).forEach(s => {
+    (s.groups || []).forEach(g => {
+      groupIdByKey[`${s.id}::${normalizeAnswerText(g.title)}`] = g.id;
+    });
+  });
+  const groupInfoCache = {};
+  parsed.forEach(p => {
+    const sid = sectionIdByTitle[normalizeAnswerText(p.sectionTitle)];
+    const gkey = `${sid}::${normalizeAnswerText(p.groupTitle)}`;
+    if(!groupInfoCache[gkey]) groupInfoCache[gkey] = { sectionId: sid, title: p.groupTitle, order: p.groupOrder };
+  });
+
+  let groupsCreated = 0;
+  for(const gkey of Object.keys(groupInfoCache)){
+    if(groupIdByKey[gkey] !== undefined) continue;
+    const info = groupInfoCache[gkey];
+    if(info.sectionId === undefined || info.sectionId === null){
+      rowErrors.push(`Không xác định được phần cho dạng "${info.title}" — đã bỏ qua các câu thuộc dạng này.`);
+      continue;
+    }
+    const data = await callRpc("admin_upsert_calc_practice_group", {
+      p_password: PASSWORD, p_subject_slug: currentSubjectSlug, p_title: info.title,
+      p_id: null, p_section_id: info.sectionId, p_order_index: info.order
+    });
+    if(data && data.status === "ok"){
+      groupIdByKey[gkey] = data.id;
+      groupsCreated++;
+    } else {
+      rowErrors.push(`Không tạo được dạng "${info.title}": ${esc(data && data.status)}`);
+    }
+  }
+
+  msgEl.innerHTML = `<div class="muted">Đang nhập các câu hỏi...</div>`;
+
+  // --- Bước 3: nhập tất cả các câu (song song) ---
+  let itemsOk = 0;
+  const itemOrderCounter = {}; // groupId -> số thứ tự tiếp theo (nếu file không ghi thứ tự câu)
+  await Promise.all(parsed.map(async (p) => {
+    const sid = sectionIdByTitle[normalizeAnswerText(p.sectionTitle)];
+    const gkey = `${sid}::${normalizeAnswerText(p.groupTitle)}`;
+    const groupId = groupIdByKey[gkey];
+    if(groupId === undefined || groupId === null){
+      rowErrors.push(`Dòng ${p.rowNum}: không xác định được dạng cho câu này — đã bỏ qua.`);
+      return;
+    }
+    let order = p.itemOrder;
+    if(!order){
+      itemOrderCounter[groupId] = (itemOrderCounter[groupId] || 0) + 1;
+      order = itemOrderCounter[groupId];
+    }
+    const data = await callRpc("admin_upsert_calc_practice_item", {
+      p_password: PASSWORD, p_group_id: groupId, p_id: null,
+      p_item_type: p.itemType, p_order_index: order, p_question: p.question,
+      p_unit: p.unit || null, p_correct_value: p.correctValue, p_tolerance: p.tolerance,
+      p_solution_steps: p.solution || null
+    });
+    if(data && data.status === "ok"){
+      itemsOk++;
+    } else {
+      rowErrors.push(`Dòng ${p.rowNum}: lỗi khi lưu câu hỏi (${esc(data && data.status)}).`);
+    }
+  }));
+
+  const summary = `Đã nhập ${itemsOk}/${parsed.length} câu, tạo mới ${sectionsCreated} phần và ${groupsCreated} dạng (các phần/dạng trùng tên đã có sẵn được tự gộp chung).`;
+  const errHtml = rowErrors.length ? `<div class="msg err" style="margin-top:6px;">${rowErrors.map(esc).join("<br>")}</div>` : "";
+  const resultHtml = `<div class="msg ok">${esc(summary)}</div>${errHtml}`;
+
+  // loadCalcPractice() sẽ render lại toàn bộ khung (kể cả khu vực nhập Excel),
+  // nên phải lưu kết quả lại và gán vào đúng div #calc-import-msg MỚI sau khi render lại,
+  // vì tham chiếu msgEl cũ sẽ bị huỷ khi innerHTML của cha nó được thay thế.
+  await loadCalcPractice(currentSubjectSlug);
+  const newMsgEl = document.getElementById("calc-import-msg");
+  if(newMsgEl) newMsgEl.innerHTML = resultHtml;
 }
 
 /* ---------- Tài khoản học viên (đăng ký SĐT + email) ---------- */
