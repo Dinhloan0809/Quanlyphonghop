@@ -46,6 +46,7 @@
 
   .subject-title{color:var(--navy);font-size:1.2rem;font-weight:700;margin:0 0 4px;}
   .subject-desc{color:#666;font-size:.88rem;margin:0 0 16px;line-height:1.4;}
+  .subject-hours{display:inline-flex;align-items:center;gap:5px;background:#eef1fb;color:#4a4f8a;font-size:.8rem;font-weight:600;padding:4px 10px;border-radius:999px;margin:-4px 0 14px;}
   .lesson-list{display:flex;flex-direction:column;gap:9px;}
   .lesson-item{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border:1px solid #e3e7f5;border-radius:9px;background:var(--white);color:var(--dark);cursor:pointer;transition:.15s;}
   .lesson-item:hover{border-color:var(--navy);background:var(--light);}
@@ -57,6 +58,7 @@
   .exam-item{margin-top:6px;border:1.5px dashed var(--gold);background:#fdf8ec;}
   .exam-item .name{color:var(--gold);}
   .exam-item .sub{display:block;font-weight:500;font-size:.74rem;color:#a07a17;margin-top:1px;}
+  .calc-item .sub{display:block;font-weight:500;font-size:.74rem;color:#6a6ea3;margin-top:1px;}
   .exam-item .badge-num{background:var(--gold);color:var(--white);}
   .exam-item.active{border-style:solid;box-shadow:inset 0 0 0 1px var(--gold);}
   .muted{color:#888;font-size:.85rem;}
@@ -110,6 +112,32 @@
   .expl b{color:var(--navy);}
   .progress-bar{position:sticky;top:0;background:var(--white);padding:10px 14px;border-radius:9px;margin-bottom:10px;font-size:.85rem;font-weight:600;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.06);}
   .save-box{text-align:center;padding:14px;}
+
+  /* ---------- Luyện tính toán chuyên sâu ---------- */
+  .calc-switcher{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .calc-switcher button{padding:7px 13px;border-radius:20px;border:1px solid #e3e7f5;background:var(--white);font-size:.8rem;font-weight:600;color:var(--dark);}
+  .calc-switcher button.active{background:var(--navy);color:var(--white);border-color:var(--navy);}
+  .calc-switcher button.done::after{content:" ✓";color:var(--green);}
+  .calc-tag{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:10px;}
+  .calc-tag.sample{background:#e3effc;color:var(--navy);}
+  .calc-tag.practice{background:#fdf1de;color:var(--gold);}
+  .calc-question{font-weight:600;line-height:1.55;margin-bottom:14px;font-size:1rem;}
+  .calc-input-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
+  .calc-input-row input{max-width:220px;}
+  .calc-unit{font-weight:600;color:#777;}
+  .calc-feedback{border-radius:9px;padding:12px 14px;margin:12px 0;font-size:.88rem;line-height:1.55;}
+  .calc-feedback.correct{background:#e9f7ec;border:1px solid var(--green);}
+  .calc-feedback.wrong{background:#fbeceb;border:1px solid var(--red);}
+  .calc-feedback .verdict{font-weight:700;display:block;margin-bottom:5px;}
+  .calc-feedback.correct .verdict{color:var(--green);}
+  .calc-feedback.wrong .verdict{color:var(--red);}
+  .calc-solution{white-space:pre-line;}
+  .calc-done-box{text-align:center;padding:30px 10px;}
+  .calc-done-box .big{font-size:2.4rem;margin-bottom:8px;}
+  .calc-video-details{border:1px solid #e3e7f5;border-radius:9px;padding:10px 14px;margin-bottom:14px;background:var(--light);}
+  .calc-video-details summary{cursor:pointer;font-weight:700;font-size:.88rem;color:var(--navy);list-style:none;}
+  .calc-video-details summary::-webkit-details-marker{display:none;}
+  .calc-video-details[open] summary{margin-bottom:4px;}
 
   /* ---------- Footer ---------- */
   footer.site-footer{max-width:1180px;margin:20px auto 0;padding:26px 20px 40px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;border-top:1px solid #dfe4f5;}
@@ -246,6 +274,7 @@
     <span class="user-chevron">⌄</span>
     <div class="user-menu" id="user-menu" style="display:none;">
       <button type="button" onclick="changeDisplayName(event)">✏️ Đổi tên hiển thị</button>
+      <div id="user-menu-admin-slot"></div>
       <button type="button" onclick="logoutStudent(event)">🚪 Đăng xuất</button>
     </div>
   </div>
@@ -256,6 +285,7 @@
     <div class="subject-tabs" id="subject-tabs" style="display:none;"></div>
     <div class="subject-title" id="subject-title">Đang tải...</div>
     <div class="subject-desc" id="subject-desc"></div>
+    <div class="subject-hours" id="subject-hours" style="display:none;"></div>
     <div class="lesson-list" id="lesson-list"></div>
   </aside>
   <main class="content" id="content">
@@ -427,6 +457,7 @@ async function showApp(){
   document.getElementById("auth-gate").style.display = "none";
   document.getElementById("app-shell").style.display = "block";
   await refreshStudentStatus();
+  renderUserChip();
   callRpc("get_portal_settings_public", {}).then(data => {
     if(data && data.status === "ok"){ portalSettings = data; }
   });
@@ -616,9 +647,24 @@ async function submitAccessRequest(){
 
 /* ---------- User display name (local only, no real login) ---------- */
 let displayName = localStorage.getItem("cchn_display_name") || (currentStudent ? currentStudent.full_name : "");
+
+// Số điện thoại tài khoản được thấy link sang trang quản trị ngay trong menu người dùng.
+// Chỉ là 1 đường dẫn tắt hiển thị cho đúng người — trang quản trị vẫn cần mật khẩu riêng để làm bất cứ việc gì.
+const ADMIN_PHONES = ["0337455335"];
+function normalizePhone(p){ return String(p||"").replace(/\D/g, ""); }
+function isAdminAccount(){
+  return !!(currentStudent && currentStudent.phone && ADMIN_PHONES.includes(normalizePhone(currentStudent.phone)));
+}
+
 function renderUserChip(){
   document.getElementById("user-name-label").innerText = displayName || "Khách";
   document.getElementById("user-avatar").innerText = displayName ? displayName.trim()[0].toUpperCase() : "?";
+  const adminSlot = document.getElementById("user-menu-admin-slot");
+  if(adminSlot){
+    adminSlot.innerHTML = isAdminAccount()
+      ? `<a href="quiz-admin.html" style="display:block;text-decoration:none;" onclick="event.stopPropagation();"><button type="button">⚙️ Trang quản trị</button></a>`
+      : "";
+  }
 }
 function toggleUserMenu(e){
   e.stopPropagation();
@@ -648,9 +694,17 @@ let lessonQuizPrefetch = { lessonSlug: null, slug: null, questions: null };
 
 const initParams = new URLSearchParams(location.search);
 
+let subjectHoursCache = {}; // subject slug -> tổng số giờ học (ước tính), nếu có khai báo
+
 async function init(){
   const data = await callRpc("list_subjects_public", {});
   allSubjects = (data && data.subjects) || [];
+  callRpc("list_subject_hours_public", {}).then(hd => {
+    if(hd && hd.status === "ok"){
+      (hd.items||[]).forEach(it => { subjectHoursCache[it.slug] = it.estimated_hours; });
+      renderSubjectHours();
+    }
+  }).catch(() => {});
   if(allSubjects.length === 0){
     document.getElementById("subject-title").innerText = "Chưa có môn học";
     document.getElementById("subject-desc").innerText = "";
@@ -665,11 +719,17 @@ async function init(){
   currentSubject = allSubjects.find(s => s.slug === wantSubjectSlug) || allSubjects[0];
   renderSidebarForSubject();
 
+  // Dò trước môn nào có nội dung "Luyện tính toán" để hiện đúng mục trong sidebar (không chặn hiển thị trang).
+  prefetchCalcAvailability().then(() => { renderSidebarForSubject(); updateActiveStates(); });
+
   const wantLesson = initParams.get("lesson");
   const wantExam = initParams.get("exam");
+  const wantCalc = initParams.get("calc");
   const wantLessonIdx = wantLesson ? currentSubject.lessons.findIndex(l => l.slug === wantLesson) : -1;
   if(wantExam === "1" && currentSubject.has_mock_exam && !isExamLocked()){
     selectExam();
+  } else if(wantCalc === "1" && !isExamLocked()){
+    selectCalcPractice();
   } else if(wantLessonIdx >= 0 && !isLessonLocked(wantLessonIdx)){
     selectLesson(wantLesson);
   } else if(currentSubject.lessons.length){
@@ -679,6 +739,16 @@ async function init(){
   } else {
     document.getElementById("content").innerHTML = `<div class="card"><div class="empty">Môn học này chưa có nội dung.</div></div>`;
   }
+}
+
+let calcGroupsCache = {}; // subject slug -> mảng dạng (đã kèm items), cache trong phiên
+
+async function prefetchCalcAvailability(){
+  const results = await Promise.all(allSubjects.map(s => callRpc("get_calc_practice_public", { p_subject_slug: s.slug }).catch(() => null)));
+  allSubjects.forEach((s,i) => {
+    const d = results[i];
+    calcGroupsCache[s.slug] = (d && d.status === "ok") ? (d.groups || []) : [];
+  });
 }
 
 function renderSubjectTabs(){
@@ -705,10 +775,25 @@ function selectSubject(slug){
   }
 }
 
+function renderSubjectHours(){
+  const el = document.getElementById("subject-hours");
+  if(!el || !currentSubject) return;
+  const hours = subjectHoursCache[currentSubject.slug];
+  if(hours && hours > 0){
+    const label = Number.isInteger(hours) ? hours : hours.toLocaleString("vi-VN");
+    el.style.display = "inline-flex";
+    el.innerHTML = `⏱ Tổng thời lượng: ${label} giờ`;
+  } else {
+    el.style.display = "none";
+    el.innerHTML = "";
+  }
+}
+
 function renderSidebarForSubject(){
   const s = currentSubject;
   document.getElementById("subject-title").innerText = s.title;
   document.getElementById("subject-desc").innerText = s.description || "";
+  renderSubjectHours();
   const listEl = document.getElementById("lesson-list");
   if(!s.lessons.length && !s.has_mock_exam){
     listEl.innerHTML = `<div class="empty">Chưa có bài học nào.</div>`;
@@ -723,6 +808,12 @@ function renderSidebarForSubject(){
         <span class="arrow">›</span>
       </div>
     `;}).join("")}
+    ${(calcGroupsCache[s.slug] && calcGroupsCache[s.slug].length) ? (() => { const locked = isExamLocked(); return `
+      <div class="lesson-item calc-item ${locked ? "locked" : ""}" data-calc="1" onclick="${locked ? "openAccessModal()" : "selectCalcPractice()"}">
+        <span><span class="badge-num">🧮</span><span class="name">Luyện tính toán chuyên sâu${locked ? `<span class="lock-ic">🔒</span>` : ""}<span class="sub">(làm mẫu rồi tự giải từng dạng)</span></span></span>
+        <span class="arrow">›</span>
+      </div>
+    `; })() : ""}
     ${s.has_mock_exam ? (() => { const locked = isExamLocked(); return `
       <div class="lesson-item exam-item ${locked ? "locked" : ""}" data-exam="1" onclick="${locked ? "openAccessModal()" : "selectExam()"}">
         <span><span class="badge-num">★</span><span class="name">${esc(s.mock_exam_title)}${locked ? `<span class="lock-ic">🔒</span>` : ""}<span class="sub">(đề thi thử ${s.mock_exam_count} câu lấy ngẫu nhiên)</span></span></span>
@@ -736,6 +827,8 @@ function updateActiveStates(){
   document.querySelectorAll(".lesson-item").forEach(el => {
     if(el.dataset.exam){
       el.classList.toggle("active", currentMode === "exam");
+    } else if(el.dataset.calc){
+      el.classList.toggle("active", currentMode === "calc");
     } else {
       el.classList.toggle("active", currentMode === "lesson" && el.dataset.slug === currentLessonSlug);
     }
@@ -946,6 +1039,172 @@ async function startExamQuiz(){
   quizCtx.userAnswers = {};
   window.__takerName = name;
   renderExamQuestions(area);
+}
+
+/* ---------- Luyện tính toán chuyên sâu: 1 bài mẫu có lời giải sẵn, rồi vài bài tập tự điền đáp án số ---------- */
+let calcCtx = { groups: [], groupIdx: 0, itemIdx: 0, answered: {}, entered: {} }; // key `${groupIdx}-${itemIdx}`: answered[key]=true, entered[key]=số đã nộp
+
+async function selectCalcPractice(){
+  stopExamTimer();
+  if(isExamLocked()){ openAccessModal(); return; }
+  currentMode = "calc";
+  currentLessonSlug = null;
+  updateActiveStates();
+  updateUrl({ subject: currentSubject.slug, calc: "1" });
+
+  const content = document.getElementById("content");
+  content.innerHTML = `<div class="card"><div class="empty">Đang tải...</div></div>`;
+
+  let groups = calcGroupsCache[currentSubject.slug];
+  if(!groups){
+    const data = await callRpc("get_calc_practice_public", { p_subject_slug: currentSubject.slug });
+    groups = (data && data.status === "ok") ? (data.groups || []) : [];
+    calcGroupsCache[currentSubject.slug] = groups;
+  }
+  if(currentMode !== "calc") return; // người dùng đã bấm sang chỗ khác trong lúc chờ tải
+
+  calcCtx = { groups, groupIdx: 0, itemIdx: 0, answered: {}, entered: {} };
+  renderCalcPractice();
+}
+
+function calcParseNumber(raw){
+  const cleaned = String(raw||"").trim().replace(/\s/g, "").replace(/,/g, "");
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? null : n;
+}
+function calcIsCorrect(entered, correct, tolerance){
+  if(entered === null) return false;
+  return Math.abs(entered - correct) <= (Number(tolerance)||0) + 1e-9;
+}
+
+function jumpToCalcGroup(groupIdx){
+  calcCtx.groupIdx = groupIdx;
+  calcCtx.itemIdx = 0;
+  renderCalcPractice();
+}
+
+function renderCalcPractice(){
+  const content = document.getElementById("content");
+  const groups = calcCtx.groups;
+
+  if(!groups.length){
+    content.innerHTML = `<div class="card"><div class="empty">Môn học này chưa có nội dung luyện tính toán. Admin sẽ cập nhật sau.</div></div>`;
+    return;
+  }
+
+  const group = groups[calcCtx.groupIdx];
+  const items = group.items || [];
+
+  const switcherHtml = `
+    <div class="calc-switcher">
+      ${groups.map((g,gi) => {
+        const allDone = (g.items||[]).every((it,ii) => it.item_type === "sample" || calcCtx.answered[`${gi}-${ii}`]);
+        return `<button type="button" class="${gi===calcCtx.groupIdx?"active":""} ${allDone?"done":""}" onclick="jumpToCalcGroup(${gi})">${esc(g.title)}</button>`;
+      }).join("")}
+    </div>
+  `;
+  const videoHtml = group.video_url ? `
+    <details class="calc-video-details">
+      <summary>🎬 ${esc(group.video_label || "Xem video hướng dẫn dạng này")}</summary>
+      <div style="margin-top:10px;">${renderVideoBlock({ label: group.video_label || "Video hướng dẫn", url: group.video_url })}</div>
+    </details>
+  ` : "";
+
+  if(!items.length){
+    content.innerHTML = `<div class="card">${switcherHtml}${videoHtml}<div class="empty">Dạng này chưa có câu nào.</div></div>`;
+    return;
+  }
+  if(calcCtx.itemIdx >= items.length){
+    // Đã xong hết câu của dạng này -> sang dạng tiếp theo, hoặc hoàn thành toàn bộ
+    if(calcCtx.groupIdx < groups.length - 1){
+      content.innerHTML = `
+        <div class="card">
+          ${switcherHtml}
+          ${videoHtml}
+          <div class="calc-done-box">
+            <div class="big">✅</div>
+            <h2 style="margin:0 0 8px;">Xong ${esc(group.title)}!</h2>
+            <p class="muted">Sẵn sàng sang dạng tiếp theo chưa?</p>
+            <button class="btn-primary" style="margin-top:10px;" onclick="jumpToCalcGroup(${calcCtx.groupIdx+1})">Sang: ${esc(groups[calcCtx.groupIdx+1].title)} →</button>
+          </div>
+        </div>
+      `;
+    } else {
+      content.innerHTML = `
+        <div class="card">
+          ${switcherHtml}
+          ${videoHtml}
+          <div class="calc-done-box">
+            <div class="big">🎉</div>
+            <h2 style="margin:0 0 8px;">Hoàn thành toàn bộ phần luyện tính toán!</h2>
+            <p class="muted">Bạn đã làm xong tất cả các dạng của môn này. Có thể quay lại ôn bất kỳ dạng nào ở trên.</p>
+          </div>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  const item = items[calcCtx.itemIdx];
+  const key = `${calcCtx.groupIdx}-${calcCtx.itemIdx}`;
+  const isSample = item.item_type === "sample";
+  const already = calcCtx.answered[key];
+
+  content.innerHTML = `
+    <div class="card">
+      ${switcherHtml}
+      ${videoHtml}
+      <div class="progress-bar" style="position:static;">${esc(group.title)} · Câu ${calcCtx.itemIdx+1}/${items.length}</div>
+      <span class="calc-tag ${isSample?"sample":"practice"}">${isSample ? "📘 BÀI MẪU" : "✏️ BÀI TỰ LUYỆN"}</span>
+      <div class="calc-question">${esc(item.question).replace(/\n/g,"<br>")}</div>
+      <div id="calc-item-body">
+        ${isSample ? `
+          <div class="calc-feedback correct">
+            <span class="verdict">Đáp số: ${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}</span>
+            <div class="calc-solution">${esc(item.solution_steps||"").replace(/\n/g,"<br>")}</div>
+          </div>
+        ` : already ? renderCalcFeedback(item, calcCtx.entered[key]) : `
+          <div class="calc-input-row">
+            <input type="text" id="calc-answer-input" placeholder="Nhập đáp án..." onkeydown="if(event.key==='Enter') submitCalcAnswer()">
+            ${item.unit ? `<span class="calc-unit">${esc(item.unit)}</span>` : ""}
+          </div>
+          <button class="btn-primary" onclick="submitCalcAnswer()">Nộp đáp án</button>
+        `}
+      </div>
+      <div class="row" style="margin-top:16px;">
+        ${(isSample || already) ? `<button class="btn-primary" onclick="nextCalcItem()">${calcCtx.itemIdx+1>=items.length ? "Hoàn thành dạng này →" : "Câu tiếp theo →"}</button>` : ""}
+      </div>
+    </div>
+  `;
+  if(!isSample && !already){
+    setTimeout(() => { const inp = document.getElementById("calc-answer-input"); if(inp) inp.focus(); }, 0);
+  }
+}
+
+function renderCalcFeedback(item, entered){
+  const isCorrect = calcIsCorrect(entered, item.correct_value, item.tolerance);
+  return `
+    <div class="calc-feedback ${isCorrect ? "correct" : "wrong"}">
+      <span class="verdict">${isCorrect ? "✅ Chính xác!" : "❌ Chưa đúng."} Đáp số đúng: ${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}</span>
+      <div class="calc-solution">${esc(item.solution_steps||"").replace(/\n/g,"<br>")}</div>
+    </div>
+  `;
+}
+
+function submitCalcAnswer(){
+  const input = document.getElementById("calc-answer-input");
+  if(!input) return;
+  const entered = calcParseNumber(input.value);
+  if(entered === null){ input.style.borderColor = "var(--red)"; input.focus(); return; }
+  const key = `${calcCtx.groupIdx}-${calcCtx.itemIdx}`;
+  calcCtx.answered[key] = true;
+  calcCtx.entered[key] = entered;
+  renderCalcPractice();
+}
+
+function nextCalcItem(){
+  calcCtx.itemIdx++;
+  renderCalcPractice();
 }
 
 /* ---------- Chế độ thi thật cho đề ôn tập: chọn xong mới lộ đáp án, có đếm giờ ---------- */

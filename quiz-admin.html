@@ -317,9 +317,10 @@ function editSubject(i){
 }
 
 async function loadSubjects(){
-  const [data, timeData] = await Promise.all([
+  const [data, timeData, hoursData] = await Promise.all([
     callRpc("admin_list_subjects", { p_password: PASSWORD }),
-    callRpc("admin_list_mock_exam_time_limits", { p_password: PASSWORD }).catch(() => null)
+    callRpc("admin_list_mock_exam_time_limits", { p_password: PASSWORD }).catch(() => null),
+    callRpc("admin_list_subject_hours", { p_password: PASSWORD }).catch(() => null)
   ]);
   const el = document.getElementById("subjects-table");
   if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
@@ -329,11 +330,15 @@ async function loadSubjects(){
   if(timeData && timeData.status === "ok"){
     (timeData.items||[]).forEach(it => { timeLimits[it.slug] = it.mock_exam_time_limit_minutes; });
   }
+  const subjectHours = {};
+  if(hoursData && hoursData.status === "ok"){
+    (hoursData.items||[]).forEach(it => { subjectHours[it.slug] = it.estimated_hours; });
+  }
   lastLoadedSubjects = subs;
   if(subs.length === 0){ el.innerHTML = `<p class="muted">Chưa có môn học nào.</p>`; return; }
   el.innerHTML = `
     <table>
-      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th>Thời gian làm bài</th><th></th><th></th><th></th></tr>
+      <tr><th>Môn học</th><th>Số bài</th><th>Đề ôn tập</th><th>Thời gian làm bài</th><th>Tổng số giờ học</th><th></th><th></th><th></th></tr>
       ${subs.map((s,i) => `
         <tr>
           <td><b>${esc(s.title)}</b><br><span class="muted">${esc(s.slug)}</span></td>
@@ -343,14 +348,32 @@ async function loadSubjects(){
             <input type="text" id="time-${esc(s.slug)}" value="${timeLimits[s.slug] != null ? timeLimits[s.slug] : ""}" placeholder="Không giới hạn" style="width:110px;display:inline-block;">
             <button class="btn-secondary" onclick="saveExamTimeLimit('${s.slug.replace(/'/g,"\\'")}')">Lưu</button>
           </td>
+          <td style="white-space:nowrap;">
+            <input type="text" id="hours-${esc(s.slug)}" value="${subjectHours[s.slug] != null ? subjectHours[s.slug] : ""}" placeholder="VD: 6" style="width:80px;display:inline-block;">
+            <button class="btn-secondary" onclick="saveSubjectHours('${s.slug.replace(/'/g,"\\'")}')">Lưu</button>
+          </td>
           <td><button class="btn-primary" onclick="manageMockExamQuestions('${(s.mock_exam_quiz_slug||"").replace(/'/g,"\\'")}')">📥 Câu hỏi ôn tập</button></td>
           <td><button class="btn-secondary" onclick="openLessons('${s.slug.replace(/'/g,"\\'")}')">Quản lý bài học</button></td>
           <td><button class="btn-secondary" onclick="editSubject(${i})">Sửa</button></td>
         </tr>
       `).join("")}
     </table>
-    <p class="muted" style="margin-top:8px;">Thời gian làm bài tính bằng phút, để trống = không giới hạn thời gian (đáp án vẫn ẩn tới khi nộp bài).</p>
+    <p class="muted" style="margin-top:8px;">Thời gian làm bài tính bằng phút, để trống = không giới hạn thời gian (đáp án vẫn ẩn tới khi nộp bài).<br>
+    Tổng số giờ học là số giờ ước tính để học xong toàn bộ môn (hiện cho học viên ngay dưới tên môn); để trống = không hiển thị.</p>
   `;
+}
+
+async function saveSubjectHours(slug){
+  const input = document.getElementById(`hours-${slug}`);
+  const raw = input.value.trim();
+  const hours = raw === "" ? null : parseFloat(raw.replace(",", "."));
+  if(raw !== "" && (isNaN(hours) || hours <= 0)){
+    alert("Số giờ phải là số dương (có thể có phần lẻ, vd 4.5), hoặc để trống nếu không muốn hiển thị.");
+    return;
+  }
+  const data = await callRpc("admin_set_subject_hours", { p_password: PASSWORD, p_subject_slug: slug, p_hours: hours });
+  if(!data || data.status !== "ok"){ alert("Lỗi khi lưu: " + (data && data.status)); return; }
+  loadSubjects();
 }
 
 async function saveExamTimeLimit(slug){
@@ -456,6 +479,10 @@ async function openLessons(subjectSlug){
     <button class="btn-primary" style="margin-top:14px;" onclick="saveLesson()">+ Tạo / cập nhật bài học</button>
     <div id="les-msg"></div>
     <div id="lessons-table" style="margin-top:12px;"><span class="muted">Đang tải...</span></div>
+
+    <h2 style="margin-top:28px;">🧮 Luyện tính toán chuyên sâu</h2>
+    <p class="muted" style="margin-top:-6px;">Phần luyện tập cuối môn, sau khi học hết lý thuyết: chia theo từng "dạng" tính toán, mỗi dạng có 1 bài mẫu (xem lời giải luôn) rồi vài bài tập tương tự để học viên tự điền đáp án số, chấm ngay tại chỗ.</p>
+    <div id="calc-practice-panel"><span class="muted">Đang tải...</span></div>
   `;
   currentLessonDocuments = [];
   currentLessonVideos = [];
@@ -463,6 +490,7 @@ async function openLessons(subjectSlug){
   renderVideosList();
   renderMindmapPreview();
   loadLessonsTable(subjectSlug);
+  loadCalcPractice(subjectSlug);
 }
 
 let currentLessonDocuments = [];
@@ -677,6 +705,198 @@ async function deleteLesson(lessonSlug){
   loadLessonsTable(currentSubjectSlug);
   loadSubjects();
   delete lessonsBySubjectCache[currentSubjectSlug];
+}
+
+/* ---------- Luyện tính toán chuyên sâu (mẫu + bài tập điền đáp án số, theo từng dạng) ---------- */
+let currentCalcGroups = [];
+let calcGroupFormOpenFor = null; // null | 'new' | group.id đang sửa
+let calcItemFormOpenFor = null;  // null | { groupId, itemId|null }
+
+async function loadCalcPractice(subjectSlug){
+  const data = await callRpc("admin_list_calc_practice", { p_password: PASSWORD, p_subject_slug: subjectSlug });
+  const el = document.getElementById("calc-practice-panel");
+  if(!el) return;
+  if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
+  currentCalcGroups = data.groups || [];
+  renderCalcPractice();
+}
+
+function renderCalcPractice(){
+  const el = document.getElementById("calc-practice-panel");
+  if(!el) return;
+  let html = `<button class="btn-secondary" type="button" onclick="openCalcGroupForm('new')">+ Thêm dạng mới</button>`;
+  html += `<div id="calc-group-form-area"></div>`;
+
+  if(!currentCalcGroups.length){
+    html += `<p class="muted" style="margin-top:10px;">Chưa có dạng tính toán nào cho môn này.</p>`;
+  } else {
+    currentCalcGroups.forEach(g => {
+      const items = g.items || [];
+      html += `
+        <div class="card" style="background:#f7f9ff;margin-top:12px;padding:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <h3 style="margin:0;">#${g.order_index} · ${esc(g.title)} ${g.video_url ? `<span class="muted" style="font-size:.75rem;font-weight:400;">🎬 ${esc(g.video_label||"có video")}</span>` : ""}</h3>
+            <div>
+              <button class="btn-secondary" type="button" onclick="openCalcGroupForm(${g.id})">Sửa dạng</button>
+              <button class="btn-danger" type="button" onclick="deleteCalcGroup(${g.id})">Xoá dạng</button>
+            </div>
+          </div>
+          <div id="calc-group-form-${g.id}"></div>
+
+          ${items.length ? `
+            <table style="margin-top:10px;">
+              <tr><th>#</th><th>Loại</th><th>Câu hỏi</th><th>Đáp án đúng</th><th>Sai số</th><th></th></tr>
+              ${items.map(it => `
+                <tr>
+                  <td>${it.order_index}</td>
+                  <td>${it.item_type === "sample" ? "📘 Mẫu" : "✏️ Bài tập"}</td>
+                  <td>${esc((it.question||"").length > 70 ? it.question.slice(0,70)+"..." : (it.question||""))}</td>
+                  <td>${it.correct_value}${it.unit ? " "+esc(it.unit) : ""}</td>
+                  <td>${it.tolerance || 0}</td>
+                  <td style="white-space:nowrap;">
+                    <button class="btn-secondary" type="button" onclick="openCalcItemForm(${g.id}, ${it.id})">Sửa</button>
+                    <button class="btn-danger" type="button" onclick="deleteCalcItem(${it.id}, ${g.id})">Xoá</button>
+                  </td>
+                </tr>
+              `).join("")}
+            </table>
+          ` : `<p class="muted" style="margin-top:8px;">Dạng này chưa có câu nào.</p>`}
+
+          <button class="btn-secondary" type="button" style="margin-top:10px;" onclick="openCalcItemForm(${g.id}, null)">+ Thêm câu vào dạng này</button>
+          <div id="calc-item-form-${g.id}"></div>
+        </div>
+      `;
+    });
+  }
+  el.innerHTML = html;
+}
+
+function openCalcGroupForm(target){
+  calcGroupFormOpenFor = target;
+  const isNew = target === "new";
+  const g = isNew ? null : currentCalcGroups.find(x => x.id === target);
+  const formHtml = `
+    <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:10px;padding:12px;">
+      <div class="row">
+        <div><label>Tên dạng</label><input type="text" id="cg-title" placeholder="VD: Dạng 1: Tính EPS/P-E" value="${esc(g ? g.title : "")}"></div>
+        <div><label>Thứ tự</label><input type="text" id="cg-order" placeholder="1" value="${g ? g.order_index : (currentCalcGroups.length+1)}"></div>
+      </div>
+      <div class="row">
+        <div><label>Link video hướng dẫn (tuỳ chọn)</label><input type="text" id="cg-video-url" placeholder="https://... (YouTube/Google Drive)" value="${esc(g ? (g.video_url||"") : "")}"></div>
+        <div><label>Tên video hiển thị</label><input type="text" id="cg-video-label" placeholder="VD: Hướng dẫn giải dạng 1-6" value="${esc(g ? (g.video_label||"") : "")}"></div>
+      </div>
+      <p class="muted" style="margin-top:-6px;">1 video có thể dùng chung cho nhiều dạng: chỉ cần dán đúng link này vào ô video của các dạng khác muốn gộp chung video hướng dẫn.</p>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn-primary" type="button" onclick="saveCalcGroup(${isNew ? "null" : g.id})">💾 Lưu dạng</button>
+        <button class="btn-secondary" type="button" onclick="closeCalcGroupForm()">Huỷ</button>
+      </div>
+      <div id="cg-msg"></div>
+    </div>
+  `;
+  const targetEl = isNew ? document.getElementById("calc-group-form-area") : document.getElementById(`calc-group-form-${target}`);
+  if(targetEl) targetEl.innerHTML = formHtml;
+}
+function closeCalcGroupForm(){
+  calcGroupFormOpenFor = null;
+  const areaEl = document.getElementById("calc-group-form-area");
+  if(areaEl) areaEl.innerHTML = "";
+  currentCalcGroups.forEach(g => { const e = document.getElementById(`calc-group-form-${g.id}`); if(e) e.innerHTML = ""; });
+}
+async function saveCalcGroup(id){
+  const title = document.getElementById("cg-title").value.trim();
+  const order = parseInt(document.getElementById("cg-order").value) || 0;
+  const videoUrl = document.getElementById("cg-video-url").value.trim();
+  const videoLabel = document.getElementById("cg-video-label").value.trim();
+  const msgEl = document.getElementById("cg-msg");
+  if(!title){ msgEl.innerHTML = `<div class="msg err">Nhập tên dạng.</div>`; return; }
+  const data = await callRpc("admin_upsert_calc_practice_group", {
+    p_password: PASSWORD, p_subject_slug: currentSubjectSlug, p_id: id || null, p_title: title, p_order_index: order,
+    p_video_url: videoUrl || null, p_video_label: videoLabel || null
+  });
+  if(data && data.status === "ok"){
+    closeCalcGroupForm();
+    loadCalcPractice(currentSubjectSlug);
+  } else {
+    msgEl.innerHTML = `<div class="msg err">Lỗi: ${esc(data && data.status)}</div>`;
+  }
+}
+async function deleteCalcGroup(id){
+  if(!confirm("Xoá cả dạng này cùng toàn bộ câu mẫu/bài tập bên trong?")) return;
+  await callRpc("admin_delete_calc_practice_group", { p_password: PASSWORD, p_id: id });
+  loadCalcPractice(currentSubjectSlug);
+}
+
+function openCalcItemForm(groupId, itemId){
+  calcItemFormOpenFor = { groupId, itemId };
+  const g = currentCalcGroups.find(x => x.id === groupId);
+  const it = (itemId && g) ? (g.items||[]).find(x => x.id === itemId) : null;
+  const formHtml = `
+    <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:10px;padding:12px;">
+      <div class="row">
+        <div>
+          <label>Loại câu</label>
+          <select id="ci-type">
+            <option value="sample" ${it && it.item_type==="sample" ? "selected":""}>📘 Bài mẫu (hiện lời giải luôn, học viên không cần nhập đáp án)</option>
+            <option value="practice" ${!it || it.item_type==="practice" ? "selected":""}>✏️ Bài tập (học viên tự điền đáp án số)</option>
+          </select>
+        </div>
+        <div><label>Thứ tự trong dạng</label><input type="text" id="ci-order" placeholder="1" value="${it ? it.order_index : (((g&&g.items)||[]).length+1)}"></div>
+      </div>
+      <label>Đề bài / câu hỏi</label>
+      <textarea id="ci-question" rows="3" placeholder="VD: Doanh nghiệp X có lợi nhuận sau thuế 10 tỷ, số lượng cổ phiếu lưu hành 2 triệu cổ phiếu. Tính EPS.">${esc(it ? it.question : "")}</textarea>
+      <div class="row">
+        <div><label>Đáp án đúng (số)</label><input type="text" id="ci-value" placeholder="VD: 5000" value="${it ? it.correct_value : ""}"></div>
+        <div><label>Sai số cho phép</label><input type="text" id="ci-tolerance" placeholder="VD: 0 hoặc 0.01" value="${it ? (it.tolerance||0) : "0"}"></div>
+        <div><label>Đơn vị (tuỳ chọn)</label><input type="text" id="ci-unit" placeholder="VD: đồng, %, lần" value="${esc(it ? (it.unit||"") : "")}"></div>
+      </div>
+      <label>Lời giải chi tiết (hiện sau khi học viên nộp đáp án, hoặc hiện luôn nếu là bài mẫu)</label>
+      <textarea id="ci-solution" rows="4" placeholder="VD: EPS = Lợi nhuận sau thuế / Số cổ phiếu lưu hành = 10,000,000,000 / 2,000,000 = 5,000 đồng/cổ phiếu">${esc(it ? (it.solution_steps||"") : "")}</textarea>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn-primary" type="button" onclick="saveCalcItem(${groupId}, ${itemId || "null"})">💾 Lưu câu</button>
+        <button class="btn-secondary" type="button" onclick="closeCalcItemForm(${groupId})">Huỷ</button>
+      </div>
+      <div id="ci-msg"></div>
+    </div>
+  `;
+  const targetEl = itemId ? null : document.getElementById(`calc-item-form-${groupId}`);
+  // Khi sửa 1 câu có sẵn, mở form ngay dưới khu danh sách câu của dạng đó (dùng chung vùng "thêm câu")
+  const area = document.getElementById(`calc-item-form-${groupId}`);
+  if(area) area.innerHTML = formHtml;
+}
+function closeCalcItemForm(groupId){
+  calcItemFormOpenFor = null;
+  const area = document.getElementById(`calc-item-form-${groupId}`);
+  if(area) area.innerHTML = "";
+}
+async function saveCalcItem(groupId, itemId){
+  const type = document.getElementById("ci-type").value;
+  const order = parseInt(document.getElementById("ci-order").value) || 0;
+  const question = document.getElementById("ci-question").value.trim();
+  const value = parseFloat(document.getElementById("ci-value").value);
+  const tolerance = parseFloat(document.getElementById("ci-tolerance").value) || 0;
+  const unit = document.getElementById("ci-unit").value.trim();
+  const solution = document.getElementById("ci-solution").value.trim();
+  const msgEl = document.getElementById("ci-msg");
+  if(!question || isNaN(value)){
+    msgEl.innerHTML = `<div class="msg err">Cần nhập đề bài và đáp án đúng (là 1 số).</div>`;
+    return;
+  }
+  const data = await callRpc("admin_upsert_calc_practice_item", {
+    p_password: PASSWORD, p_group_id: groupId, p_id: itemId || null,
+    p_item_type: type, p_order_index: order, p_question: question,
+    p_unit: unit || null, p_correct_value: value, p_tolerance: tolerance, p_solution_steps: solution || null
+  });
+  if(data && data.status === "ok"){
+    closeCalcItemForm(groupId);
+    loadCalcPractice(currentSubjectSlug);
+  } else {
+    msgEl.innerHTML = `<div class="msg err">Lỗi: ${esc(data && data.status)}</div>`;
+  }
+}
+async function deleteCalcItem(id, groupId){
+  if(!confirm("Xoá câu này?")) return;
+  await callRpc("admin_delete_calc_practice_item", { p_password: PASSWORD, p_id: id });
+  loadCalcPractice(currentSubjectSlug);
 }
 
 /* ---------- Tài khoản học viên (đăng ký SĐT + email) ---------- */
