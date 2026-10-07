@@ -201,6 +201,7 @@ function renderMain(sets){
     <div id="tab-students" class="tab-content hidden">
       <div class="card">
         <h2>👤 Tài khoản học viên đã đăng ký (SĐT + email)</h2>
+        <div id="students-online-badge" style="margin:-4px 0 12px;font-size:.88rem;"></div>
         <div class="row" style="align-items:end;">
           <div>
             <label>Tìm theo tên / SĐT / email / ID môi giới</label>
@@ -749,7 +750,7 @@ function renderCalcPractice(){
   html += `
     <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:14px;padding:14px;">
       <h3 style="margin-top:0;">📥 Nhập hàng loạt từ Excel</h3>
-      <p class="muted">Mỗi dòng trong file = 1 câu (mẫu hoặc bài tập). Cột "Phần" và "Dạng" trùng tên (trong cùng file, hoặc trùng với phần/dạng đã có sẵn) sẽ tự gộp chung — không cần tạo phần/dạng trước, hệ thống tự tạo khi chưa có. Thứ tự các cột đúng theo file mẫu: <b>Phần, Thứ tự phần, Video phần (link), Tên video phần, Dạng, Thứ tự dạng, Loại câu (Mẫu/Bài tập), Thứ tự câu, Câu hỏi, Đáp án đúng, Sai số, Đơn vị, Lời giải chi tiết</b>. Dòng đầu là tiêu đề sẽ tự bỏ qua. Cột "Video phần" chỉ cần điền ở 1 dòng bất kỳ của phần đó (các dòng khác để trống cũng được).</p>
+      <p class="muted">Mỗi dòng trong file = 1 câu trắc nghiệm 4 đáp án (mẫu hoặc bài tập). Cột "Phần" và "Dạng" trùng tên (trong cùng file, hoặc trùng với phần/dạng đã có sẵn) sẽ tự gộp chung — không cần tạo phần/dạng trước, hệ thống tự tạo khi chưa có. Thứ tự các cột đúng theo file mẫu: <b>Phần, Thứ tự phần, Video phần (link), Tên video phần, Dạng, Thứ tự dạng, Loại câu (Mẫu/Bài tập), Thứ tự câu, Câu hỏi, Đáp án A, Đáp án B, Đáp án C, Đáp án D, Đáp án đúng (A/B/C/D), Lời giải chi tiết</b>. Dòng đầu là tiêu đề sẽ tự bỏ qua. Cột "Video phần" chỉ cần điền ở 1 dòng bất kỳ của phần đó (các dòng khác để trống cũng được).</p>
       <input type="file" id="calc-excel-file" accept=".xlsx,.xls,.csv">
       <button class="btn-primary" style="margin-top:10px;" onclick="importCalcPracticeExcel()">Nhập từ Excel</button>
       <div id="calc-import-msg" style="margin-top:8px;"></div>
@@ -801,20 +802,21 @@ function renderCalcGroupCard(g){
       <div id="calc-group-form-${g.id}"></div>
       ${items.length ? `
         <table style="margin-top:10px;">
-          <tr><th>#</th><th>Loại</th><th>Câu hỏi</th><th>Đáp án đúng</th><th>Sai số</th><th></th></tr>
-          ${items.map(it => `
+          <tr><th>#</th><th>Loại</th><th>Câu hỏi</th><th>Đáp án đúng</th><th></th></tr>
+          ${items.map(it => {
+            const correctText = it.correct_option ? `${it.correct_option}. ${esc(it["option_"+it.correct_option.toLowerCase()]||"")}` : "(chưa chọn)";
+            return `
             <tr>
               <td>${it.order_index}</td>
               <td>${it.item_type === "sample" ? "📘 Mẫu" : "✏️ Bài tập"}</td>
               <td>${esc((it.question||"").length > 70 ? it.question.slice(0,70)+"..." : (it.question||""))}</td>
-              <td>${it.correct_value}${it.unit ? " "+esc(it.unit) : ""}</td>
-              <td>${it.tolerance || 0}</td>
+              <td>${correctText}</td>
               <td style="white-space:nowrap;">
                 <button class="btn-secondary" type="button" onclick="openCalcItemForm(${g.id}, ${it.id})">Sửa</button>
                 <button class="btn-danger" type="button" onclick="deleteCalcItem(${it.id}, ${g.id})">Xoá</button>
               </td>
             </tr>
-          `).join("")}
+          `;}).join("")}
         </table>
       ` : `<p class="muted" style="margin-top:8px;">Dạng này chưa có câu nào.</p>`}
       <button class="btn-secondary" type="button" style="margin-top:10px;" onclick="openCalcItemForm(${g.id}, null)">+ Thêm câu vào dạng này</button>
@@ -964,14 +966,30 @@ function openCalcItemForm(groupId, itemId){
         <div><label>Thứ tự trong dạng</label><input type="text" id="ci-order" placeholder="1" value="${it ? it.order_index : (((g&&g.items)||[]).length+1)}"></div>
       </div>
       <label>Đề bài / câu hỏi</label>
-      <textarea id="ci-question" rows="3" placeholder="VD: Doanh nghiệp X có lợi nhuận sau thuế 10 tỷ, số lượng cổ phiếu lưu hành 2 triệu cổ phiếu. Tính EPS.">${esc(it ? it.question : "")}</textarea>
+      <textarea id="ci-question" rows="3" placeholder="VD: Quyền chọn mua có giá thực hiện 44.000 đồng, phí 3.000 đồng; giá cổ phiếu hiện tại 49.000 đồng. Tính giá trị nội tại của quyền chọn.">${esc(it ? it.question : "")}</textarea>
+      <p class="muted" style="margin:-4px 0 6px;">Nhập đủ 4 đáp án A/B/C/D rồi chọn đáp án đúng. Học viên sẽ bấm chọn 1 trong 4 đáp án này.</p>
       <div class="row">
-        <div><label>Đáp án đúng (số)</label><input type="text" id="ci-value" placeholder="VD: 5000" value="${it ? it.correct_value : ""}"></div>
-        <div><label>Sai số cho phép</label><input type="text" id="ci-tolerance" placeholder="VD: 0 hoặc 0.01" value="${it ? (it.tolerance||0) : "0"}"></div>
-        <div><label>Đơn vị (tuỳ chọn)</label><input type="text" id="ci-unit" placeholder="VD: đồng, %, lần" value="${esc(it ? (it.unit||"") : "")}"></div>
+        <div><label>Đáp án A</label><input type="text" id="ci-opt-a" placeholder="VD: 2.000 đồng" value="${esc(it ? (it.option_a||"") : "")}"></div>
+        <div><label>Đáp án B</label><input type="text" id="ci-opt-b" placeholder="VD: 3.000 đồng" value="${esc(it ? (it.option_b||"") : "")}"></div>
       </div>
-      <label>Lời giải chi tiết (hiện sau khi học viên nộp đáp án, hoặc hiện luôn nếu là bài mẫu)</label>
-      <textarea id="ci-solution" rows="4" placeholder="VD: EPS = Lợi nhuận sau thuế / Số cổ phiếu lưu hành = 10,000,000,000 / 2,000,000 = 5,000 đồng/cổ phiếu">${esc(it ? (it.solution_steps||"") : "")}</textarea>
+      <div class="row">
+        <div><label>Đáp án C</label><input type="text" id="ci-opt-c" placeholder="VD: 5.000 đồng" value="${esc(it ? (it.option_c||"") : "")}"></div>
+        <div><label>Đáp án D</label><input type="text" id="ci-opt-d" placeholder="VD: 8.000 đồng" value="${esc(it ? (it.option_d||"") : "")}"></div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Đáp án đúng</label>
+          <select id="ci-correct">
+            <option value="">-- Chọn đáp án đúng --</option>
+            <option value="A" ${it && it.correct_option==="A" ? "selected":""}>A</option>
+            <option value="B" ${it && it.correct_option==="B" ? "selected":""}>B</option>
+            <option value="C" ${it && it.correct_option==="C" ? "selected":""}>C</option>
+            <option value="D" ${it && it.correct_option==="D" ? "selected":""}>D</option>
+          </select>
+        </div>
+      </div>
+      <label>Lời giải chi tiết (hiện ngay sau khi học viên chọn đáp án, hoặc hiện luôn nếu là bài mẫu)</label>
+      <textarea id="ci-solution" rows="4" placeholder="VD: Giá trị nội tại = max(S - K; 0) = max(49.000 - 44.000; 0) = 5.000 đồng">${esc(it ? (it.solution_steps||"") : "")}</textarea>
       <div class="row" style="margin-top:10px;">
         <button class="btn-primary" type="button" onclick="saveCalcItem(${groupId}, ${itemId || "null"})">💾 Lưu câu</button>
         <button class="btn-secondary" type="button" onclick="closeCalcItemForm(${groupId})">Huỷ</button>
@@ -993,19 +1011,22 @@ async function saveCalcItem(groupId, itemId){
   const type = document.getElementById("ci-type").value;
   const order = parseInt(document.getElementById("ci-order").value) || 0;
   const question = document.getElementById("ci-question").value.trim();
-  const value = parseFloat(document.getElementById("ci-value").value);
-  const tolerance = parseFloat(document.getElementById("ci-tolerance").value) || 0;
-  const unit = document.getElementById("ci-unit").value.trim();
+  const optA = document.getElementById("ci-opt-a").value.trim();
+  const optB = document.getElementById("ci-opt-b").value.trim();
+  const optC = document.getElementById("ci-opt-c").value.trim();
+  const optD = document.getElementById("ci-opt-d").value.trim();
+  const correctOption = document.getElementById("ci-correct").value;
   const solution = document.getElementById("ci-solution").value.trim();
   const msgEl = document.getElementById("ci-msg");
-  if(!question || isNaN(value)){
-    msgEl.innerHTML = `<div class="msg err">Cần nhập đề bài và đáp án đúng (là 1 số).</div>`;
+  if(!question || !optA || !optB || !optC || !optD || !correctOption){
+    msgEl.innerHTML = `<div class="msg err">Cần nhập đủ đề bài, cả 4 đáp án A/B/C/D, và chọn đáp án đúng.</div>`;
     return;
   }
   const data = await callRpc("admin_upsert_calc_practice_item", {
     p_password: PASSWORD, p_group_id: groupId, p_id: itemId || null,
     p_item_type: type, p_order_index: order, p_question: question,
-    p_unit: unit || null, p_correct_value: value, p_tolerance: tolerance, p_solution_steps: solution || null
+    p_option_a: optA, p_option_b: optB, p_option_c: optC, p_option_d: optD,
+    p_correct_option: correctOption, p_solution_steps: solution || null
   });
   if(data && data.status === "ok"){
     closeCalcItemForm(groupId);
@@ -1021,10 +1042,11 @@ async function deleteCalcItem(id, groupId){
 }
 
 /* ---------- Nhập hàng loạt "Luyện tính toán chuyên sâu" từ file Excel ---------- */
-// Cấu trúc 13 cột (dòng đầu là tiêu đề, sẽ tự bỏ qua):
+// Cấu trúc 15 cột (dòng đầu là tiêu đề, sẽ tự bỏ qua):
 // 0 Phần | 1 Thứ tự phần | 2 Video phần (link) | 3 Tên video phần |
 // 4 Dạng | 5 Thứ tự dạng | 6 Loại câu (Mẫu/Bài tập) | 7 Thứ tự câu |
-// 8 Câu hỏi | 9 Đáp án đúng | 10 Sai số | 11 Đơn vị | 12 Lời giải chi tiết
+// 8 Câu hỏi | 9 Đáp án A | 10 Đáp án B | 11 Đáp án C | 12 Đáp án D |
+// 13 Đáp án đúng (A/B/C/D) | 14 Lời giải chi tiết
 async function importCalcPracticeExcel(){
   const fileInput = document.getElementById("calc-excel-file");
   const msgEl = document.getElementById("calc-import-msg");
@@ -1060,10 +1082,12 @@ async function importCalcPracticeExcel(){
     const typeRaw = normalizeAnswerText(r[6] || "");
     const itemOrder = parseInt(r[7] || "") || 0;
     const question = String(r[8] || "").trim();
-    const correctValue = parseFloat(String(r[9] || "").replace(",", "."));
-    const tolerance = parseFloat(String(r[10] || "").replace(",", ".")) || 0;
-    const unit = String(r[11] || "").trim();
-    const solution = String(r[12] || "").trim();
+    const optionA = String(r[9] || "").trim();
+    const optionB = String(r[10] || "").trim();
+    const optionC = String(r[11] || "").trim();
+    const optionD = String(r[12] || "").trim();
+    const correctOptionRaw = String(r[13] || "").trim().toUpperCase().replace(/[^A-D]/g, "");
+    const solution = String(r[14] || "").trim();
 
     // Bỏ qua hàng trống hoàn toàn
     if(!sectionTitle && !groupTitle && !question) return;
@@ -1072,15 +1096,20 @@ async function importCalcPracticeExcel(){
       rowErrors.push(`Dòng ${rowNum}: thiếu "Phần"/"Dạng"/"Câu hỏi" — đã bỏ qua.`);
       return;
     }
-    if(isNaN(correctValue)){
-      rowErrors.push(`Dòng ${rowNum}: "Đáp án đúng" không phải là số — đã bỏ qua.`);
+    if(!optionA || !optionB || !optionC || !optionD){
+      rowErrors.push(`Dòng ${rowNum}: thiếu 1 trong 4 đáp án A/B/C/D — đã bỏ qua.`);
+      return;
+    }
+    if(!["A","B","C","D"].includes(correctOptionRaw)){
+      rowErrors.push(`Dòng ${rowNum}: "Đáp án đúng" phải là A, B, C hoặc D — đã bỏ qua.`);
       return;
     }
     const itemType = (typeRaw === "mẫu" || typeRaw === "mau" || typeRaw === "sample") ? "sample" : "practice";
 
     parsed.push({
       rowNum, sectionTitle, sectionOrder, sectionVideoUrl, sectionVideoLabel,
-      groupTitle, groupOrder, itemType, itemOrder, question, correctValue, tolerance, unit, solution
+      groupTitle, groupOrder, itemType, itemOrder, question,
+      optionA, optionB, optionC, optionD, correctOption: correctOptionRaw, solution
     });
   });
 
@@ -1176,8 +1205,8 @@ async function importCalcPracticeExcel(){
     const data = await callRpc("admin_upsert_calc_practice_item", {
       p_password: PASSWORD, p_group_id: groupId, p_id: null,
       p_item_type: p.itemType, p_order_index: order, p_question: p.question,
-      p_unit: p.unit || null, p_correct_value: p.correctValue, p_tolerance: p.tolerance,
-      p_solution_steps: p.solution || null
+      p_option_a: p.optionA, p_option_b: p.optionB, p_option_c: p.optionC, p_option_d: p.optionD,
+      p_correct_option: p.correctOption, p_solution_steps: p.solution || null
     });
     if(data && data.status === "ok"){
       itemsOk++;
@@ -1215,6 +1244,21 @@ function fmtDT(iso){
   return d.toLocaleString("vi-VN");
 }
 
+// Hiện "x phút trước" / "x giờ trước" / "x ngày trước" cho dễ nhìn thay vì ngày giờ đầy đủ.
+function fmtRelative(iso){
+  if(!iso) return "—";
+  const then = new Date(iso).getTime();
+  const diffSec = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if(diffSec < 60) return "Vừa xong";
+  const diffMin = Math.floor(diffSec / 60);
+  if(diffMin < 60) return `${diffMin} phút trước`;
+  const diffHour = Math.floor(diffMin / 60);
+  if(diffHour < 24) return `${diffHour} giờ trước`;
+  const diffDay = Math.floor(diffHour / 24);
+  if(diffDay < 30) return `${diffDay} ngày trước`;
+  return new Date(iso).toLocaleDateString("vi-VN");
+}
+
 const STATUS_LABEL = {
   none: { text: "Chưa yêu cầu", bg: "#eee", fg: "#666" },
   pending: { text: "⏳ Chờ duyệt", bg: "#fdf1de", fg: "#a07a17" },
@@ -1235,9 +1279,10 @@ async function loadStudents(offset){
   if(rows.length === 0){ el.innerHTML = `<p class="muted">Không có học viên nào khớp bộ lọc.</p>`; document.getElementById("students-pager").innerHTML = ""; return; }
   el.innerHTML = `
     <table>
-      <tr><th>Họ tên</th><th>SĐT</th><th>Email</th><th>ID môi giới</th><th>Phòng</th><th>Trạng thái</th><th>Đăng ký lúc</th><th></th></tr>
+      <tr><th>Họ tên</th><th>SĐT</th><th>Email</th><th>ID môi giới</th><th>Phòng</th><th>Trạng thái</th><th>Hoạt động gần nhất</th><th>Đăng ký lúc</th><th></th></tr>
       ${rows.map(s => {
         const st = STATUS_LABEL[s.approval_status] || STATUS_LABEL.none;
+        const onlineNow = s.last_seen_at && (Date.now() - new Date(s.last_seen_at).getTime()) <= 5*60*1000;
         return `
         <tr>
           <td><b>${esc(s.full_name)}</b></td>
@@ -1246,6 +1291,7 @@ async function loadStudents(offset){
           <td>${esc(s.broker_id||"—")}</td>
           <td>${esc(s.department||"—")}</td>
           <td><span class="pill" style="background:${st.bg};color:${st.fg};">${st.text}</span></td>
+          <td>${onlineNow ? `<span style="color:var(--green);font-weight:700;">🟢 Đang online</span>` : fmtRelative(s.last_seen_at)}</td>
           <td>${fmtDT(s.requested_at || s.created_at)}</td>
           <td style="white-space:nowrap;">
             ${s.approval_status !== "approved" ? `<button class="btn-secondary" style="color:var(--green);" onclick="approveStudent(${s.id})">Duyệt</button>` : ""}
@@ -1265,6 +1311,18 @@ async function loadStudents(offset){
     <button class="btn-secondary" ${hasPrev ? "" : "disabled"} onclick="loadStudents(${Math.max(0, offset - STU_PAGE_SIZE)})">← Trước</button>
     <button class="btn-secondary" ${hasNext ? "" : "disabled"} onclick="loadStudents(${offset + STU_PAGE_SIZE})">Sau →</button>
   `;
+  loadOnlineStudentCount();
+}
+
+async function loadOnlineStudentCount(){
+  const badge = document.getElementById("students-online-badge");
+  if(!badge) return;
+  const data = await callRpc("admin_count_online_students", { p_password: PASSWORD, p_minutes: 5 });
+  if(data && data.status === "ok"){
+    badge.innerHTML = `🟢 <b>${data.online}</b> học viên đang online (hoạt động trong ${data.minutes} phút qua)`;
+  } else {
+    badge.innerHTML = "";
+  }
 }
 
 async function approveStudent(id){

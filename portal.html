@@ -114,18 +114,79 @@
   .save-box{text-align:center;padding:14px;}
 
   /* ---------- Luyện tính toán chuyên sâu ---------- */
-  .calc-section-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
-  .calc-section-tabs button{padding:9px 16px;border-radius:10px;border:1px solid #d7ddf5;background:#eef1fb;font-size:.85rem;font-weight:700;color:var(--navy);}
-  .calc-section-tabs button.active{background:var(--navy);color:var(--white);border-color:var(--navy);}
-  .calc-section-tabs button.done::after{content:" ✓";color:var(--green);}
-  .calc-switcher{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
-  .calc-switcher button{padding:7px 13px;border-radius:20px;border:1px solid #e3e7f5;background:var(--white);font-size:.8rem;font-weight:600;color:var(--dark);}
-  .calc-switcher button.active{background:var(--navy);color:var(--white);border-color:var(--navy);}
-  .calc-switcher button.done::after{content:" ✓";color:var(--green);}
-  .calc-tag{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:10px;}
-  .calc-tag.sample{background:#e3effc;color:var(--navy);}
-  .calc-tag.practice{background:#fdf1de;color:var(--gold);}
-  .calc-question{font-weight:600;line-height:1.55;margin-bottom:14px;font-size:1rem;}
+  .calc-phan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:14px;}
+  .calc-phan-card{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid #e3e7f5;border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;}
+  .calc-phan-card .icon{width:36px;height:36px;border-radius:9px;background:#eef1fb;color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex:none;}
+  .calc-phan-card .txt{line-height:1.3;}
+  .calc-phan-card .txt .num{font-size:.72rem;font-weight:700;color:#8891b5;}
+  .calc-phan-card .txt .ttl{font-weight:700;font-size:.88rem;color:var(--dark);}
+  .calc-phan-card.active{background:var(--navy);border-color:var(--navy);}
+  .calc-phan-card.active .icon{background:rgba(255,255,255,.18);color:var(--white);}
+  .calc-phan-card.active .txt .num{color:#cfd6f5;}
+  .calc-phan-card.active .txt .ttl{color:var(--white);}
+  .calc-phan-card.done .icon::after{content:"✓";margin-left:2px;}
+
+  .calc-dang-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;}
+  .calc-dang-tabs button{flex:none;min-width:88px;padding:8px 12px;border-radius:10px;border:1px solid #e3e7f5;background:var(--white);text-align:left;cursor:pointer;}
+  .calc-dang-tabs button .num{display:block;font-weight:800;color:var(--navy);font-size:.85rem;}
+  .calc-dang-tabs button .lbl{display:block;font-size:.68rem;color:#8891b5;line-height:1.25;margin-top:1px;}
+  .calc-dang-tabs button.active{background:var(--navy);border-color:var(--navy);}
+  .calc-dang-tabs button.active .num, .calc-dang-tabs button.active .lbl{color:var(--white);}
+  .calc-dang-tabs button.done .num::after{content:" ✓";color:var(--green);}
+  .calc-dang-tabs button.active.done .num::after{color:#8ee6a8;}
+
+  .calc-main-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start;}
+  @media (max-width:860px){ .calc-main-grid{grid-template-columns:1fr;} }
+  .calc-q-card, .calc-ans-card{background:var(--white);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.05);padding:18px 20px;}
+  .calc-q-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .calc-dang-pill{display:inline-block;background:#eef1fb;color:var(--navy);font-weight:700;font-size:.78rem;padding:4px 12px;border-radius:20px;}
+  .calc-q-nav{display:flex;align-items:center;gap:8px;font-size:.82rem;color:#777;font-weight:600;}
+  .calc-q-nav button{width:28px;height:28px;border-radius:50%;border:1px solid #e3e7f5;background:var(--white);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--navy);font-weight:700;}
+  .calc-q-nav button:disabled{opacity:.35;cursor:default;}
+  .calc-q-title{font-weight:800;font-size:1.15rem;margin:2px 0 14px;color:var(--dark);}
+  .calc-sample-box{background:#eef4fd;border-radius:10px;padding:12px 14px;margin-bottom:16px;}
+  .calc-sample-box .lbl{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--navy);font-size:.82rem;margin-bottom:6px;}
+  .calc-sample-box .txt{line-height:1.55;font-size:.93rem;}
+  .calc-plain-q{line-height:1.55;font-size:.95rem;margin-bottom:16px;font-weight:600;}
+  .calc-opt{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:11px;border:1px solid #e3e7f5;margin-bottom:9px;cursor:pointer;}
+  .calc-opt:hover{background:var(--light);}
+  .calc-opt .badge{width:26px;height:26px;border-radius:50%;background:#eef1fb;color:var(--navy);font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center;flex:none;}
+  .calc-opt .txt{font-size:.92rem;}
+  .calc-opt.correct{border-color:var(--green);background:#e9f7ec;}
+  .calc-opt.correct .badge{background:var(--green);color:var(--white);}
+  .calc-opt.wrong{border-color:var(--red);background:#fbeceb;}
+  .calc-opt.wrong .badge{background:var(--red);color:var(--white);}
+  .calc-opt.disabled{cursor:default;}
+  .calc-opt.disabled:hover{background:inherit;}
+
+  .calc-ans-card{min-height:100%;}
+  .calc-ans-empty{color:#9aa1bf;font-size:.9rem;text-align:center;padding:30px 10px;}
+  .calc-correct-box{background:#e9f7ec;border:1px solid var(--green);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+  .calc-correct-box .lbl{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--green);font-size:.85rem;margin-bottom:6px;}
+  .calc-correct-box .val{font-weight:800;font-size:1.3rem;color:var(--dark);}
+  .calc-sol-box{background:var(--light);border-radius:12px;padding:14px 16px;}
+  .calc-sol-box .lbl{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--gold);font-size:.85rem;margin-bottom:8px;}
+  .calc-sol-box .body{line-height:1.6;font-size:.88rem;white-space:pre-line;}
+  .calc-sol-box .formula{background:#e3effc;color:var(--navy);font-weight:700;border-radius:8px;padding:9px 12px;margin:8px 0;display:inline-block;}
+
+  .calc-nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:18px;}
+  .calc-nav-ghost{padding:10px 18px;border-radius:10px;border:1px solid #e3e7f5;background:var(--white);font-weight:700;font-size:.85rem;color:var(--dark);cursor:pointer;}
+  .calc-nav-ghost:disabled{opacity:.4;cursor:default;}
+  .calc-dots{display:flex;gap:7px;align-items:center;}
+  .calc-dots .dot{width:8px;height:8px;border-radius:50%;background:#d7ddf5;}
+  .calc-dots .dot.active{width:22px;background:var(--navy);border-radius:5px;}
+  .calc-dots .dot.done{background:var(--green);}
+  .calc-nav-next{padding:10px 22px;border-radius:10px;border:none;background:var(--navy);color:var(--white);font-weight:700;font-size:.85rem;cursor:pointer;}
+  .calc-nav-next:disabled{opacity:.4;cursor:default;}
+
+  .calc-done-box{text-align:center;padding:30px 10px;}
+  .calc-done-box .big{font-size:2.4rem;margin-bottom:8px;}
+  .calc-video-details{border:1px solid #e3e7f5;border-radius:9px;padding:10px 14px;margin-bottom:14px;background:var(--light);}
+  .calc-video-details summary{cursor:pointer;font-weight:700;font-size:.88rem;color:var(--navy);list-style:none;}
+  .calc-video-details summary::-webkit-details-marker{display:none;}
+  .calc-video-details[open] summary{margin-bottom:4px;}
+
+  /* kiểu cũ: câu tự nhập đáp án số (giữ lại để tương thích câu đã nhập trước đây) */
   .calc-input-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
   .calc-input-row input{max-width:220px;}
   .calc-unit{font-weight:600;color:#777;}
@@ -136,12 +197,6 @@
   .calc-feedback.correct .verdict{color:var(--green);}
   .calc-feedback.wrong .verdict{color:var(--red);}
   .calc-solution{white-space:pre-line;}
-  .calc-done-box{text-align:center;padding:30px 10px;}
-  .calc-done-box .big{font-size:2.4rem;margin-bottom:8px;}
-  .calc-video-details{border:1px solid #e3e7f5;border-radius:9px;padding:10px 14px;margin-bottom:14px;background:var(--light);}
-  .calc-video-details summary{cursor:pointer;font-weight:700;font-size:.88rem;color:var(--navy);list-style:none;}
-  .calc-video-details summary::-webkit-details-marker{display:none;}
-  .calc-video-details[open] summary{margin-bottom:4px;}
 
   /* ---------- Footer ---------- */
   footer.site-footer{max-width:1180px;margin:20px auto 0;padding:26px 20px 40px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;border-top:1px solid #dfe4f5;}
@@ -465,7 +520,21 @@ async function showApp(){
   callRpc("get_portal_settings_public", {}).then(data => {
     if(data && data.status === "ok"){ portalSettings = data; }
   });
+  startStudentHeartbeat();
   init();
+}
+
+// Cập nhật "lần hoạt động gần nhất" định kỳ trong lúc học viên đang mở trang,
+// để admin xem được ai đang học gần đây / đang online (không chỉ lúc mở trang lần đầu).
+let studentHeartbeatHandle = null;
+function startStudentHeartbeat(){
+  if(studentHeartbeatHandle || !currentStudent || !currentStudent.phone) return;
+  studentHeartbeatHandle = setInterval(() => {
+    if(document.visibilityState === "visible") refreshStudentStatus();
+  }, 120000); // mỗi 2 phút
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible") refreshStudentStatus();
+  });
 }
 function showGate(){
   document.getElementById("app-shell").style.display = "none";
@@ -1046,7 +1115,7 @@ async function startExamQuiz(){
 }
 
 /* ---------- Luyện tính toán chuyên sâu: 1 bài mẫu có lời giải sẵn, rồi vài bài tập tự điền đáp án số ---------- */
-let calcCtx = { sections: [], sectionIdx: 0, groupIdx: 0, itemIdx: 0, answered: {}, entered: {} }; // key `${sectionIdx}-${groupIdx}-${itemIdx}`
+let calcCtx = { sections: [], sectionIdx: 0, groupIdx: 0, itemIdx: 0, answered: {}, entered: {}, selected: {} }; // key `${sectionIdx}-${groupIdx}-${itemIdx}`
 
 async function selectCalcPractice(){
   stopExamTimer();
@@ -1067,7 +1136,7 @@ async function selectCalcPractice(){
   }
   if(currentMode !== "calc") return; // người dùng đã bấm sang chỗ khác trong lúc chờ tải
 
-  calcCtx = { sections, sectionIdx: 0, groupIdx: 0, itemIdx: 0, answered: {}, entered: {} };
+  calcCtx = { sections, sectionIdx: 0, groupIdx: 0, itemIdx: 0, answered: {}, entered: {}, selected: {} };
   renderCalcPractice();
 }
 
@@ -1094,6 +1163,8 @@ function jumpToCalcGroup(groupIdx){
   renderCalcPractice();
 }
 
+const CALC_PHAN_ICONS = ["📄","📋","🥧","📊","📈","📐","🧮","📑"];
+
 function renderCalcPractice(){
   const content = document.getElementById("content");
   const sections = calcCtx.sections;
@@ -1106,12 +1177,17 @@ function renderCalcPractice(){
   const section = sections[calcCtx.sectionIdx];
   const groups = section.groups || [];
 
-  const sectionTabsHtml = `
-    <div class="calc-section-tabs">
-      ${sections.map((s,si) => {
-        const allDone = (s.groups||[]).length > 0 && (s.groups||[]).every((g,gi) => (g.items||[]).every((it,ii) => it.item_type === "sample" || calcCtx.answered[`${si}-${gi}-${ii}`]));
-        return `<button type="button" class="${si===calcCtx.sectionIdx?"active":""} ${allDone?"done":""}" onclick="selectCalcSection(${si})">${esc(s.title)}</button>`;
-      }).join("")}
+  const isGroupDone = (si, gi, g) => (g.items||[]).every((it,ii) => it.item_type === "sample" || calcCtx.answered[`${si}-${gi}-${ii}`]);
+  const isSectionDone = (si, s) => (s.groups||[]).length > 0 && (s.groups||[]).every((g,gi) => isGroupDone(si, gi, g));
+
+  const phanGridHtml = `
+    <div class="calc-phan-grid">
+      ${sections.map((s,si) => `
+        <button type="button" class="calc-phan-card ${si===calcCtx.sectionIdx?"active":""} ${isSectionDone(si,s)?"done":""}" onclick="selectCalcSection(${si})">
+          <span class="icon">${CALC_PHAN_ICONS[si % CALC_PHAN_ICONS.length]}</span>
+          <span class="txt"><span class="num">Phần ${si+1}</span><span class="ttl">${esc(s.title.replace(/^Phần\s*\d+\s*[:.-]?\s*/i,""))}</span></span>
+        </button>
+      `).join("")}
     </div>
   `;
   const videoCardHtml = section.video_url ? `
@@ -1122,33 +1198,35 @@ function renderCalcPractice(){
   ` : "";
 
   if(!groups.length){
-    content.innerHTML = `${sectionTabsHtml}${videoCardHtml}<div class="card"><div class="empty">Phần này chưa có dạng bài tập nào. Admin sẽ cập nhật sau.</div></div>`;
+    content.innerHTML = `${phanGridHtml}${videoCardHtml}<div class="card"><div class="empty">Phần này chưa có dạng bài tập nào. Admin sẽ cập nhật sau.</div></div>`;
     return;
   }
 
   const group = groups[calcCtx.groupIdx];
   const items = group.items || [];
 
-  const switcherHtml = `
-    <div class="calc-switcher">
-      ${groups.map((g,gi) => {
-        const allDone = (g.items||[]).every((it,ii) => it.item_type === "sample" || calcCtx.answered[`${calcCtx.sectionIdx}-${gi}-${ii}`]);
-        return `<button type="button" class="${gi===calcCtx.groupIdx?"active":""} ${allDone?"done":""}" onclick="jumpToCalcGroup(${gi})">${esc(g.title)}</button>`;
-      }).join("")}
+  const dangTabsHtml = `
+    <div class="calc-dang-tabs">
+      ${groups.map((g,gi) => `
+        <button type="button" class="${gi===calcCtx.groupIdx?"active":""} ${isGroupDone(calcCtx.sectionIdx,gi,g)?"done":""}" onclick="jumpToCalcGroup(${gi})">
+          <span class="num">${calcCtx.sectionIdx+1}.${gi+1}</span>
+          <span class="lbl">${esc(g.title.replace(/^Dạng\s*[\d.]+\s*[:.-]?\s*/i,""))}</span>
+        </button>
+      `).join("")}
     </div>
   `;
 
   if(!items.length){
-    content.innerHTML = `${sectionTabsHtml}${videoCardHtml}<div class="card">${switcherHtml}<div class="empty">Dạng này chưa có câu nào.</div></div>`;
+    content.innerHTML = `${phanGridHtml}${videoCardHtml}<div class="card">${dangTabsHtml}<div class="empty">Dạng này chưa có câu nào.</div></div>`;
     return;
   }
   if(calcCtx.itemIdx >= items.length){
     // Đã xong hết câu của dạng này
     if(calcCtx.groupIdx < groups.length - 1){
       content.innerHTML = `
-        ${sectionTabsHtml}${videoCardHtml}
+        ${phanGridHtml}${videoCardHtml}
         <div class="card">
-          ${switcherHtml}
+          ${dangTabsHtml}
           <div class="calc-done-box">
             <div class="big">✅</div>
             <h2 style="margin:0 0 8px;">Xong ${esc(group.title)}!</h2>
@@ -1160,9 +1238,9 @@ function renderCalcPractice(){
     } else if(calcCtx.sectionIdx < sections.length - 1){
       // hết dạng trong phần này -> mời sang phần tiếp theo
       content.innerHTML = `
-        ${sectionTabsHtml}${videoCardHtml}
+        ${phanGridHtml}${videoCardHtml}
         <div class="card">
-          ${switcherHtml}
+          ${dangTabsHtml}
           <div class="calc-done-box">
             <div class="big">✅</div>
             <h2 style="margin:0 0 8px;">Xong ${esc(section.title)}!</h2>
@@ -1173,9 +1251,9 @@ function renderCalcPractice(){
       `;
     } else {
       content.innerHTML = `
-        ${sectionTabsHtml}${videoCardHtml}
+        ${phanGridHtml}${videoCardHtml}
         <div class="card">
-          ${switcherHtml}
+          ${dangTabsHtml}
           <div class="calc-done-box">
             <div class="big">🎉</div>
             <h2 style="margin:0 0 8px;">Hoàn thành toàn bộ phần luyện tính toán!</h2>
@@ -1190,50 +1268,127 @@ function renderCalcPractice(){
   const item = items[calcCtx.itemIdx];
   const key = `${calcCtx.sectionIdx}-${calcCtx.groupIdx}-${calcCtx.itemIdx}`;
   const isSample = item.item_type === "sample";
-  const already = calcCtx.answered[key];
+  const already = !!calcCtx.answered[key];
+  const isMcq = !!(item.correct_option && item.option_a && item.option_b && item.option_c && item.option_d);
+  const revealed = isSample || already; // đã lộ đáp án đúng + lời giải chưa
 
-  content.innerHTML = `
-    ${sectionTabsHtml}${videoCardHtml}
-    <div class="card">
-      ${switcherHtml}
-      <div class="progress-bar" style="position:static;">${esc(group.title)} · Câu ${calcCtx.itemIdx+1}/${items.length}</div>
-      <span class="calc-tag ${isSample?"sample":"practice"}">${isSample ? "📘 BÀI MẪU" : "✏️ BÀI TỰ LUYỆN"}</span>
-      <div class="calc-question">${esc(item.question).replace(/\n/g,"<br>")}</div>
-      <div id="calc-item-body">
-        ${isSample ? `
-          <div class="calc-feedback correct">
-            <span class="verdict">Đáp số: ${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}</span>
-            <div class="calc-solution">${esc(item.solution_steps||"").replace(/\n/g,"<br>")}</div>
-          </div>
-        ` : already ? renderCalcFeedback(item, calcCtx.entered[key]) : `
-          <div class="calc-input-row">
-            <input type="text" id="calc-answer-input" placeholder="Nhập đáp án..." onkeydown="if(event.key==='Enter') submitCalcAnswer()">
-            ${item.unit ? `<span class="calc-unit">${esc(item.unit)}</span>` : ""}
-          </div>
-          <button class="btn-primary" onclick="submitCalcAnswer()">Nộp đáp án</button>
-        `}
-      </div>
-      <div class="row" style="margin-top:16px;">
-        ${(isSample || already) ? `<button class="btn-primary" onclick="nextCalcItem()">${calcCtx.itemIdx+1>=items.length ? "Hoàn thành dạng này →" : "Câu tiếp theo →"}</button>` : ""}
+  const dotsHtml = `
+    <div class="calc-dots">
+      ${items.map((it,ii) => {
+        const k2 = `${calcCtx.sectionIdx}-${calcCtx.groupIdx}-${ii}`;
+        const doneDot = it.item_type === "sample" || calcCtx.answered[k2];
+        return `<span class="dot ${ii===calcCtx.itemIdx?"active":(doneDot?"done":"")}"></span>`;
+      }).join("")}
+    </div>
+  `;
+
+  const qTopHtml = `
+    <div class="calc-q-top">
+      <span class="calc-dang-pill">Dạng ${calcCtx.sectionIdx+1}.${calcCtx.groupIdx+1}</span>
+      <div class="calc-q-nav">
+        <span>Câu ${calcCtx.itemIdx+1}/${items.length}</span>
+        <button type="button" ${calcCtx.itemIdx<=0?"disabled":""} onclick="prevCalcItem()">‹</button>
+        <button type="button" ${already||isSample?"":"disabled"} onclick="nextCalcItem()">›</button>
       </div>
     </div>
   `;
-  if(!isSample && !already){
+
+  let leftBodyHtml;
+  if(isMcq){
+    const optKeys = [["A","option_a"],["B","option_b"],["C","option_c"],["D","option_d"]];
+    const selected = calcCtx.selected[key];
+    leftBodyHtml = `
+      ${isSample ? `
+        <div class="calc-sample-box">
+          <div class="lbl">📄 Bài mẫu</div>
+          <div class="txt">${esc(item.question).replace(/\n/g,"<br>")}</div>
+        </div>
+      ` : `<div class="calc-plain-q">${esc(item.question).replace(/\n/g,"<br>")}</div>`}
+      <div class="calc-opts">
+        ${optKeys.map(([letter,field]) => {
+          const isCorrectOpt = item.correct_option === letter;
+          const isSelectedOpt = selected === letter;
+          let cls = "";
+          if(revealed){
+            if(isCorrectOpt) cls = "correct";
+            else if(isSelectedOpt && !isCorrectOpt) cls = "wrong";
+          }
+          const clickable = !isSample && !already;
+          return `
+            <div class="calc-opt ${cls} ${clickable?"":"disabled"}" ${clickable?`onclick="selectCalcAnswer('${letter}')"`:""}>
+              <span class="badge">${letter}</span>
+              <span class="txt">${esc(item[field]||"")}</span>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  } else {
+    // Kiểu cũ: tự nhập đáp án số (câu nhập trước khi có trắc nghiệm)
+    const entered = calcCtx.entered[key];
+    leftBodyHtml = `
+      <div class="calc-plain-q">${esc(item.question).replace(/\n/g,"<br>")}</div>
+      ${isSample ? `
+        <div class="calc-feedback correct">
+          <span class="verdict">Đáp số: ${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}</span>
+        </div>
+      ` : already ? `
+        <div class="calc-feedback ${calcIsCorrect(entered, item.correct_value, item.tolerance) ? "correct" : "wrong"}">
+          <span class="verdict">${calcIsCorrect(entered, item.correct_value, item.tolerance) ? "✅ Chính xác!" : "❌ Chưa đúng."} Đáp số đúng: ${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}</span>
+        </div>
+      ` : `
+        <div class="calc-input-row">
+          <input type="text" id="calc-answer-input" placeholder="Nhập đáp án..." onkeydown="if(event.key==='Enter') submitCalcNumberAnswer()">
+          ${item.unit ? `<span class="calc-unit">${esc(item.unit)}</span>` : ""}
+        </div>
+        <button class="btn-primary" onclick="submitCalcNumberAnswer()">Nộp đáp án</button>
+      `}
+    `;
+  }
+
+  const rightHtml = revealed ? `
+    <div class="calc-correct-box">
+      <div class="lbl">✅ Đáp án đúng</div>
+      <div class="val">${isMcq ? esc(item["option_"+item.correct_option.toLowerCase()]||"") : `${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}`}</div>
+    </div>
+    ${item.solution_steps ? `
+      <div class="calc-sol-box">
+        <div class="lbl">💡 Lời giải chi tiết</div>
+        <div class="body">${esc(item.solution_steps).replace(/\n/g,"<br>")}</div>
+      </div>
+    ` : ""}
+  ` : `<div class="calc-ans-empty">Chọn 1 đáp án bên trái để xem kết quả và lời giải chi tiết.</div>`;
+
+  content.innerHTML = `
+    ${phanGridHtml}${videoCardHtml}
+    ${dangTabsHtml}
+    <div class="calc-main-grid">
+      <div class="calc-q-card">
+        ${qTopHtml}
+        <div class="calc-q-title">${esc(group.title)}</div>
+        ${leftBodyHtml}
+      </div>
+      <div class="calc-ans-card">${rightHtml}</div>
+    </div>
+    <div class="calc-nav-row">
+      <button type="button" class="calc-nav-ghost" ${calcCtx.itemIdx<=0?"disabled":""} onclick="prevCalcItem()">← Câu trước</button>
+      ${dotsHtml}
+      <button type="button" class="calc-nav-next" ${(isSample||already)?"":"disabled"} onclick="nextCalcItem()">${calcCtx.itemIdx+1>=items.length ? "Hoàn thành dạng này →" : "Câu tiếp theo →"}</button>
+    </div>
+  `;
+  if(!isMcq && !isSample && !already){
     setTimeout(() => { const inp = document.getElementById("calc-answer-input"); if(inp) inp.focus(); }, 0);
   }
 }
 
-function renderCalcFeedback(item, entered){
-  const isCorrect = calcIsCorrect(entered, item.correct_value, item.tolerance);
-  return `
-    <div class="calc-feedback ${isCorrect ? "correct" : "wrong"}">
-      <span class="verdict">${isCorrect ? "✅ Chính xác!" : "❌ Chưa đúng."} Đáp số đúng: ${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}</span>
-      <div class="calc-solution">${esc(item.solution_steps||"").replace(/\n/g,"<br>")}</div>
-    </div>
-  `;
+function selectCalcAnswer(letter){
+  const key = `${calcCtx.sectionIdx}-${calcCtx.groupIdx}-${calcCtx.itemIdx}`;
+  calcCtx.selected[key] = letter;
+  calcCtx.answered[key] = true;
+  renderCalcPractice();
 }
 
-function submitCalcAnswer(){
+function submitCalcNumberAnswer(){
   const input = document.getElementById("calc-answer-input");
   if(!input) return;
   const entered = calcParseNumber(input.value);
@@ -1245,8 +1400,18 @@ function submitCalcAnswer(){
 }
 
 function nextCalcItem(){
+  const section = calcCtx.sections[calcCtx.sectionIdx];
+  const group = (section.groups||[])[calcCtx.groupIdx];
+  const items = (group && group.items) || [];
+  const item = items[calcCtx.itemIdx];
+  const key = `${calcCtx.sectionIdx}-${calcCtx.groupIdx}-${calcCtx.itemIdx}`;
+  if(item && item.item_type !== "sample" && !calcCtx.answered[key]) return; // chưa trả lời thì chưa cho sang câu tiếp
   calcCtx.itemIdx++;
   renderCalcPractice();
+}
+
+function prevCalcItem(){
+  if(calcCtx.itemIdx > 0){ calcCtx.itemIdx--; renderCalcPractice(); }
 }
 
 /* ---------- Chế độ thi thật cho đề ôn tập: chọn xong mới lộ đáp án, có đếm giờ ---------- */
