@@ -113,6 +113,23 @@
   .progress-bar{position:sticky;top:0;background:var(--white);padding:10px 14px;border-radius:9px;margin-bottom:10px;font-size:.85rem;font-weight:600;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.06);}
   .save-box{text-align:center;padding:14px;}
 
+  /* ---------- Bảng xem nhanh kết quả theo số câu (sau khi nộp bài) ---------- */
+  .q-result-panel{background:var(--white);border-radius:11px;padding:12px 14px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .q-result-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;font-size:.88rem;}
+  .q-result-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.76rem;color:#777;}
+  .q-result-legend span{display:inline-flex;align-items:center;gap:4px;}
+  .q-result-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .q-result-legend i.lc{background:#e9f7ec;border:1px solid var(--green);}
+  .q-result-legend i.lw{background:#fbeceb;border:1px solid var(--red);}
+  .q-result-legend i.lu{background:#f3f3f3;border:1px solid #ddd;}
+  .q-result-grid{display:flex;flex-wrap:wrap;gap:6px;}
+  .q-result-grid button{width:34px;height:34px;border-radius:8px;border:1px solid #e3e7f5;background:var(--white);font-weight:700;font-size:.78rem;cursor:pointer;color:var(--dark);}
+  .q-result-grid button.correct{background:#e9f7ec;border-color:var(--green);color:var(--green);}
+  .q-result-grid button.wrong{background:#fbeceb;border-color:var(--red);color:var(--red);}
+  .q-result-grid button.unanswered{background:#f3f3f3;border-color:#ddd;color:#999;}
+  .q-block.flash-highlight{animation:qFlash 1.2s ease;}
+  @keyframes qFlash{ 0%{box-shadow:0 0 0 4px rgba(26,35,95,.35);border-radius:10px;} 100%{box-shadow:none;} }
+
   /* ---------- Luyện tính toán chuyên sâu ---------- */
   .calc-phan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:14px;}
   .calc-phan-card{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid #e3e7f5;border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;}
@@ -1110,6 +1127,8 @@ async function startExamQuiz(){
 
   quizCtx.questions = stratifiedSample(data.questions, quizCtx.examCount);
   quizCtx.userAnswers = {};
+  quizCtx.examResults = {};
+  quizCtx.wrongOnly = false;
   window.__takerName = name;
   renderExamQuestions(area);
 }
@@ -1493,6 +1512,8 @@ async function submitExamAnswers(isAutoSubmit){
   stopExamTimer();
 
   let score = 0;
+  quizCtx.examResults = {}; // qid -> 'correct' | 'wrong' | 'unanswered', để vẽ bảng xem nhanh theo số câu
+  quizCtx.wrongOnly = false;
   quizCtx.questions.forEach(q => {
     const block = document.querySelector(`.q-block[data-qid="${q.id}"]`);
     if(!block) return;
@@ -1500,6 +1521,7 @@ async function submitExamAnswers(isAutoSubmit){
     const chosenKey = quizCtx.userAnswers[q.id];
     const isCorrect = chosenKey && chosenKey === correctKey;
     if(isCorrect) score++;
+    quizCtx.examResults[q.id] = !chosenKey ? "unanswered" : (isCorrect ? "correct" : "wrong");
 
     block.querySelectorAll(".opt").forEach(o => {
       o.classList.add("disabled");
@@ -1523,9 +1545,55 @@ async function submitExamAnswers(isAutoSubmit){
   quizCtx.score = score;
   quizCtx.answered = quizCtx.questions.length;
   const bar = document.getElementById("progress-bar");
-  if(bar) bar.innerText = `Đã nộp bài · Điểm: ${score}/${quizCtx.questions.length}`;
+  if(bar){
+    bar.innerText = `Đã nộp bài · Điểm: ${score}/${quizCtx.questions.length}`;
+    bar.insertAdjacentHTML("afterend", renderResultGridHtml());
+  }
 
   await finishQuiz();
+}
+
+// Bảng các ô số 1..N để xem nhanh câu nào đúng (xanh)/sai (đỏ)/chưa làm (xám),
+// bấm vào ô là nhảy thẳng xuống câu đó; có nút lọc chỉ hiện câu sai.
+function renderResultGridHtml(){
+  const wrongCount = Object.values(quizCtx.examResults).filter(s => s === "wrong").length;
+  return `
+    <div class="q-result-panel" id="q-result-panel">
+      <div class="q-result-head">
+        <div class="q-result-legend">
+          <span><i class="lc"></i>Đúng</span>
+          <span><i class="lw"></i>Sai</span>
+          <span><i class="lu"></i>Chưa chọn</span>
+        </div>
+        <button type="button" class="btn-secondary" id="q-wrong-toggle" onclick="toggleWrongOnly()">🔍 Chỉ xem ${wrongCount} câu sai</button>
+      </div>
+      <div class="q-result-grid">
+        ${quizCtx.questions.map((q,i) => `<button type="button" class="${quizCtx.examResults[q.id]}" onclick="jumpToQuestion(${q.id})">${i+1}</button>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function jumpToQuestion(qid){
+  if(quizCtx.wrongOnly) toggleWrongOnly();
+  const block = document.querySelector(`.q-block[data-qid="${qid}"]`);
+  if(!block) return;
+  block.scrollIntoView({behavior:"smooth", block:"center"});
+  block.classList.add("flash-highlight");
+  setTimeout(() => block.classList.remove("flash-highlight"), 1200);
+}
+
+function toggleWrongOnly(){
+  quizCtx.wrongOnly = !quizCtx.wrongOnly;
+  quizCtx.questions.forEach(q => {
+    const block = document.querySelector(`.q-block[data-qid="${q.id}"]`);
+    if(!block) return;
+    const isWrong = quizCtx.examResults[q.id] === "wrong";
+    block.style.display = (quizCtx.wrongOnly && !isWrong) ? "none" : "";
+  });
+  const btn = document.getElementById("q-wrong-toggle");
+  const wrongCount = Object.values(quizCtx.examResults).filter(s => s === "wrong").length;
+  if(btn) btn.innerText = quizCtx.wrongOnly ? "👁 Xem lại tất cả câu" : `🔍 Chỉ xem ${wrongCount} câu sai`;
 }
 
 function saveDisplayNameFrom(name){
