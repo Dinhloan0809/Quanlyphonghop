@@ -480,6 +480,69 @@
     .stage-num{position:static;margin-bottom:8px;}
   }
 
+  /* ---------- Góc học tập ---------- */
+  .corner-head{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .corner-avatar{width:60px;height:60px;border-radius:18px;background:var(--accent);color:var(--on-accent);font-size:1.5rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none;}
+  .corner-head h2{margin:0;font-size:1.35rem;font-weight:800;}
+  .corner-head .meta{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:.86rem;margin-top:4px;align-items:center;}
+  .corner-head .grow{flex:1;min-width:200px;}
+  .corner-note{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn-line);border-radius:12px;padding:10px 14px;font-size:.84rem;line-height:1.45;margin-bottom:16px;}
+  .corner-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+  .corner-stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;}
+  .corner-stat b{display:block;font-size:1.45rem;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .corner-stat span{font-size:.8rem;color:var(--muted);font-weight:600;}
+  .corner-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start;}
+  @media (max-width:900px){ .corner-grid{grid-template-columns:1fr;} }
+  .corner-grid .card{margin-bottom:16px;}
+  .week-chart{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end;height:150px;padding-top:6px;}
+  .week-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;}
+  .week-bar .bar{width:100%;max-width:34px;border-radius:7px 7px 3px 3px;background:var(--accent);min-height:3px;}
+  .week-bar .bar.zero{background:var(--line);}
+  .week-bar .v{font-size:.72rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .week-bar .d{font-size:.74rem;color:var(--muted);font-weight:600;}
+  .week-bar.today .d{color:var(--accent-text);font-weight:800;}
+  .cont-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .cont-row:last-child{border-bottom:none;}
+  .cont-row .t{flex:1;min-width:0;}
+  .cont-row .t b{display:block;font-size:.92rem;}
+  .cont-row .t span{font-size:.8rem;color:var(--muted);}
+  .cont-row button{padding:9px 14px;font-size:.84rem;flex:none;}
+  .wrong-sum{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+  .wrong-sum b{font-size:2rem;font-weight:800;color:var(--bad);line-height:1;}
+  .wrong-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .wrong-item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:.86rem;line-height:1.45;}
+  .wrong-item .src{font-size:.74rem;color:var(--muted);font-weight:600;margin-top:4px;display:flex;justify-content:space-between;gap:8px;}
+  .wrong-item .times{color:var(--bad);font-weight:700;}
+  .hist-table{width:100%;border-collapse:collapse;font-size:.86rem;}
+  .hist-table th{text-align:left;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;padding:8px 6px;border-bottom:1px solid var(--line);}
+  .hist-table td{padding:10px 6px;border-bottom:1px solid var(--line);vertical-align:top;}
+  .hist-table tr:last-child td{border-bottom:none;}
+  .hist-table .sc{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .hist-wrap{overflow-x:auto;}
+  .corner-btn{display:inline-flex;align-items:center;gap:8px;}
+
+  /* Chế độ toàn màn hình: ẩn danh sách bài, nội dung bài giảng/bài tập mở rộng */
+  .side-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;}
+  .side-top .back-home{margin:0;}
+  .intro-link{background:none;border:none;padding:0;margin:-8px 0 16px;color:var(--accent-text);font-weight:700;font-size:.86rem;cursor:pointer;}
+  .intro-link:hover{text-decoration:underline;}
+  .focus-toggle{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:.82rem;font-weight:700;}
+  .focus-toggle:hover{border-color:var(--accent);color:var(--accent-text);}
+  .focus-toggle svg,.focus-bar svg{width:16px;height:16px;flex:none;}
+  .focus-bar{display:none;align-items:center;gap:12px;margin-bottom:14px;}
+  .focus-bar .btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;min-height:42px;font-size:.86rem;}
+  .focus-title{font-weight:800;color:var(--muted);font-size:.92rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  body.focus-mode .layout{max-width:1320px;}
+  body.focus-mode .sidebar{display:none;}
+  body.focus-mode .content{max-width:1180px;margin:0 auto;}
+  body.focus-mode .focus-bar{display:flex;}
+  body.focus-mode .qr-wrap{grid-template-columns:minmax(0,1fr) 280px;}
+  @media (max-width:860px){
+    .focus-toggle{display:none;}
+    body.focus-mode .sidebar{display:block;}
+    body.focus-mode .focus-bar{display:none;}
+  }
+
   .back-home{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-weight:600;font-size:.86rem;padding:4px 0;margin:0 0 12px;cursor:pointer;}
   .back-home:hover{color:var(--accent-text);}
   .topbar-left.clickable{cursor:pointer;}
@@ -612,6 +675,7 @@
     </div>
     <span class="user-chevron">⌄</span>
     <div class="user-menu" id="user-menu" style="display:none;">
+      <button type="button" onclick="event.stopPropagation();document.getElementById('user-menu').style.display='none';showCorner()">📚 Góc học tập</button>
       <button type="button" onclick="changeDisplayName(event)">✏️ Đổi tên hiển thị</button>
       <div id="user-menu-admin-slot"></div>
       <button type="button" onclick="logoutStudent(event)">🚪 Đăng xuất</button>
@@ -624,16 +688,32 @@
 
 <div class="layout" id="study-view">
   <aside class="sidebar">
-    <button type="button" class="back-home" onclick="showHome()">‹ Tất cả môn học</button>
+    <div class="side-top">
+      <button type="button" class="back-home" onclick="showHome()">‹ Tất cả môn học</button>
+      <button type="button" class="focus-toggle" onclick="setFocusMode(true)" title="Ẩn danh sách bài để xem bài giảng toàn màn hình">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
+        Toàn màn hình
+      </button>
+    </div>
     <div class="subject-tabs" id="subject-tabs" style="display:none;"></div>
     <div class="subject-title" id="subject-title">Đang tải...</div>
     <div class="subject-desc" id="subject-desc"></div>
+    <button type="button" class="intro-link" onclick="showSubjectIntro(currentSubject.slug)">Xem lộ trình môn học ›</button>
     <div class="subject-hours" id="subject-hours" style="display:none;"></div>
     <div class="lesson-list" id="lesson-list"></div>
   </aside>
-  <main class="content" id="content">
-    <div class="card"><div class="empty">Đang tải nội dung...</div></div>
-  </main>
+  <div class="content">
+    <div class="focus-bar" id="focus-bar">
+      <button type="button" class="btn-secondary" onclick="setFocusMode(false)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        Hiện danh sách bài
+      </button>
+      <span class="focus-title" id="focus-title"></span>
+    </div>
+    <main id="content">
+      <div class="card"><div class="empty">Đang tải nội dung...</div></div>
+    </main>
+  </div>
 </div>
 
 <footer class="site-footer">
@@ -1141,6 +1221,7 @@ async function init(){
     else { renderSidebarForSubject(); updateActiveStates(); }
   });
 
+  if(initParams.get("view") === "goc-hoc-tap" && isLoggedIn()){ showCorner(); return; }
   // Vào hệ thống không kèm môn cụ thể → màn giới thiệu chọn môn học
   if(!wantSubjectSlug || !allSubjects.some(s => s.slug === wantSubjectSlug)){ showHome(); return; }
   if(wantIntro === "1"){ showSubjectIntro(wantSubjectSlug); return; }
@@ -1274,6 +1355,7 @@ function renderSidebarForSubject(){
 }
 
 function updateActiveStates(){
+  setTimeout(updateFocusTitle, 0);
   document.querySelectorAll(".lesson-item").forEach(el => {
     if(el.dataset.exam){
       el.classList.toggle("active", currentMode === "exam");
@@ -1288,7 +1370,7 @@ function updateActiveStates(){
 function updateUrl(params){
   const qs = new URLSearchParams(params).toString();
   history.replaceState(null, "", qs ? "?" + qs : location.pathname);
-  if(params && params.subject && params.lesson) saveLastLesson(params.subject, params.lesson);
+  if(params && params.subject && params.lesson){ saveLastLesson(params.subject, params.lesson); recordLessonVisit(params.subject, params.lesson); }
 }
 
 /* ================= Danh mục môn học & lộ trình CCHN =================
@@ -1495,6 +1577,7 @@ function renderHome(){
         <div class="home-hello">${name ? "Xin chào, " + esc(name) : "Xin chào"}</div>
         <h2>${route ? `Tiếp tục lộ trình <span class="hl">${esc(route.title)}</span>` : `Bạn muốn thi <span class="hl">chứng chỉ nào?</span>`}</h2>
         <p>${route ? "Học lần lượt từng môn theo giai đoạn: xem video, ghi chú, làm bài, ôn luyện rồi tổng ôn." : "Chọn một lộ trình bên dưới, hệ thống sẽ sắp xếp các môn cần học theo đúng thứ tự cho bạn."}</p>
+        ${isLoggedIn() ? `<button type="button" class="btn-secondary corner-btn" style="margin-top:14px;" onclick="showCorner()">📚 Góc học tập của tôi</button>` : ""}
       </div>
       <div class="home-stats">
         <div class="home-stat"><b>${allSubjects.length}</b><span>môn đã có bài</span></div>
@@ -1608,6 +1691,224 @@ function enterSubject(slug, mode, lessonSlug){
 }
 
 /* ---------- Lesson content ---------- */
+/* ================= Góc học tập =================
+   Hiện tại dữ liệu học tập lưu trên trình duyệt của máy học viên (localStorage), theo từng số điện thoại.
+   Khi có bảng lưu trên Supabase, chỉ cần thay 2 hàm studyLoad/studySave. */
+function studyKey(name){ return "cchn_" + name + "_" + ((currentStudent && currentStudent.phone) || "guest"); }
+function studyLoad(name, fallback){
+  try{ const v = localStorage.getItem(studyKey(name)); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; }
+}
+function studySave(name, val){ try{ localStorage.setItem(studyKey(name), JSON.stringify(val)); }catch(e){} }
+function todayStr(d){ d = d || new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+
+// Đếm giờ học: cứ 15 giây, nếu tab đang mở và học viên đang ở trong bài/đề thì cộng thời gian
+const STUDY_TICK = 15;
+setInterval(() => {
+  if(!isLoggedIn() || document.visibilityState !== "visible") return;
+  if(homeMode || !currentSubject || !currentMode) return;
+  if(Date.now() - lastUserActivity > 5 * 60 * 1000) return; // bỏ qua nếu 5 phút không thao tác
+  const time = studyLoad("time", {});
+  const d = todayStr();
+  time[d] = time[d] || {};
+  time[d][currentSubject.slug] = (time[d][currentSubject.slug] || 0) + STUDY_TICK;
+  studySave("time", time);
+}, STUDY_TICK * 1000);
+let lastUserActivity = Date.now();
+["click", "keydown", "scroll", "touchstart", "mousemove"].forEach(ev => document.addEventListener(ev, () => { lastUserActivity = Date.now(); }, { passive: true }));
+
+function recordLessonVisit(subjectSlug, lessonSlug){
+  if(!isLoggedIn()) return;
+  const v = studyLoad("visited", {});
+  v[subjectSlug] = v[subjectSlug] || [];
+  if(!v[subjectSlug].includes(lessonSlug)) v[subjectSlug].push(lessonSlug);
+  studySave("visited", v);
+}
+// Ghi kết quả bài làm + gom câu sai để ôn lại
+function recordQuizResult(){
+  if(!isLoggedIn() || !qr) return;
+  const qs = quizCtx.questions;
+  const subj = currentSubject ? currentSubject.slug : "";
+  if(currentMode !== "review"){
+    const hist = studyLoad("hist", []);
+    const lesson = currentLessonSlug && currentSubject ? currentSubject.lessons.find(l => l.slug === currentLessonSlug) : null;
+    hist.unshift({ t: Date.now(), subject: subj, kind: currentMode === "exam" ? "exam" : "practice", label: currentMode === "exam" ? (quizCtx.examTitle || "Thi thử") : (lesson ? lesson.title : "Quiz"), score: quizCtx.score, total: qs.length });
+    studySave("hist", hist.slice(0, 100));
+  }
+  const bank = studyLoad("wrong", {});
+  qs.forEach(q => {
+    const st = qr.results[q.id];
+    const key = String(q.id);
+    if(st === "correct"){ if(bank[key]) delete bank[key]; return; }
+    if(st === "blank" && currentMode === "review") return;
+    const prev = bank[key];
+    bank[key] = {
+      q: { id: q.id, question: q.question, option_a: q.option_a, option_b: q.option_b, option_c: q.option_c, option_d: q.option_d, correct_answer: q.correct_answer, explanation: q.explanation, topic: q.topic },
+      subject: prev ? prev.subject : (q.__subject || subj), times: (prev ? prev.times : 0) + 1, last: Date.now()
+    };
+  });
+  // giới hạn 300 câu gần nhất
+  const keys = Object.keys(bank).sort((a, b) => bank[b].last - bank[a].last);
+  keys.slice(300).forEach(k => delete bank[k]);
+  studySave("wrong", bank);
+}
+function subjectTitleBySlug(slug){
+  const s = allSubjects.find(x => x.slug === slug);
+  return s ? ((catalogForSubject(s) || s).title) : slug;
+}
+function fmtDuration(sec){
+  const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
+  if(h && m) return `${h} giờ ${m}p`;
+  if(h) return `${h} giờ`;
+  return `${m} phút`;
+}
+function showCorner(){
+  if(!isLoggedIn()){ openAuth("Đăng nhập để xem góc học tập của bạn.", showCorner); return; }
+  stopExamTimer();
+  homeMode = "corner";
+  setStudyVisible(false);
+  homeMode = "corner";
+  document.getElementById("content").innerHTML = "";
+  updateUrl({ view: "goc-hoc-tap" });
+  renderCorner();
+  window.scrollTo(0, 0);
+}
+function renderCorner(){
+  const el = document.getElementById("home-view");
+  const st = currentStudent || {};
+  const name = displayName || st.full_name || "Học viên";
+  const phone = String(st.phone || "");
+  const phoneMasked = phone.length > 6 ? phone.slice(0, 3) + "****" + phone.slice(-3) : phone;
+  const statusTxt = st.approval_status === "approved" ? `<span class="status-pill approved">Đã mở khoá toàn bộ</span>`
+    : st.approval_status === "pending" ? `<span class="status-pill pending">Đang chờ duyệt mở khoá</span>`
+    : st.approval_status === "rejected" ? `<span class="status-pill rejected">Chưa được duyệt mở khoá</span>`
+    : `<span class="status-pill pending">Đang học thử</span>`;
+  const route = getChosenRoute();
+
+  // giờ học
+  const time = studyLoad("time", {});
+  let total = 0, week = 0;
+  const now = new Date();
+  const days = [];
+  for(let i = 6; i >= 0; i--){
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    const k = todayStr(d);
+    const sec = Object.values(time[k] || {}).reduce((a, b) => a + b, 0);
+    days.push({ k, sec, label: ["CN","T2","T3","T4","T5","T6","T7"][d.getDay()], today: i === 0 });
+    week += sec;
+  }
+  Object.values(time).forEach(m => Object.values(m).forEach(v => total += v));
+  const maxDay = Math.max(1, ...days.map(d => d.sec));
+
+  const visited = studyLoad("visited", {});
+  const nVisited = Object.values(visited).reduce((n, a) => n + a.length, 0);
+  const hist = studyLoad("hist", []);
+  const avg = hist.length ? Math.round(hist.reduce((n, h) => n + h.score / Math.max(1, h.total), 0) / hist.length * 100) : null;
+  const bank = studyLoad("wrong", {});
+  const wrongArr = Object.values(bank).sort((a, b) => (b.times - a.times) || (b.last - a.last));
+
+  // học tiếp
+  const contRows = allSubjects.map(s => ({ s, last: getLastLesson(s) })).filter(x => x.last).map(x => {
+    const sq = x.s.slug.replace(/'/g, "\\'");
+    const done = (visited[x.s.slug] || []).length;
+    return `<div class="cont-row"><div class="t"><b>${esc(subjectTitleBySlug(x.s.slug))}</b><span>Đang học: ${esc(lessonLabel(x.last))} · đã mở ${done}/${x.s.lessons.length} bài</span></div><button type="button" class="btn-primary" onclick="enterSubject('${sq}')">Học tiếp</button></div>`;
+  }).join("");
+
+  // câu sai theo môn
+  const bySubj = {};
+  wrongArr.forEach(w => { bySubj[w.subject] = (bySubj[w.subject] || 0) + 1; });
+
+  el.innerHTML = `
+    <button type="button" class="intro-back" onclick="showHome()">‹ Trang chủ</button>
+    <section class="corner-head">
+      <div class="corner-avatar">${esc((name.trim()[0] || "H").toUpperCase())}</div>
+      <div class="grow">
+        <h2>Góc học tập của ${esc(name)}</h2>
+        <div class="meta"><span>📱 ${esc(phoneMasked)}</span>${statusTxt}<span>Lộ trình: <b>${route ? esc(route.title) : "chưa chọn"}</b></span></div>
+      </div>
+      <button type="button" class="btn-secondary" onclick="showHome()">${route ? "Xem lộ trình" : "Chọn lộ trình"}</button>
+    </section>
+    <div class="corner-note">Số liệu dưới đây đang được lưu trên trình duyệt của máy này. Nếu bạn học trên máy hoặc điện thoại khác, số liệu ở máy đó sẽ tính riêng.</div>
+    <div class="corner-stats">
+      <div class="corner-stat"><b>${fmtDuration(week)}</b><span>Giờ học 7 ngày qua</span></div>
+      <div class="corner-stat"><b>${fmtDuration(total)}</b><span>Tổng giờ học</span></div>
+      <div class="corner-stat"><b>${nVisited}</b><span>Bài đã mở học</span></div>
+      <div class="corner-stat"><b>${hist.length}</b><span>Lần làm bài</span></div>
+      <div class="corner-stat"><b>${avg === null ? "—" : avg + "%"}</b><span>Tỷ lệ đúng trung bình</span></div>
+      <div class="corner-stat"><b style="color:var(--bad);">${wrongArr.length}</b><span>Câu cần ôn lại</span></div>
+    </div>
+    <div class="corner-grid">
+      <div>
+        <div class="card">
+          <h2>⏱️ Giờ học 7 ngày qua</h2>
+          <div class="week-chart" role="img" aria-label="Biểu đồ số phút học mỗi ngày trong 7 ngày qua">
+            ${days.map(d => `<div class="week-bar ${d.today ? "today" : ""}"><span class="v">${d.sec ? Math.round(d.sec / 60) + "p" : ""}</span><div class="bar ${d.sec ? "" : "zero"}" style="height:${d.sec ? Math.max(6, Math.round(d.sec / maxDay * 100)) : 3}%;"></div><span class="d">${d.label}</span></div>`).join("")}
+          </div>
+          <p class="muted" style="margin:10px 0 0;">Chỉ tính khi bạn đang mở bài học, bài tập hoặc đề thi.</p>
+        </div>
+        <div class="card">
+          <h2>📝 Lịch sử làm bài</h2>
+          ${hist.length ? `<div class="hist-wrap"><table class="hist-table">
+            <thead><tr><th>Thời gian</th><th>Môn · Bài</th><th>Điểm</th></tr></thead>
+            <tbody>${hist.slice(0, 15).map(h => {
+              const d = new Date(h.t);
+              const pct = Math.round(h.score / Math.max(1, h.total) * 100);
+              const col = pct >= 70 ? "var(--ok)" : pct >= 50 ? "var(--warn)" : "var(--bad)";
+              return `<tr><td>${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}</td><td>${esc(subjectTitleBySlug(h.subject))}<br><span class="muted">${h.kind === "exam" ? "Thi thử · " : ""}${esc(h.label || "")}</span></td><td class="sc" style="color:${col};">${h.score}/${h.total}</td></tr>`;
+            }).join("")}</tbody></table></div>` : `<div class="empty">Chưa có bài làm nào. Làm quiz cuối bài hoặc thi thử để thấy kết quả ở đây.</div>`}
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>🎯 Câu hay sai</h2>
+          ${wrongArr.length ? `
+            <div class="wrong-sum"><div><b>${wrongArr.length}</b> <span class="muted">câu cần ôn lại</span></div>
+              <button type="button" class="btn-primary" onclick="startWrongReview()">Ôn lại câu sai</button></div>
+            <div class="muted" style="margin-bottom:6px;">${Object.entries(bySubj).map(([k, n]) => `${esc(subjectTitleBySlug(k))}: ${n} câu`).join(" · ")}</div>
+            <div class="wrong-list">${wrongArr.slice(0, 5).map(w => `<div class="wrong-item">${esc(w.q.question)}<div class="src"><span>${esc(subjectTitleBySlug(w.subject))}</span><span class="times">Sai ${w.times} lần</span></div></div>`).join("")}</div>
+            ${wrongArr.length > 5 ? `<p class="muted" style="margin:10px 0 0;">và ${wrongArr.length - 5} câu khác.</p>` : ""}
+            <p class="muted" style="margin:10px 0 0;">Khi ôn lại, câu nào bạn làm đúng sẽ tự rời khỏi danh sách.</p>
+          ` : `<div class="empty">Chưa có câu sai nào. Các câu bạn làm sai trong quiz và thi thử sẽ tự được gom về đây để ôn lại.</div>`}
+        </div>
+        <div class="card">
+          <h2>📖 Học tiếp</h2>
+          ${contRows || `<div class="empty">Bạn chưa bắt đầu môn nào. <a href="#" onclick="event.preventDefault();showHome()">Chọn môn để học</a></div>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+function startWrongReview(){
+  const bank = studyLoad("wrong", {});
+  const arr = Object.values(bank).sort((a, b) => (b.times - a.times) || (b.last - a.last)).slice(0, 50);
+  if(!arr.length) return renderCorner();
+  quizCtx.questions = arr.map(w => ({ ...w.q, __subject: w.subject }));
+  quizCtx.slug = null;
+  quizCtx.score = 0; quizCtx.answered = 0;
+  window.__takerName = displayName || (currentStudent && currentStudent.full_name) || "";
+  currentMode = "review";
+  homeMode = "corner";
+  document.getElementById("home-view").innerHTML = `
+    <button type="button" class="intro-back" onclick="currentMode=null;showCorner()">‹ Góc học tập</button>
+    <div class="card"><h2>🎯 Ôn lại ${arr.length} câu sai</h2><div id="quiz-area"></div></div>`;
+  qrStart(document.getElementById("quiz-area"), "practice");
+}
+
+/* ---------- Toàn màn hình (ẩn danh sách bài) ---------- */
+function setFocusMode(on){
+  document.body.classList.toggle("focus-mode", !!on);
+  try{ localStorage.setItem("cchn_focus", on ? "1" : "0"); }catch(e){}
+  updateFocusTitle();
+}
+function updateFocusTitle(){
+  const el = document.getElementById("focus-title");
+  if(!el || !currentSubject) return;
+  const subj = (catalogForSubject(currentSubject) || currentSubject).title;
+  const idx = currentLessonSlug ? currentSubject.lessons.findIndex(l => l.slug === currentLessonSlug) : -1;
+  const part = currentMode === "exam" ? "Tổng ôn" : currentMode === "calc" ? "Ôn luyện tính toán" : (idx >= 0 ? currentSubject.lessons[idx].title : "");
+  el.innerText = subj + (part ? " · " + part : "");
+}
+try{ if(localStorage.getItem("cchn_focus") === "1") document.body.classList.add("focus-mode"); }catch(e){}
+
 /* ---------- Các bước trong một bài: Video → Ghi chú → Làm bài ---------- */
 let lessonStep = 1;
 const STEP_NEXT_LABEL = { 1: "Tiếp: Ghi chú ›", 2: "Tiếp: Làm bài ›" };
@@ -1795,6 +2096,7 @@ async function selectExam(){
   }
   quizCtx.slug = data.quiz_slug;
   quizCtx.examCount = data.count;
+  quizCtx.examTitle = data.title;
   quizCtx.examTimeLimitMinutes = (timeData && timeData.status === "ok") ? timeData.time_limit_minutes : null;
 
   const timeNote = quizCtx.examTimeLimitMinutes
@@ -2393,13 +2695,16 @@ async function qrSubmit(isAuto){
   quizCtx.score = score;
   quizCtx.answered = qs.length;
   quizCtx.userAnswers = { ...qr.answers };
-  qr.saveState = "saving";
+  recordQuizResult();
+  qr.saveState = quizCtx.slug ? "saving" : "saved";
   qrRenderResult();
   qrArea().scrollIntoView({ behavior: "smooth", block: "start" });
-  try{
-    await callRpc("log_quiz_attempt", { p_slug: quizCtx.slug, p_taker_name: window.__takerName, p_score: score, p_total: qs.length });
-    qr.saveState = "saved";
-  }catch(e){ qr.saveState = "error"; }
+  if(quizCtx.slug){
+    try{
+      await callRpc("log_quiz_attempt", { p_slug: quizCtx.slug, p_taker_name: window.__takerName, p_score: score, p_total: qs.length });
+      qr.saveState = "saved";
+    }catch(e){ qr.saveState = "error"; }
+  }
   if(!qr.review) qrRenderResult();
 }
 function qrWrongIndexes(){
@@ -2412,7 +2717,7 @@ function qrRenderResult(){
   const nOk = vals.filter(v => v === "correct").length, nBad = vals.filter(v => v === "wrong").length, nBlank = vals.filter(v => v === "blank").length;
   const pct = Math.round(nOk / qs.length * 100);
   const msg = scoreMessage(pct);
-  const restartFn = currentMode === "exam" ? "startExamQuiz" : "startLessonQuiz";
+  const restartFn = currentMode === "exam" ? "startExamQuiz" : currentMode === "review" ? "showCorner" : "startLessonQuiz";
   const wrongTotal = nBad + nBlank;
   area.innerHTML = `
     <div class="qr-result">
@@ -2427,7 +2732,7 @@ function qrRenderResult(){
       <div class="qr-actions">
         ${wrongTotal ? `<button type="button" class="btn-primary" onclick="qrStartReview(true)">Xem lại ${wrongTotal} câu sai</button>` : ""}
         <button type="button" class="btn-secondary" onclick="qrStartReview(false)">Xem lại tất cả</button>
-        <button type="button" class="btn-secondary" onclick="${restartFn}()">Làm lại</button>
+        <button type="button" class="btn-secondary" onclick="${restartFn}()">${currentMode === "review" ? "Về góc học tập" : "Làm lại"}</button>
       </div>
       <div class="empty" style="margin-top:12px;">${qr.saveState === "saving" ? "Đang lưu kết quả..." : qr.saveState === "error" ? "Chưa lưu được kết quả, bạn kiểm tra kết nối mạng nhé." : "Đã lưu kết quả."}</div>
     </div>

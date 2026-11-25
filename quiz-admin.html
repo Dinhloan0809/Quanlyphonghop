@@ -5,47 +5,123 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quản trị bộ đề trắc nghiệm</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+  /* Dùng chung lựa chọn sáng/tối với trang học viên */
+  (function(){ try{ if(localStorage.getItem("cchn_theme")==="dark") document.documentElement.setAttribute("data-theme","dark"); }catch(e){} })();
+</script>
 <style>
-  :root{ --navy:#1E2761; --ice:#CADCFC; --white:#FFFFFF; --dark:#1A1A2E; --light:#EEF1FB; --green:#1e7a34; --red:#b3261e; }
+  /* Bảng màu đồng bộ với trang học viên (portal.html) */
+  :root{
+    --bg:#F3F7FE; --surface:#FFFFFF; --surface2:#EAF1FD; --line:#D9E4F5; --line-strong:#B9CBE8;
+    --text:#0F1B3D; --muted:#4F5B78; --faint:#6E7896;
+    --accent:#0B6BF5; --on-accent:#FFFFFF; --accent-soft:#E3EEFF; --accent-text:#0A5AD0;
+    --cta-grad:linear-gradient(135deg,#FF8A2B 0%,#F25F0D 100%); --on-cta:#FFFFFF; --cta-shadow:0 6px 16px rgba(242,95,13,.25);
+    --hi:#FFD23F;
+    --ok:#15803D; --ok-soft:#E5F5EA; --bad:#C81E1E; --bad-soft:#FDE8E8; --warn:#9A5B00; --warn-soft:#FFF4D6; --warn-line:#F2D27A;
+    --shadow:0 1px 2px rgba(15,27,61,.04), 0 6px 18px rgba(11,107,245,.07);
+    color-scheme:light;
+    /* tên cũ dùng trong mã */
+    --navy:var(--accent-text); --ice:var(--accent-soft); --white:var(--surface); --dark:var(--text); --light:var(--surface2); --green:var(--ok); --red:var(--bad);
+  }
+  :root[data-theme="dark"]{
+    --bg:#1A1B1E; --surface:#232428; --surface2:#2C2E33; --line:#36383E; --line-strong:#4A4D55;
+    --text:#ECEDEF; --muted:#A8ABB2; --faint:#8E929A;
+    --accent:#5A9CFF; --on-accent:#0E1A33; --accent-soft:#25344F; --accent-text:#8EBBFF;
+    --cta-grad:linear-gradient(135deg,#FF8A2B 0%,#F2600F 100%); --cta-shadow:0 4px 14px rgba(255,122,26,.18);
+    --ok:#5BD68A; --ok-soft:#1E3327; --bad:#FF8F8F; --bad-soft:#3B2427; --warn:#FFCF5A; --warn-soft:#332C1A; --warn-line:#5E5130;
+    --shadow:0 1px 2px rgba(0,0,0,.25), 0 6px 18px rgba(0,0,0,.22);
+    color-scheme:dark;
+  }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--light);color:var(--dark);}
-  header{background:var(--navy);color:var(--white);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;}
-  header h1{margin:0;font-size:1.1rem;}
-  main{max-width:980px;margin:0 auto;padding:18px;}
-  .card{background:var(--white);border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
-  .card h2{margin:0 0 12px;font-size:1rem;color:var(--navy);}
-  label{display:block;font-size:.85rem;font-weight:600;margin:10px 0 4px;}
-  input[type=text],input[type=password],select,textarea{width:100%;padding:9px 10px;border:1px solid #ccd3e8;border-radius:7px;font-size:.92rem;font-family:inherit;}
-  button{cursor:pointer;border:none;border-radius:7px;font-size:.88rem;font-weight:600;padding:9px 16px;}
-  .btn-primary{background:var(--navy);color:var(--white);}
-  .btn-danger{background:var(--red);color:var(--white);}
-  .btn-secondary{background:var(--light);color:var(--navy);border:1px solid var(--navy);}
-  table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:10px;}
-  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid #eceff8;}
-  th{color:var(--navy);font-weight:700;background:var(--light);}
-  tr:hover td{background:#f7f9fe;}
-  .row{display:flex;gap:10px;flex-wrap:wrap;}
+  body{margin:0;font-family:'Be Vietnam Pro',-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  a{color:var(--accent-text);}
+  button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  header{position:sticky;top:0;z-index:30;background:color-mix(in srgb, var(--bg) 88%, transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);color:var(--text);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:12px;min-width:0;}
+  .logo-icon{width:40px;height:40px;border-radius:12px;background:var(--accent);display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;padding:8px;flex:none;}
+  .logo-icon span{border-radius:3px;background:var(--on-accent);}
+  .logo-icon span:nth-child(2),.logo-icon span:nth-child(3){opacity:.45;}
+  .logo-icon span:nth-child(4){background:var(--hi);opacity:1;}
+  header h1{margin:0;font-size:1.05rem;font-weight:800;line-height:1.25;}
+  header .sub{margin:1px 0 0;color:var(--muted);font-size:.8rem;}
+  .head-actions{display:flex;gap:8px;align-items:center;}
+  .theme-toggle{width:42px;height:42px;padding:0;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text);display:flex;align-items:center;justify-content:center;}
+  .theme-toggle:hover{background:var(--surface2);}
+  .theme-toggle svg{width:19px;height:19px;}
+  .theme-toggle .ic-sun{display:none;}
+  :root[data-theme="dark"] .theme-toggle .ic-sun{display:block;}
+  :root[data-theme="dark"] .theme-toggle .ic-moon{display:none;}
+
+  main{max-width:1080px;margin:0 auto;padding:24px 20px 48px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .card .card{box-shadow:none;border-radius:14px;}
+  .card h2{margin:0 0 14px;font-size:1.05rem;font-weight:800;color:var(--text);}
+  .card h3{color:var(--text);}
+  label{display:block;font-size:.85rem;font-weight:600;margin:12px 0 6px;color:var(--text);}
+  input[type=text],input[type=password],input[type=number],input[type=email],input[type=tel],input[type=url],input[type=date],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:.92rem;font-family:inherit;background:var(--surface);color:var(--text);}
+  input::placeholder,textarea::placeholder{color:var(--faint);}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);}
+  input[type=checkbox],input[type=radio]{accent-color:var(--accent);}
+  button{cursor:pointer;border:none;border-radius:10px;font-size:.88rem;font-weight:600;padding:10px 16px;font-family:inherit;min-height:40px;}
+  button:disabled{opacity:.55;cursor:default;}
+  .btn-primary{background:var(--cta-grad);color:var(--on-cta);font-weight:700;box-shadow:var(--cta-shadow);}
+  .btn-primary:hover{filter:brightness(1.06);}
+  .btn-danger{background:var(--bad);color:#fff;}
+  :root[data-theme="dark"] .btn-danger{color:#2A0F12;}
+  .btn-danger:hover{filter:brightness(1.08);}
+  .btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--line);}
+  .btn-secondary:hover{background:var(--surface2);border-color:var(--line-strong);}
+  a.btn-secondary{display:inline-flex;align-items:center;padding:9px 14px;border-radius:10px;font-weight:600;font-size:.88rem;text-decoration:none;min-height:42px;}
+  table{width:100%;border-collapse:collapse;font-size:.86rem;margin-top:10px;}
+  th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{color:var(--muted);font-weight:700;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;background:var(--surface2);}
+  th:first-child{border-top-left-radius:10px;} th:last-child{border-top-right-radius:10px;}
+  tr:hover td{background:color-mix(in srgb, var(--surface2) 55%, transparent);}
+  td button{min-height:34px;padding:6px 10px;font-size:.8rem;}
+  .row{display:flex;gap:12px;flex-wrap:wrap;}
   .row > *{flex:1;min-width:160px;}
-  .msg{font-size:.85rem;margin-top:8px;padding:8px 10px;border-radius:6px;}
-  .msg.ok{background:#e9f7ec;color:var(--green);}
-  .msg.err{background:#fbeceb;color:var(--red);}
-  .muted{color:#888;font-size:.85rem;}
-  .pill{display:inline-block;background:var(--ice);color:var(--navy);font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px;}
-  .hidden{display:none;}
+  .msg{font-size:.86rem;margin-top:10px;padding:10px 12px;border-radius:10px;}
+  .msg:empty{display:none;}
+  .msg.ok{background:var(--ok-soft);color:var(--ok);}
+  .msg.err{background:var(--bad-soft);color:var(--bad);}
+  .muted{color:var(--muted);font-size:.85rem;}
+  .pill{display:inline-block;background:var(--accent-soft);color:var(--accent-text);font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;}
+  .hidden{display:none !important;}
   .center{text-align:center;}
-  .tabs{position:sticky;top:0;z-index:20;display:flex;gap:6px;background:var(--white);border-radius:10px;padding:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow-x:auto;}
-  .tab-btn{flex:1;min-width:150px;white-space:nowrap;background:transparent;color:var(--navy);border-radius:7px;padding:10px 14px;font-weight:700;font-size:.88rem;text-align:center;}
-  .tab-btn:hover{background:var(--light);}
-  .tab-btn.active{background:var(--navy);color:var(--white);}
+  .tabs{position:sticky;top:67px;z-index:20;display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:5px;margin-bottom:18px;box-shadow:var(--shadow);overflow-x:auto;}
+  .tab-btn{flex:1;min-width:150px;white-space:nowrap;background:transparent;color:var(--muted);border-radius:11px;padding:10px 14px;font-weight:700;font-size:.88rem;text-align:center;}
+  .tab-btn:hover{background:var(--surface2);color:var(--text);}
+  .tab-btn.active{background:var(--accent-soft);color:var(--accent-text);}
   .tab-content.hidden{display:none;}
+  #login-card{max-width:420px;margin:40px auto;}
+  #login-card button{width:100%;min-height:48px;}
+  @media (max-width:640px){
+    header{padding:10px 14px;}
+    header .sub{display:none;}
+    main{padding:16px 12px 40px;}
+    .card{padding:16px;}
+    .tabs{top:63px;}
+    table{display:block;overflow-x:auto;white-space:nowrap;}
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>⚙️ Quản trị bộ đề trắc nghiệm</h1>
-  <div style="display:flex;gap:8px;align-items:center;">
-    <a href="portal.html" class="btn-secondary" style="text-decoration:none;display:inline-block;">← Về trang học viên</a>
+  <div class="brand">
+    <div class="logo-icon"><span></span><span></span><span></span><span></span></div>
+    <div><h1>Trang quản trị</h1><p class="sub">Hệ thống ôn luyện Chứng chỉ Hành nghề</p></div>
+  </div>
+  <div class="head-actions">
+    <button type="button" class="theme-toggle" onclick="toggleTheme()" aria-label="Đổi giao diện sáng/tối" title="Đổi giao diện sáng/tối">
+      <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+      <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+    </button>
+    <a href="portal.html" class="btn-secondary">← Về trang học viên</a>
     <button class="btn-secondary hidden" id="btn-logout" onclick="logout()">Đăng xuất</button>
   </div>
 </header>
@@ -53,6 +129,7 @@
 <main id="app">
   <div class="card" id="login-card">
     <h2>Đăng nhập quản trị</h2>
+    <p class="muted" style="margin:-6px 0 4px;">Dành cho người quản lý lớp học.</p>
     <label>Mật khẩu admin</label>
     <input type="password" id="pw-input" placeholder="Mật khẩu">
     <button class="btn-primary" style="margin-top:12px;" onclick="login()">Đăng nhập</button>
@@ -60,6 +137,13 @@
   </div>
 </main>
 
+<script>
+function toggleTheme(){
+  const dark = document.documentElement.getAttribute("data-theme") !== "dark";
+  if(dark) document.documentElement.setAttribute("data-theme","dark"); else document.documentElement.removeAttribute("data-theme");
+  try{ localStorage.setItem("cchn_theme", dark ? "dark" : "light"); }catch(e){}
+}
+</script>
 <script>
 const SUPABASE_URL = "https://tvhzojcfycbikxkenhev.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2aHpvamNmeWNiaWt4a2VuaGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMjMzMzAsImV4cCI6MjEwMDY5OTMzMH0.-_hvVaUqsArDZcHHkv_5y0HSWNQuezyeYNTrzXEfmpU";
@@ -490,7 +574,7 @@ function renderVideosList(){
   if(!el) return;
   if(!currentLessonVideos.length){ el.innerHTML = `<p class="muted">Chưa có video nào cho bài này.</p>`; return; }
   el.innerHTML = currentLessonVideos.map((v,i) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #eceff8;">
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);">
       <a href="${esc(v.url)}" target="_blank" rel="noopener" style="flex:1;font-weight:600;font-size:.88rem;">▶️ ${esc(v.label)} ${v.duration_seconds ? `<span class="muted" style="font-weight:400;">(${formatMinutes(v.duration_seconds/60)} phút)</span>` : ""}</a>
       <button class="btn-danger" type="button" onclick="removeVideo(${i})">Xoá</button>
     </div>
@@ -561,7 +645,7 @@ function renderLessonDocsList(){
   if(!el) return;
   if(!currentLessonDocuments.length){ el.innerHTML = `<p class="muted">Chưa có tài liệu nào cho bài này.</p>`; return; }
   el.innerHTML = currentLessonDocuments.map((d,i) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #eceff8;">
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);">
       <a href="${esc(d.url)}" target="_blank" rel="noopener" style="flex:1;font-weight:600;font-size:.88rem;">📄 ${esc(d.label)}</a>
       <button class="btn-danger" type="button" onclick="removeLessonDoc(${i})">Xoá</button>
     </div>
@@ -593,7 +677,7 @@ function renderMindmapPreview(){
   if(!el) return;
   if(!url){ el.innerHTML = `<p class="muted">Chưa có mindmap cho bài này.</p>`; return; }
   el.innerHTML = /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(url)
-    ? `<img src="${esc(url)}" style="max-width:280px;border-radius:8px;border:1px solid #e3e7f5;display:block;margin-bottom:8px;">`
+    ? `<img src="${esc(url)}" style="max-width:280px;border-radius:8px;border:1px solid var(--line);display:block;margin-bottom:8px;">`
     : `<a href="${esc(url)}" target="_blank" rel="noopener">Xem mindmap hiện tại</a>`;
 }
 
@@ -748,7 +832,7 @@ function renderCalcPractice(){
   let html = `<button class="btn-secondary" type="button" onclick="openCalcSectionForm('new')">+ Thêm phần mới</button>`;
   html += `<div id="calc-section-form-area"></div>`;
   html += `
-    <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:14px;padding:14px;">
+    <div class="card" style="background:var(--surface);border:1px solid var(--line);margin-top:14px;padding:14px;">
       <h3 style="margin-top:0;">📥 Nhập hàng loạt từ Excel</h3>
       <p class="muted">Mỗi dòng trong file = 1 câu trắc nghiệm 4 đáp án (mẫu hoặc bài tập). Cột "Phần" và "Dạng" trùng tên (trong cùng file, hoặc trùng với phần/dạng đã có sẵn) sẽ tự gộp chung — không cần tạo phần/dạng trước, hệ thống tự tạo khi chưa có. Thứ tự các cột đúng theo file mẫu: <b>Phần, Thứ tự phần, Video phần (link), Tên video phần, Dạng, Thứ tự dạng, Loại câu (Mẫu/Bài tập), Thứ tự câu, Câu hỏi, Đáp án A, Đáp án B, Đáp án C, Đáp án D, Đáp án đúng (A/B/C/D), Lời giải chi tiết</b>. Dòng đầu là tiêu đề sẽ tự bỏ qua. Cột "Video phần" chỉ cần điền ở 1 dòng bất kỳ của phần đó (các dòng khác để trống cũng được).</p>
       <input type="file" id="calc-excel-file" accept=".xlsx,.xls,.csv">
@@ -764,7 +848,7 @@ function renderCalcPractice(){
       const isUnassigned = s.id === null;
       const groups = s.groups || [];
       html += `
-        <div class="card" style="background:#eef1fb;margin-top:14px;padding:14px;border:1px solid #d7ddf5;">
+        <div class="card" style="background:var(--surface2);margin-top:14px;padding:14px;border:1px solid var(--line);">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
             <h2 style="margin:0;">${isUnassigned ? "" : `#${s.order_index} · `}${esc(s.title)} ${s.video_url ? `<span class="muted" style="font-size:.75rem;font-weight:400;">🎬 ${esc(s.video_label||"có video")}</span>` : ""}</h2>
             ${isUnassigned ? "" : `
@@ -791,7 +875,7 @@ function renderCalcPractice(){
 function renderCalcGroupCard(g){
   const items = g.items || [];
   return `
-    <div class="card" style="background:#fff;margin-top:10px;padding:12px;border:1px solid #e3e7f5;">
+    <div class="card" style="background:var(--surface);margin-top:10px;padding:12px;border:1px solid var(--line);">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
         <h3 style="margin:0;">#${g.order_index} · ${esc(g.title)}</h3>
         <div>
@@ -831,7 +915,7 @@ function openCalcSectionForm(target){
   const s = isNew ? null : currentCalcSections.find(x => x.id === target);
   const realSectionCount = currentCalcSections.filter(x => x.id !== null).length;
   const formHtml = `
-    <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:10px;padding:12px;">
+    <div class="card" style="background:var(--surface);border:1px solid var(--line);margin-top:10px;padding:12px;">
       <div class="row">
         <div><label>Tên phần</label><input type="text" id="cs-title" placeholder="VD: Phần 1: Chứng khoán phái sinh cơ bản" value="${esc(s ? s.title : "")}"></div>
         <div><label>Thứ tự</label><input type="text" id="cs-order" placeholder="1" value="${s ? s.order_index : (realSectionCount+1)}"></div>
@@ -894,7 +978,7 @@ function openCalcGroupForm(target, newSectionId){
     `<option value="${s.id}" ${currentSectionId === s.id ? "selected" : ""}>${esc(s.title)}</option>`
   ).join("");
   const formHtml = `
-    <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:10px;padding:12px;">
+    <div class="card" style="background:var(--surface);border:1px solid var(--line);margin-top:10px;padding:12px;">
       <div class="row">
         <div><label>Tên dạng</label><input type="text" id="cg-title" placeholder="VD: Dạng 1.1: Tính EPS/P-E" value="${esc(g ? g.title : "")}"></div>
         <div><label>Thứ tự trong phần</label><input type="text" id="cg-order" placeholder="1" value="${g ? g.order_index : 1}"></div>
@@ -954,7 +1038,7 @@ function openCalcItemForm(groupId, itemId){
   const g = found ? found.group : null;
   const it = (itemId && g) ? (g.items||[]).find(x => x.id === itemId) : null;
   const formHtml = `
-    <div class="card" style="background:#fff;border:1px solid #e3e7f5;margin-top:10px;padding:12px;">
+    <div class="card" style="background:var(--surface);border:1px solid var(--line);margin-top:10px;padding:12px;">
       <div class="row">
         <div>
           <label>Loại câu</label>
@@ -1260,10 +1344,10 @@ function fmtRelative(iso){
 }
 
 const STATUS_LABEL = {
-  none: { text: "Chưa yêu cầu", bg: "#eee", fg: "#666" },
-  pending: { text: "⏳ Chờ duyệt", bg: "#fdf1de", fg: "#a07a17" },
-  approved: { text: "✅ Đã duyệt", bg: "#e9f7ec", fg: "var(--green)" },
-  rejected: { text: "❌ Từ chối", bg: "#fbeceb", fg: "var(--red)" }
+  none: { text: "Chưa yêu cầu", bg: "var(--surface2)", fg: "var(--muted)" },
+  pending: { text: "⏳ Chờ duyệt", bg: "var(--warn-soft)", fg: "var(--warn)" },
+  approved: { text: "✅ Đã duyệt", bg: "var(--ok-soft)", fg: "var(--green)" },
+  rejected: { text: "❌ Từ chối", bg: "var(--bad-soft)", fg: "var(--red)" }
 };
 
 async function loadStudents(offset){
@@ -1416,7 +1500,7 @@ async function loadFeedback(offset){
       <tr><th>Trạng thái</th><th>Bộ đề</th><th>Câu hỏi</th><th>Nội dung phản hồi</th><th>Học viên</th><th>Thời gian</th><th></th></tr>
       ${rows.map(f => `
         <tr>
-          <td>${f.status === "new" ? `<span class="pill" style="background:#fdf1de;color:#a07a17;">🆕 Chưa xem</span>` : `<span class="pill" style="background:#e9f7ec;color:var(--green);">✅ Đã xem</span>`}</td>
+          <td>${f.status === "new" ? `<span class="pill" style="background:var(--warn-soft);color:var(--warn);">🆕 Chưa xem</span>` : `<span class="pill" style="background:var(--ok-soft);color:var(--green);">✅ Đã xem</span>`}</td>
           <td>${esc(f.quiz_slug||"—")}</td>
           <td style="max-width:220px;">${esc(f.question_text||"—")}</td>
           <td style="max-width:220px;">${esc(f.feedback_text)}</td>
@@ -1473,7 +1557,7 @@ function renderFlatSetsTable(sets){
           <td><b>${esc(s.title)}</b><br><span class="muted">${esc(s.slug)}</span></td>
           <td>${s.question_count}</td>
           <td>${s.attempt_count}</td>
-          <td><span class="pill" style="background:${s.is_active ? '#CADCFC' : '#eee'};">${s.is_active ? 'Đang mở' : 'Đã ẩn'}</span></td>
+          <td><span class="pill" style="background:${s.is_active ? 'var(--accent-soft)' : 'var(--surface2)'};">${s.is_active ? 'Đang mở' : 'Đã ẩn'}</span></td>
           <td>
             <button class="btn-secondary" onclick="openDetail('${s.slug.replace(/'/g,"\\'")}')">Quản lý</button>
           </td>
@@ -1502,8 +1586,8 @@ async function renderSetsTable(){
 
   const toggleHtml = `
     <div style="margin-bottom:10px;">
-      <button class="btn-secondary" onclick="setSetsView('grouped')" style="${setsViewMode==='grouped'?'background:#CADCFC;':''}">📚 Theo môn học</button>
-      <button class="btn-secondary" onclick="setSetsView('flat')" style="${setsViewMode==='flat'?'background:#CADCFC;':''}">📋 Tất cả (${quizSets.length})</button>
+      <button class="btn-secondary" onclick="setSetsView('grouped')" style="${setsViewMode==='grouped'?'background:var(--accent-soft);':''}">📚 Theo môn học</button>
+      <button class="btn-secondary" onclick="setSetsView('flat')" style="${setsViewMode==='flat'?'background:var(--accent-soft);':''}">📋 Tất cả (${quizSets.length})</button>
     </div>
   `;
 
@@ -1552,7 +1636,7 @@ async function renderSetsTable(){
   const selectHtml = `
     <div style="margin-bottom:14px;max-width:420px;">
       <label style="font-weight:600;font-size:.88rem;display:block;margin-bottom:5px;">Chọn môn học</label>
-      <select onchange="onSelectGroupSubject(this.value)" style="width:100%;padding:10px 12px;border:1px solid #ccd3e8;border-radius:8px;font-size:.95rem;">
+      <select onchange="onSelectGroupSubject(this.value)" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:.95rem;background:var(--surface);color:var(--text);">
         ${options.map(o => `<option value="${esc(o.slug)}" ${o.slug===selectedGroupSubjectSlug?"selected":""}>${esc(o.label)}</option>`).join("")}
       </select>
     </div>
@@ -1568,7 +1652,7 @@ async function renderSetsTable(){
 
   if(selectedGroupSubjectSlug === UNASSIGNED_KEY){
     html += `
-      <div class="card" style="background:#fff7f0;padding:14px;">
+      <div class="card" style="background:var(--warn-soft);padding:14px;">
         <h3 style="margin:0 0 8px;">⚠️ Chưa gán vào môn học nào</h3>
         <p class="muted" style="margin-top:-4px;">Bộ đề này chưa được chọn làm "Câu hỏi ôn tập" hay Quizzi của bài học nào. Vào tab "Môn học &amp; bài học" để gán.</p>
         ${renderFlatSetsTable(unassigned)}
@@ -1577,7 +1661,7 @@ async function renderSetsTable(){
   } else {
     const g = groups[selectedGroupSubjectSlug];
     html += `
-      <div class="card" style="background:#f7f9ff;padding:14px;">
+      <div class="card" style="background:var(--surface2);padding:14px;">
         <h3 style="margin:0 0 8px;">${esc(g.title)}</h3>
         <table>
           <tr><th>Dùng cho</th><th>Bộ đề</th><th>Số câu</th><th>Lượt làm</th><th>Trạng thái</th><th></th></tr>
@@ -1587,7 +1671,7 @@ async function renderSetsTable(){
               <td><b>${esc(set.title)}</b><br><span class="muted">${esc(set.slug)}</span></td>
               <td>${set.question_count}</td>
               <td>${set.attempt_count}</td>
-              <td><span class="pill" style="background:${set.is_active ? '#CADCFC' : '#eee'};">${set.is_active ? 'Đang mở' : 'Đã ẩn'}</span></td>
+              <td><span class="pill" style="background:${set.is_active ? 'var(--accent-soft)' : 'var(--surface2)'};">${set.is_active ? 'Đang mở' : 'Đã ẩn'}</span></td>
               <td><button class="btn-secondary" onclick="openDetail('${set.slug.replace(/'/g,"\\'")}')">Quản lý</button></td>
             </tr>
           `).join("")}
@@ -1704,7 +1788,7 @@ function editQuestion(i){
   if(!area) return;
   const hasOptions = [q.option_a, q.option_b, q.option_c, q.option_d].some(o => o !== undefined && o !== null && o !== "");
   area.innerHTML = `
-    <div class="card" style="background:#f7f9ff;margin-top:12px;">
+    <div class="card" style="background:var(--surface2);margin-top:12px;">
       <h3 style="margin-top:0;">✏️ Sửa câu ${esc(String(q.stt))}</h3>
       ${!hasOptions ? `<div class="msg err">Không lấy được 4 đáp án gốc của câu này qua danh sách — hãy nhập lại đầy đủ cả 4 lựa chọn bên dưới trước khi lưu để khỏi mất dữ liệu (hoặc sửa trực tiếp qua file Excel rồi nhập lại nếu không chắc nội dung gốc).</div>` : ""}
       <label>Câu hỏi</label>
