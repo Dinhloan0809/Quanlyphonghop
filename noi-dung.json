@@ -1,0 +1,23 @@
+{
+ "subjects": {
+  "phap-luat": {
+   "sotay": {
+    "file": "sotay-luat.json",
+    "name": "Sổ tay con số Luật",
+    "sub": "Tra nhanh vốn, tỷ lệ %, thời hạn, mức phạt theo chủ điểm và văn bản",
+    "ph": "Gõ từ khóa: 24 gio, 5%, chao mua, phat…"
+   }
+  },
+  "chuyen-mon": {
+   "sotay": {
+    "file": "sotay-chuyenmon.json",
+    "name": "Sổ tay công thức Chuyên môn",
+    "sub": "Tra nhanh công thức và bẫy của từng dạng bài tính",
+    "ph": "Gõ từ khóa: gordon, beta, ky quy, npv…"
+   },
+   "dangbai": {
+    "file": "dangbai-chuyen-mon.json"
+   }
+  }
+ }
+}
