@@ -18,6 +18,17 @@
    "dangbai": {
     "file": "dangbai-chuyen-mon.json"
    }
+  },
+  "on-thi-phan-chuyen-mon-cchn": {
+   "sotay": {
+    "file": "sotay-chuyenmon.json",
+    "name": "Sổ tay công thức Chuyên môn",
+    "sub": "Tra nhanh công thức và bẫy của từng dạng bài tính",
+    "ph": "Gõ từ khóa: gordon, beta, ky quy, npv…"
+   },
+   "dangbai": {
+    "file": "dangbai-chuyen-mon.json"
+   }
   }
  }
 }

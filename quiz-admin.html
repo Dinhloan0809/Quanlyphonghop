@@ -180,9 +180,42 @@
   .adm-diff summary{cursor:pointer;color:var(--accent-text);}
   .adm-diff .old{margin-top:6px;padding:8px 10px;border-radius:8px;background:var(--bad-soft);}
   .adm-diff .new{margin-top:4px;padding:8px 10px;border-radius:8px;background:var(--ok-soft);}
+  .adm-rename{margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);}
+  .adm-rename label{margin-top:0;}
   .adm-sql{margin-top:10px;padding:12px;border-radius:10px;background:var(--surface2);font-size:.76rem;overflow:auto;max-height:260px;}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace !important;font-size:.86rem !important;}
   input.ok{border-color:var(--ok);background:var(--ok-soft);}
+  /* Học viên */
+  .stu-kpi{cursor:pointer;text-align:left;color:var(--text);min-height:0;font-weight:400;}
+  .stu-kpi:hover{border-color:var(--line-strong);}
+  .stu-table td{vertical-align:middle;}
+  .stu-table td .muted{font-size:.78rem;}
+  .stu-table tr.open td{background:var(--accent-soft);}
+  .stu-bar{display:inline-block;vertical-align:middle;width:70px;height:7px;border-radius:99px;background:var(--surface2);margin-right:8px;overflow:hidden;}
+  .stu-bar i{display:block;height:100%;background:var(--ok);border-radius:99px;}
+  .stu-on{color:var(--ok);font-weight:700;}
+  .stu-detail td{background:var(--surface2) !important;padding:16px;}
+  .stu-dgrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;}
+  .stu-subj{margin-bottom:10px;}
+  .stu-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
+  .stu-chip{padding:3px 9px;border-radius:999px;font-size:.74rem;font-weight:600;background:var(--surface);border:1px solid var(--line);color:var(--muted);}
+  .stu-chip.ok{background:var(--ok-soft);border-color:transparent;color:var(--ok);}
+  .stu-chip.mid{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn);}
+  .stu-recent{list-style:none;margin:6px 0 0;padding:0;font-size:.84rem;}
+  .stu-recent li{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);}
+  .stu-recent li span:last-child{flex:none;color:var(--muted);}
+  .adm-chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
+  .honor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
+  .honor-board{border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+  .honor-board h3{margin:0;font-size:1rem;}
+  .honor-board p{margin:2px 0 8px;}
+  .honor-board ol{list-style:none;margin:0;padding:0;}
+  .honor-board li{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:.88rem;}
+  .honor-board .rk{flex:none;width:24px;height:24px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.76rem;}
+  .honor-board li:first-child .rk{background:var(--hi);color:#3A2A00;}
+  .honor-board .nm{flex:1;min-width:0;}
+  .honor-board .vl{flex:none;font-weight:700;font-variant-numeric:tabular-nums;}
+  @media (max-width:900px){ .stu-dgrid{grid-template-columns:1fr;} }
   /* Soạn dạng bài đảo số */
   .dbe-layout{display:grid;grid-template-columns:270px minmax(0,1fr) 330px;gap:16px;align-items:start;}
   .dbe-prev{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow:auto;}
@@ -374,6 +407,8 @@ async function renderMain(sets){
             <input type="text" id="ns-title" placeholder="vd: Phân tích và đầu tư chứng khoán" oninput="admNewSubjectSlug()">
             <label for="ns-desc">Mô tả ngắn (hiện cho học viên)</label>
             <textarea id="ns-desc" rows="2"></textarea>
+            <label for="ns-route">Thuộc môn nào trong lộ trình</label>
+            ${admRouteSelect("ns-route", "")}
             <details class="adm-adv"><summary>Nâng cao</summary>
               <label for="ns-slug">Mã môn (dùng trong đường dẫn, không dấu). Đặt xong không đổi được.</label>
               <input type="text" id="ns-slug" oninput="this.dataset.touched='1'">
@@ -424,11 +459,14 @@ async function renderMain(sets){
           </div>
 
           <div id="pane-drills" class="adm-pane hidden">
-            <div id="dbe-root"></div>
-            <details class="card adm-fold"><summary><b>Luyện tính toán chuyên sâu</b> <span class="muted">· bài mẫu và bài tập điền đáp án số (phần cũ)</span></summary>
-              <p class="muted">Chia theo từng dạng: mỗi dạng có một bài mẫu xem lời giải, rồi vài bài tương tự để học viên tự làm.</p>
+            <div class="card">
+              <h2>1 · Bài mẫu và bài tập của từng dạng</h2>
+              <p class="muted" style="margin-top:-8px;">Chia theo Phần → Dạng. Mỗi dạng có một bài mẫu xem lời giải và vài bài tập để học viên tự làm. Nhập hàng loạt bằng Excel, lưu thẳng lên hệ thống.</p>
               <div id="calc-practice-panel"><span class="muted">Đang tải...</span></div>
-            </details>
+            </div>
+            <div class="adm-head" style="margin-top:22px;"><h2 style="font-size:1.1rem;">2 · Khuôn đảo số (nút “Luyện thêm với bộ số khác”)</h2>
+              <p class="muted">Dạng nào ở mục 1 có khuôn <b>trùng tên</b> ở đây thì học viên thấy thêm nút luyện với bộ số tự đổi. Dạng không có khuôn vẫn chạy bình thường với bài mẫu và bài tập.</p></div>
+            <div id="dbe-root"></div>
           </div>
 
           <div id="pane-handbook" class="adm-pane hidden">
@@ -497,18 +535,28 @@ async function renderMain(sets){
         </section>
 
         <section id="view-students" class="adm-view hidden">
-          <div class="adm-head"><h2>Học viên</h2></div>
-          <div class="card">
-            <div id="students-online-badge" style="margin:-4px 0 12px;font-size:.88rem;"></div>
-            <div class="row" style="align-items:end;">
-              <div><label for="stu-search">Tìm theo tên / SĐT / email / ID môi giới</label><input type="text" id="stu-search" placeholder="Gõ để tìm..." oninput="debounceSearchStudents()"></div>
-              <div><label for="stu-status">Trạng thái duyệt</label>
-                <select id="stu-status" onchange="loadStudents(0)"><option value="all">Tất cả</option><option value="pending">Chờ duyệt</option><option value="approved">Đã duyệt</option><option value="rejected">Từ chối</option><option value="none">Chưa yêu cầu</option></select></div>
-              <div><button class="btn-secondary" type="button" onclick="loadStudents(0)">Làm mới</button></div>
-            </div>
-            <div id="students-table" style="margin-top:10px;"><span class="muted">Đang tải...</span></div>
-            <div id="students-pager" style="margin-top:10px;"></div>
+          <div class="adm-head"><h2>Học viên</h2><p class="muted">Ai đang học, học tới đâu, và ai đáng được vinh danh.</p></div>
+          <div class="adm-kpis" id="stu-kpis"></div>
+          <div class="adm-tabs" role="tablist">
+            <button type="button" class="adm-tab" role="tab" data-stu-tab="list" onclick="stuSetTab('list')">Danh sách và tình hình học</button>
+            <button type="button" class="adm-tab" role="tab" data-stu-tab="honor" onclick="stuSetTab('honor')">Bảng vinh danh</button>
           </div>
+          <div id="stu-pane-list">
+            <div class="card">
+              <div id="students-online-badge" class="hidden"></div>
+              <div class="row" style="align-items:end;">
+                <div><label for="stu-search" style="margin-top:0;">Tìm theo tên / SĐT / email / ID môi giới / phòng</label><input type="text" id="stu-search" placeholder="Gõ để tìm..." oninput="stu.shown=40;stuRender()"></div>
+                <div style="flex:0 0 210px;"><label for="stu-status" style="margin-top:0;">Lọc</label>
+                  <select id="stu-status" onchange="stu.shown=40;stuRender()"><option value="all">Tất cả</option><option value="pending">Chờ duyệt</option><option value="approved">Đã duyệt</option><option value="rejected">Từ chối</option><option value="none">Chưa yêu cầu mở khoá</option><option value="online">Đang online</option><option value="active7">Có học trong 7 ngày</option><option value="idle14">Đã duyệt nhưng 14 ngày chưa học</option><option value="noquiz">Chưa làm bài nào</option></select></div>
+                <div style="flex:0 0 210px;"><label for="stu-sort" style="margin-top:0;">Sắp xếp</label>
+                  <select id="stu-sort" onchange="stuSetSort(this.value)"><option value="recent">Hoạt động gần nhất</option><option value="passed">Đạt nhiều bài nhất</option><option value="avg">Điểm trung bình cao nhất</option><option value="mock">Thi thử cao nhất</option><option value="newest">Mới đăng ký</option><option value="name">Tên A–Z</option></select></div>
+                <div style="flex:none;min-width:0;"><button class="btn-secondary" type="button" onclick="loadStudents(0)">Làm mới</button></div>
+              </div>
+              <div id="students-table" style="margin-top:10px;"><span class="muted">Đang tải...</span></div>
+              <div id="students-pager" style="margin-top:10px;"></div>
+            </div>
+          </div>
+          <div id="stu-pane-honor" class="hidden"><div class="card" id="stu-honor"></div></div>
         </section>
 
         <section id="view-settings" class="adm-view hidden">
@@ -564,7 +612,8 @@ async function renderMain(sets){
 let CONTENT_MODE = "file";
 const CFG_DEFAULT = { subjects: {
   "phap-luat":  { sotay: { file: "sotay-luat.json", name: "Sổ tay con số Luật", sub: "Tra nhanh vốn, tỷ lệ %, thời hạn, mức phạt theo chủ điểm và văn bản", ph: "Gõ từ khóa: 24 gio, 5%, chao mua, phat…" } },
-  "chuyen-mon": { sotay: { file: "sotay-chuyenmon.json", name: "Sổ tay công thức Chuyên môn", sub: "Tra nhanh công thức và bẫy của từng dạng bài tính", ph: "Gõ từ khóa: gordon, beta, ky quy, npv…" }, dangbai: { file: "dangbai-chuyen-mon.json" } }
+  "chuyen-mon": { sotay: { file: "sotay-chuyenmon.json", name: "Sổ tay công thức Chuyên môn", sub: "Tra nhanh công thức và bẫy của từng dạng bài tính", ph: "Gõ từ khóa: gordon, beta, ky quy, npv…" }, dangbai: { file: "dangbai-chuyen-mon.json" } },
+  "on-thi-phan-chuyen-mon-cchn": { sotay: { file: "sotay-chuyenmon.json", name: "Sổ tay công thức Chuyên môn", sub: "Tra nhanh công thức và bẫy của từng dạng bài tính", ph: "Gõ từ khóa: gordon, beta, ky quy, npv…" }, dangbai: { file: "dangbai-chuyen-mon.json" } }
 } };
 let CFG = JSON.parse(JSON.stringify(CFG_DEFAULT));
 let cfgDirty = false;
@@ -606,7 +655,10 @@ function contentSavedMsg(res){
 async function cfgLoad(){
   let c = null;
   try{ c = await contentGet("cauhinh", "noi-dung.json"); }catch(e){}
-  CFG = (c && c.subjects) ? c : JSON.parse(JSON.stringify(CFG_DEFAULT));
+  CFG = (c && c.subjects) ? c : { subjects: {} };
+  // môn nào file cấu hình chưa nhắc tới thì dùng cấu hình có sẵn
+  const def = JSON.parse(JSON.stringify(CFG_DEFAULT)).subjects;
+  Object.keys(def).forEach(k => { if(!(k in CFG.subjects)) CFG.subjects[k] = def[k]; });
 }
 function cfgOf(slug){ const k = String(slug).toLowerCase(); if(!CFG.subjects[k]) CFG.subjects[k] = {}; return CFG.subjects[k]; }
 
@@ -631,6 +683,15 @@ function admLastChange(slug){ const e = admLogRead().find(x => x.subj === slug);
 
 /* ================= Điều hướng ================= */
 const adm = { view: "home", subj: null, tab: "lessons" };
+/* Các môn trong lộ trình CCHN (giống danh mục ở trang học viên). Mỗi môn trên hệ thống được xếp vào một ô. */
+const ADM_CATALOG = [
+  ["co-ban", "1 · Cơ bản về Chứng khoán"], ["phap-luat", "2 · Pháp luật về Chứng khoán"], ["moi-gioi", "3 · Môi giới & Tư vấn đầu tư Chứng khoán"], ["phan-tich", "4 · Phân tích đầu tư Chứng khoán"],
+  ["bctc", "5 · Phân tích báo cáo Tài chính doanh nghiệp"], ["bao-lanh", "6 · Tư vấn tài chính & Bảo lãnh phát hành"], ["quan-ly-quy", "7 · Quản lý Quỹ và Tài sản"], ["phai-sinh", "8 · Chứng khoán Phái sinh"],
+  ["sh-luat", "Ôn thi sát hạch – Phần Luật"], ["sh-moi-gioi", "Ôn thi sát hạch Môi giới – Phần Chuyên môn"], ["sh-pttc", "Ôn thi sát hạch Phân tích tài chính – Phần Chuyên môn"], ["sh-qlq", "Ôn thi sát hạch Quản lý quỹ – Phần Chuyên môn"]
+];
+const ADM_CATALOG_DEFAULT = { "phantichbctc": "bctc", "ckps": "phai-sinh", "phap-luat": "sh-luat", "on-thi-phan-chuyen-mon-cchn": "sh-moi-gioi", "chuyen-mon": "sh-moi-gioi" };
+function admRouteOf(slug){ const c = cfgOf(slug); return ("lotrinh" in c) ? (c.lotrinh || "") : (ADM_CATALOG_DEFAULT[String(slug).toLowerCase()] || ""); }
+function admRouteSelect(id, cur){ return `<select id="${id}"><option value="">— Chưa xếp vào lộ trình —</option>${ADM_CATALOG.map(c => `<option value="${c[0]}" ${c[0] === cur ? "selected" : ""}>${esc(c[1])}</option>`).join("")}</select>`; }
 const ADM_TABS = [["lessons", "Bài học"], ["questions", "Ngân hàng câu hỏi"], ["drills", "Luyện theo dạng"], ["handbook", "Sổ tay"], ["exam", "Thi thử"], ["info", "Thông tin môn"]];
 let admPending = 0, admNewFeedback = 0, admTimeLimits = {}, admVideoHours = {};
 function admSubj(){ return lastLoadedSubjects.find(s => s.slug === adm.subj) || null; }
@@ -665,6 +726,7 @@ function admRender(){
   if(adm.view === "subject") admRenderSubject();
   if(adm.view === "knowledge") admRenderKnowledge();
   if(adm.view === "settings") admRenderStore();
+  if(adm.view === "students") stuRender();
   if(adm.view === "newsubject"){ const t = document.getElementById("ns-title"); if(t) t.focus(); }
 }
 /* Khung chi tiết bộ đề (#detail-panel) chỉ có một, được chuyển tới đúng chỗ đang cần */
@@ -734,7 +796,9 @@ async function admCreateSubject(){
   const order = lastLoadedSubjects.reduce((m, s) => Math.max(m, s.order_index || 0), 0) + 1;
   const data = await admUpsertSubject({ slug, title, description: desc, order_index: order });
   if(!data || data.status !== "ok"){ msg.innerHTML = `<div class="msg err">Lỗi: ${esc(data && data.status)}</div>`; return; }
-  ["ns-title", "ns-desc", "ns-slug"].forEach(id => { const e = document.getElementById(id); e.value = ""; delete e.dataset.touched; });
+  const route = document.getElementById("ns-route").value;
+  if(route){ cfgOf(slug).lotrinh = route; await contentSave("cauhinh", CFG, "noi-dung.json"); }
+  ["ns-title", "ns-desc", "ns-slug", "ns-route"].forEach(id => { const e = document.getElementById(id); e.value = ""; delete e.dataset.touched; });
   msg.innerHTML = "";
   admLog("Thêm môn “" + title + "”", slug);
   await loadSubjects();
@@ -750,6 +814,9 @@ function admRenderInfo(){
       <div><label for="subj-order">Thứ tự hiển thị</label><input type="text" id="subj-order" value="${esc(s.order_index)}"></div>
       <div><label>Mã môn (không đổi được)</label><input type="text" value="${esc(s.slug)}" disabled></div>
     </div>
+    <label for="subj-route">Thuộc môn nào trong lộ trình</label>
+    ${admRouteSelect("subj-route", admRouteOf(s.slug))}
+    <p class="muted">Trang học viên xếp môn này vào đúng ô đó của lộ trình CCHN. Chưa xếp thì môn chỉ hiện ở phần “Tất cả môn học”.</p>
     <p class="muted" style="margin-top:10px;">Tổng thời lượng video: ${(vh && vh.total_minutes > 0) ? `${vh.total_hours.toLocaleString("vi-VN")} giờ (${vh.total_minutes.toLocaleString("vi-VN")} phút)` : "chưa có"}. Con số này tự cộng từ thời lượng video của từng bài.</p>
     <h2 style="margin-top:18px;">Sổ tay của môn</h2>
     ${cfg.sotay ? `
@@ -766,15 +833,17 @@ async function admSaveInfo(){
   if(!title){ msg.innerHTML = `<div class="msg err">Cần nhập tên môn học.</div>`; return; }
   const data = await admUpsertSubject({ slug: s.slug, title, description: document.getElementById("subj-desc").value.trim(), order_index: parseInt(document.getElementById("subj-order").value) || 0, mock_exam_quiz_slug: s.mock_exam_quiz_slug, mock_exam_count: s.mock_exam_count });
   if(!data || data.status !== "ok"){ msg.innerHTML = `<div class="msg err">Lỗi: ${esc(data && data.status)}</div>`; return; }
-  let extra = "";
+  let extra = "", cfgChanged = false;
   const cfg = cfgOf(s.slug);
+  const route = document.getElementById("subj-route").value;
+  if(route !== admRouteOf(s.slug)){ cfg.lotrinh = route; cfgChanged = true; }
   if(cfg.sotay){
     const n = document.getElementById("subj-hb-name").value.trim(), sub = document.getElementById("subj-hb-sub").value.trim(), ph = document.getElementById("subj-hb-ph").value.trim();
     if(n !== (cfg.sotay.name || "") || sub !== (cfg.sotay.sub || "") || ph !== (cfg.sotay.ph || "")){
-      cfg.sotay.name = n; cfg.sotay.sub = sub; cfg.sotay.ph = ph;
-      extra = contentSavedMsg(await contentSave("cauhinh", CFG, "noi-dung.json"));
+      cfg.sotay.name = n; cfg.sotay.sub = sub; cfg.sotay.ph = ph; cfgChanged = true;
     }
   }
+  if(cfgChanged) extra = contentSavedMsg(await contentSave("cauhinh", CFG, "noi-dung.json"));
   admLog("Sửa thông tin môn", s.slug);
   await loadSubjects();
   admRender();
@@ -1050,7 +1119,9 @@ async function openDetail(slug){
   if(!set){ panel.innerHTML = ""; return; }
   panel.innerHTML = `
     <div class="card">
-      <div class="adm-cardhead"><h2>Câu hỏi · ${esc(set.title)} <span class="muted">(${set.question_count} câu)</span></h2></div>
+      <div class="adm-cardhead"><h2>Câu hỏi · ${esc(set.title)} <span class="muted">(${set.question_count} câu)</span></h2>
+        <button class="btn-secondary" type="button" onclick="admRenameSetOpen('${admJs(slug)}')">Sửa tên bộ đề</button></div>
+      <div id="set-rename"></div>
       <div id="questions-table"><span class="muted">Đang tải...</span></div>
 
       <details class="adm-adv"><summary>Nhập nhiều câu từ Excel</summary>
@@ -1070,6 +1141,64 @@ async function openDetail(slug){
     </div>`;
   loadAttempts(slug);
   await loadQuestions(slug);
+}
+
+/* ---------- Sửa tên bộ đề ---------- */
+const ADM_RENAME_SQL = `create or replace function public.admin_rename_quiz_set(p_password text, p_slug text, p_title text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if coalesce((admin_list_quiz_sets(p_password)::jsonb)->>'status','') <> 'ok' then
+    return jsonb_build_object('status','unauthorized');
+  end if;
+  update quiz_sets set title = p_title where slug = p_slug;
+  if not found then return jsonb_build_object('status','not_found'); end if;
+  return jsonb_build_object('status','ok');
+end $$;
+grant execute on function public.admin_rename_quiz_set(text, text, text) to anon, authenticated;`;
+function admRenameSetOpen(slug){
+  const set = quizSets.find(s => s.slug === slug), box = document.getElementById("set-rename");
+  if(!set || !box) return;
+  box.innerHTML = `<div class="adm-rename">
+      <label for="set-rename-input">Tên mới của bộ đề</label>
+      <div class="adm-search"><input type="text" id="set-rename-input" value="${esc(set.title)}" onkeydown="if(event.key==='Enter') admRenameSet('${admJs(slug)}')">
+        <button class="btn-primary" type="button" onclick="admRenameSet('${admJs(slug)}')">Lưu tên</button>
+        <button class="btn-secondary" type="button" onclick="document.getElementById('set-rename').innerHTML=''">Huỷ</button></div>
+      <p class="muted">Chỉ đổi tên hiển thị. Câu hỏi, lượt làm bài và chỗ bộ đề đang được gắn vào bài học đều giữ nguyên.</p>
+      <div id="set-rename-msg"></div></div>`;
+  const i = document.getElementById("set-rename-input"); i.focus(); i.select();
+}
+async function admRenameSet(slug){
+  const set = quizSets.find(s => s.slug === slug), msg = document.getElementById("set-rename-msg");
+  const title = document.getElementById("set-rename-input").value.trim();
+  if(!set || !msg) return;
+  if(!title){ msg.innerHTML = `<div class="msg err">Tên bộ đề không được để trống.</div>`; return; }
+  if(title === set.title){ document.getElementById("set-rename").innerHTML = ""; return; }
+  msg.innerHTML = `<div class="msg">Đang lưu...</div>`;
+  const old = set.title;
+  // Thử lần lượt hai hàm trên hệ thống, rồi đọc lại danh sách để chắc chắn tên đã đổi thật
+  const tries = [["admin_update_quiz_set", { p_password: PASSWORD, p_slug: slug, p_title: title }], ["admin_rename_quiz_set", { p_password: PASSWORD, p_slug: slug, p_title: title }]];
+  let done = false;
+  for(const [fn, args] of tries){
+    let d = null; try{ d = await callRpc(fn, args); }catch(e){}
+    if(d && d.status === "ok"){
+      const fresh = await callRpc("admin_list_quiz_sets", { p_password: PASSWORD });
+      if(fresh && fresh.status === "ok"){ quizSets = fresh.quiz_sets; if((quizSets.find(s => s.slug === slug) || {}).title === title){ done = true; break; } }
+    }
+  }
+  if(!done){
+    msg.innerHTML = `<div class="msg err">Hệ thống hiện chưa có hàm đổi tên bộ đề nên tên chưa đổi.</div>
+      <p class="muted">Bật một lần: mở Supabase → SQL Editor → New query, dán đoạn lệnh dưới đây rồi bấm Run. Sau đó quay lại bấm “Lưu tên”.</p>
+      <button class="btn-secondary" type="button" onclick="navigator.clipboard.writeText(ADM_RENAME_SQL).then(() => { this.innerText = 'Đã sao chép'; })">Sao chép đoạn lệnh</button>
+      <pre class="adm-sql">${esc(ADM_RENAME_SQL)}</pre>`;
+    return;
+  }
+  admLog("Đổi tên bộ đề", admSubjectOfSet(slug) || "", old, title);
+  renderSetsTable();
+  if(document.getElementById("lessons-table") && lastLoadedLessons.length) admRenderLessonList();
+  const lq = document.getElementById("les-quiz");
+  if(lq){ const o = Array.from(lq.options).find(x => x.value === slug); if(o) o.text = title + " (" + set.question_count + " câu)"; }
+  await openDetail(slug);
+  const box = document.getElementById("set-rename"); if(box) box.innerHTML = `<div class="msg ok">Đã đổi tên bộ đề thành “${esc(title)}”.</div>`;
 }
 
 /* Tìm câu hỏi: tải câu hỏi của các bộ đề cần tìm (có nhớ tạm trong phiên) */
@@ -1456,7 +1585,7 @@ async function admRenderHome(){
   await admLoadQuestions(quizSets.map(s => s.slug));
   draw(admCheckCounts());
 }
-function admGoPending(){ admGo("students"); const s = document.getElementById("stu-status"); if(s){ s.value = "pending"; loadStudents(0); } }
+function admGoPending(){ admGo("students"); const s = document.getElementById("stu-status"); if(s){ s.value = "pending"; stu.tab = "list"; stuRender(); } }
 function admGoNoExp(){ admGo("knowledge"); const c = document.getElementById("adm-k-noexp"); if(c){ c.checked = true; admQSearch("all"); } }
 
 /* ================= Cập nhật kiến thức ================= */
@@ -2492,53 +2621,207 @@ const STATUS_LABEL = {
   rejected: { text: "❌ Từ chối", bg: "var(--bad-soft)", fg: "var(--red)" }
 };
 
-async function loadStudents(offset){
-  studentsOffset = offset;
-  const search = document.getElementById("stu-search").value.trim();
-  const status = document.getElementById("stu-status").value;
+/* ================= Học viên: tình hình học và bảng vinh danh =================
+   Nguồn số liệu: danh sách học viên + lượt làm bài của mọi bộ đề. Lượt làm bài ghi theo họ tên,
+   nên học viên được ghép với lượt làm bài bằng họ tên (hai người trùng tên sẽ bị gộp số liệu). */
+const STU_PASS = 80;       // % để tính là "đạt" một bài
+let stu = { students: [], attempts: [], stats: {}, dup: {}, unmatched: 0, loaded: false, shown: 40, open: null, tab: "list", sort: "recent", period: 7, showDept: true };
+const stuKey = n => hbeFold(String(n || "")).replace(/\s+/g, " ").trim();
+async function stuFetchAll(){
+  const students = [];
+  for(let guard = 0; guard < 60; guard++){
+    const d = await callRpc("admin_list_students", { p_password: PASSWORD, p_search: null, p_status: "all", p_limit: 200, p_offset: students.length }).catch(() => null);
+    if(!d || d.status !== "ok" || !(d.students || []).length) break;
+    students.push.apply(students, d.students);
+    if(students.length >= (d.total || 0)) break;
+  }
+  const attempts = [];
+  await Promise.all(quizSets.filter(s => s.attempt_count > 0).map(async set => {
+    for(let off = 0, guard = 0; guard < 40; guard++){
+      const d = await callRpc("admin_list_quiz_attempts", { p_password: PASSWORD, p_quiz_slug: set.slug, p_limit: 200, p_offset: off }).catch(() => null);
+      const rows = (d && d.status === "ok" && d.attempts) || [];
+      rows.forEach(a => { if(a.total > 0) attempts.push({ set: set.slug, key: stuKey(a.taker_name), score: a.score, total: a.total, pct: a.score / a.total * 100, at: new Date(a.finished_at).getTime() }); });
+      if(rows.length < 200) break;
+      off += rows.length;
+    }
+  }));
+  stu.students = students; stu.attempts = attempts; stu.loaded = true;
+}
+/* Bộ đề nào là bài học, bộ đề nào là thi thử, thuộc môn nào */
+function stuSetInfo(){
+  const info = {};
+  lastLoadedSubjects.forEach(s => {
+    (lessonsBySubjectCache[s.slug] || []).forEach(l => { if(l.quiz_slug && !info[l.quiz_slug]) info[l.quiz_slug] = { kind: "lesson", subj: s.slug, label: l.title }; });
+    if(s.mock_exam_quiz_slug) info[s.mock_exam_quiz_slug] = { kind: "mock", subj: s.slug, label: "Thi thử" };
+  });
+  return info;
+}
+function stuAggregate(attempts, info){
+  const by = {};
+  attempts.forEach(a => {
+    const st = by[a.key] || (by[a.key] = { n: 0, days: {}, last: 0, sets: {} });
+    st.n++; st.days[new Date(a.at).toDateString()] = 1; if(a.at > st.last) st.last = a.at;
+    const x = st.sets[a.set] || (st.sets[a.set] = { n: 0, best: -1, bestScore: 0, bestTotal: 0, firstAt: Infinity, first: 0, lastAt: 0 });
+    x.n++; if(a.pct > x.best){ x.best = a.pct; x.bestScore = a.score; x.bestTotal = a.total; }
+    if(a.at < x.firstAt){ x.firstAt = a.at; x.first = a.pct; } if(a.at > x.lastAt) x.lastAt = a.at;
+  });
+  Object.keys(by).forEach(k => {
+    const st = by[k]; let passed = 0, sum = 0, cnt = 0, mock = null, gain = 0, gainN = 0;
+    Object.keys(st.sets).forEach(slug => { const x = st.sets[slug], i = info[slug];
+      sum += x.best; cnt++;
+      if(i && i.kind === "lesson" && x.best >= STU_PASS) passed++;
+      if(i && i.kind === "mock" && x.bestTotal >= 20 && (!mock || x.best > mock.best)) mock = { best: x.best, score: x.bestScore, total: x.bestTotal, subj: i.subj };
+      if(x.n >= 2){ gain += x.best - x.first; gainN++; } });
+    st.passed = passed; st.avg = cnt ? sum / cnt : 0; st.mock = mock; st.dayCount = Object.keys(st.days).length; st.gain = gainN ? gain / gainN : 0; st.gainN = gainN;
+  });
+  return by;
+}
+function stuCompute(){
+  const info = stuSetInfo();
+  stu.info = info;
+  stu.lessonTotal = Object.keys(info).filter(k => info[k].kind === "lesson").length;
+  stu.stats = stuAggregate(stu.attempts, info);
+  const seen = {}; stu.dup = {};
+  stu.students.forEach(s => { const k = stuKey(s.full_name); if(seen[k]) stu.dup[k] = 1; seen[k] = 1; });
+  stu.unmatched = Object.keys(stu.stats).filter(k => !seen[k]).length;
+}
+function stuLast(s){ const st = stu.stats[stuKey(s.full_name)]; return Math.max(s.last_seen_at ? new Date(s.last_seen_at).getTime() : 0, st ? st.last : 0); }
+async function loadStudents(){
+  const el = document.getElementById("students-table"); if(!el) return;
+  if(!stu.loaded) el.innerHTML = `<span class="muted">Đang tải học viên và lượt làm bài...</span>`;
+  await Promise.all([stuFetchAll(), ensureLessonsForGrouping()]);
+  stuCompute();
+  admPending = stu.students.filter(s => s.approval_status === "pending").length; admRenderNav();
+  stuRender();
+}
+function stuSetTab(t){ stu.tab = t; stuRender(); }
+function stuSetSort(v){ stu.sort = v; stuRender(); }
+function stuToggle(id){ stu.open = stu.open === id ? null : id; stuRender(); }
+function stuMore(){ stu.shown += 40; stuRender(); }
+function stuRender(){
+  document.querySelectorAll("[data-stu-tab]").forEach(b => b.classList.toggle("on", b.dataset.stuTab === stu.tab));
+  document.getElementById("stu-pane-list").classList.toggle("hidden", stu.tab !== "list");
+  document.getElementById("stu-pane-honor").classList.toggle("hidden", stu.tab !== "honor");
+  if(!stu.loaded) return;
+  const now = Date.now(), D = 86400000;
+  const online = stu.students.filter(s => s.last_seen_at && now - new Date(s.last_seen_at).getTime() <= 5 * 60000).length;
+  const active7 = stu.students.filter(s => now - stuLast(s) <= 7 * D).length;
+  const noQuiz = stu.students.filter(s => !stu.stats[stuKey(s.full_name)]).length;
+  const kpi = (n, label, val) => `<button type="button" class="adm-kpi stu-kpi" onclick="document.getElementById('stu-status').value='${val}';stuSetTab('list')"><b>${n}</b><span>${label}</span></button>`;
+  document.getElementById("stu-kpis").innerHTML = kpi(stu.students.length, "Tổng học viên", "all") + kpi(online, "Đang online", "online") + kpi(active7, "Có học trong 7 ngày", "active7") + kpi(admPending, "Chờ duyệt", "pending") + kpi(noQuiz, "Chưa làm bài nào", "noquiz");
+  if(stu.tab === "honor"){ stuRenderHonor(); return; }
+
+  const q = stuKey(document.getElementById("stu-search").value), f = document.getElementById("stu-status").value;
+  let rows = stu.students.filter(s => {
+    if(q && stuKey([s.full_name, s.phone, s.email, s.broker_id, s.department].join(" ")).indexOf(q) < 0) return false;
+    const last = stuLast(s), st = stu.stats[stuKey(s.full_name)];
+    if(f === "online") return s.last_seen_at && now - new Date(s.last_seen_at).getTime() <= 5 * 60000;
+    if(f === "active7") return now - last <= 7 * D;
+    if(f === "idle14") return s.approval_status === "approved" && now - last > 14 * D;
+    if(f === "noquiz") return !st;
+    if(f !== "all") return (s.approval_status || "none") === f;
+    return true;
+  });
+  const S = s => stu.stats[stuKey(s.full_name)] || { n: 0, passed: 0, avg: 0, mock: null, dayCount: 0 };
+  const sorters = { recent: (a, b) => stuLast(b) - stuLast(a), passed: (a, b) => S(b).passed - S(a).passed || S(b).avg - S(a).avg, avg: (a, b) => S(b).avg - S(a).avg, mock: (a, b) => ((S(b).mock || {}).best || -1) - ((S(a).mock || {}).best || -1), name: (a, b) => String(a.full_name).localeCompare(String(b.full_name), "vi"), newest: (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0) };
+  rows.sort(sorters[stu.sort] || sorters.recent);
   const el = document.getElementById("students-table");
-  el.innerHTML = `<span class="muted">Đang tải...</span>`;
-  const data = await callRpc("admin_list_students", { p_password: PASSWORD, p_search: search || null, p_status: status, p_limit: STU_PAGE_SIZE, p_offset: offset });
-  if(!data || data.status !== "ok"){ el.innerHTML = `<p class="muted">Không tải được.</p>`; return; }
-  studentsTotal = data.total;
-  const rows = data.students;
-  if(rows.length === 0){ el.innerHTML = `<p class="muted">Không có học viên nào khớp bộ lọc.</p>`; document.getElementById("students-pager").innerHTML = ""; return; }
-  el.innerHTML = `
-    <table>
-      <tr><th>Họ tên</th><th>SĐT</th><th>Email</th><th>ID môi giới</th><th>Phòng</th><th>Trạng thái</th><th>Hoạt động gần nhất</th><th>Đăng ký lúc</th><th></th></tr>
-      ${rows.map(s => {
-        const st = STATUS_LABEL[s.approval_status] || STATUS_LABEL.none;
-        const onlineNow = s.last_seen_at && (Date.now() - new Date(s.last_seen_at).getTime()) <= 5*60*1000;
-        return `
-        <tr>
-          <td><b>${esc(s.full_name)}</b></td>
-          <td>${esc(s.phone)}</td>
-          <td>${esc(s.email)}</td>
-          <td>${esc(s.broker_id||"—")}</td>
-          <td>${esc(s.department||"—")}</td>
-          <td><span class="pill" style="background:${st.bg};color:${st.fg};">${st.text}</span></td>
-          <td>${onlineNow ? `<span style="color:var(--green);font-weight:700;">🟢 Đang online</span>` : fmtRelative(s.last_seen_at)}</td>
-          <td>${fmtDT(s.requested_at || s.created_at)}</td>
-          <td style="white-space:nowrap;">
-            ${s.approval_status !== "approved" ? `<button class="btn-secondary" style="color:var(--green);" onclick="approveStudent(${s.id})">Duyệt</button>` : ""}
-            ${s.approval_status !== "rejected" && s.approval_status !== "none" ? `<button class="btn-secondary" style="color:var(--red);" onclick="rejectStudent(${s.id})">Từ chối</button>` : ""}
-            <button class="btn-secondary" onclick="editStudent(${s.id},'${esc(s.full_name).replace(/'/g,"\\'")}','${esc(s.phone).replace(/'/g,"\\'")}','${esc(s.email).replace(/'/g,"\\'")}')">Sửa</button>
-            <button class="btn-danger" onclick="deleteStudent(${s.id})">Xoá</button>
-          </td>
-        </tr>
-      `;}).join("")}
-    </table>
-    <p class="muted" style="margin-top:8px;">Tổng ${studentsTotal} học viên.</p>
-  `;
-  const pager = document.getElementById("students-pager");
-  const hasPrev = offset > 0;
-  const hasNext = offset + STU_PAGE_SIZE < studentsTotal;
-  pager.innerHTML = `
-    <button class="btn-secondary" ${hasPrev ? "" : "disabled"} onclick="loadStudents(${Math.max(0, offset - STU_PAGE_SIZE)})">← Trước</button>
-    <button class="btn-secondary" ${hasNext ? "" : "disabled"} onclick="loadStudents(${offset + STU_PAGE_SIZE})">Sau →</button>
-  `;
+  if(!rows.length){ el.innerHTML = `<p class="muted">Không có học viên nào khớp bộ lọc.</p>`; document.getElementById("students-pager").innerHTML = ""; return; }
+  const tot = stu.lessonTotal || 0;
+  el.innerHTML = `<table class="stu-table">
+    <tr><th>Học viên</th><th>Trạng thái</th><th>Hoạt động gần nhất</th><th>Bài đã đạt</th><th>Điểm trung bình</th><th>Thi thử cao nhất</th><th>Lượt làm</th><th></th></tr>
+    ${rows.slice(0, stu.shown).map(s => {
+      const st = S(s), lab = STATUS_LABEL[s.approval_status] || STATUS_LABEL.none, last = stuLast(s);
+      const on = s.last_seen_at && now - new Date(s.last_seen_at).getTime() <= 5 * 60000;
+      const open = stu.open === s.id;
+      return `<tr class="${open ? "open" : ""}">
+        <td><b>${esc(s.full_name)}</b>${stu.dup[stuKey(s.full_name)] ? ` <span class="adm-warn" title="Có học viên khác trùng họ tên, số liệu làm bài bị gộp chung">trùng tên</span>` : ""}<div class="muted">${esc([s.phone, s.department, s.broker_id ? "ID " + s.broker_id : ""].filter(Boolean).join(" · "))}</div></td>
+        <td><span class="pill" style="background:${lab.bg};color:${lab.fg};">${lab.text.replace(/^[^\wÀ-ỹ]+/, "")}</span></td>
+        <td>${on ? `<span class="stu-on">Đang online</span>` : last ? esc(fmtRelative(new Date(last).toISOString())) : "—"}</td>
+        <td>${st.n ? `<div class="stu-bar"><i style="width:${tot ? Math.min(100, st.passed / tot * 100) : 0}%"></i></div><span>${st.passed}/${tot}</span>` : `<span class="muted">chưa làm</span>`}</td>
+        <td>${st.n ? Math.round(st.avg) + "%" : "—"}</td>
+        <td>${st.mock ? `${st.mock.score}/${st.mock.total} <span class="muted">(${Math.round(st.mock.best)}%)</span>` : "—"}</td>
+        <td>${st.n || 0}</td>
+        <td style="white-space:nowrap;text-align:right;">
+          ${s.approval_status === "pending" ? `<button class="btn-primary" type="button" onclick="approveStudent(${s.id})">Duyệt</button>` : ""}
+          <button class="btn-secondary" type="button" aria-expanded="${open}" onclick="stuToggle(${s.id})">${open ? "Thu gọn" : "Chi tiết"}</button></td>
+      </tr>${open ? `<tr class="stu-detail"><td colspan="8">${stuDetailHtml(s)}</td></tr>` : ""}`; }).join("")}
+  </table>
+  <p class="muted" style="margin-top:8px;">Hiện ${Math.min(stu.shown, rows.length)}/${rows.length} học viên. “Bài đã đạt” là số bài học có điểm cao nhất từ ${STU_PASS}% trở lên, trên tổng ${tot} bài có câu hỏi. Số liệu làm bài ghép theo họ tên${stu.unmatched ? `; có ${stu.unmatched} tên làm bài không khớp học viên nào` : ""}.</p>`;
+  document.getElementById("students-pager").innerHTML = rows.length > stu.shown ? `<button class="btn-secondary" type="button" onclick="stuMore()">Hiện thêm</button>` : "";
   loadOnlineStudentCount();
 }
+function stuDetailHtml(s){
+  const st = stu.stats[stuKey(s.full_name)];
+  const subjects = lastLoadedSubjects.map(sub => {
+    const lessons = (lessonsBySubjectCache[sub.slug] || []).filter(l => l.quiz_slug);
+    const chips = lessons.map((l, i) => { const x = st && st.sets[l.quiz_slug];
+      return `<span class="stu-chip ${x ? (x.best >= STU_PASS ? "ok" : "mid") : ""}" title="${esc(l.title)}${x ? " · làm " + x.n + " lần" : " · chưa làm"}">Bài ${i + 1}${x ? " · " + Math.round(x.best) + "%" : ""}</span>`; }).join("");
+    const m = st && sub.mock_exam_quiz_slug && st.sets[sub.mock_exam_quiz_slug];
+    const any = (st && (lessons.some(l => st.sets[l.quiz_slug]) || m));
+    if(!lessons.length && !sub.mock_exam_quiz_slug) return "";
+    return `<div class="stu-subj"><b>${esc(sub.title)}</b>${any ? "" : ` <span class="muted">· chưa làm bài nào</span>`}<div class="stu-chips">${chips}${sub.mock_exam_quiz_slug ? `<span class="stu-chip ${m ? (m.best >= STU_PASS ? "ok" : "mid") : ""}">Thi thử${m ? " · " + m.bestScore + "/" + m.bestTotal + " · " + m.n + " lần" : ""}</span>` : ""}</div></div>`; }).join("");
+  const recent = stu.attempts.filter(a => a.key === stuKey(s.full_name)).sort((a, b) => b.at - a.at).slice(0, 6);
+  const nameOf = slug => { const i = stu.info[slug]; const set = quizSets.find(q => q.slug === slug); return i ? (i.kind === "mock" ? "Thi thử · " + admSubjTitle(i.subj) : i.label) : (set ? set.title : slug); };
+  const q = v => esc(v).replace(/'/g, "\\'");
+  return `<div class="stu-dgrid">
+    <div>${subjects || `<p class="muted">Chưa có bài học nào gắn câu hỏi.</p>`}
+      <p class="muted" style="margin:8px 0 0;">Xanh: đã đạt từ ${STU_PASS}%. Vàng: đã làm nhưng chưa đạt. Xám: chưa làm. Số % là điểm cao nhất.</p></div>
+    <div>
+      <b>Làm bài gần đây</b>
+      ${recent.length ? `<ul class="stu-recent">${recent.map(a => `<li><span>${esc(nameOf(a.set))}</span><span>${a.score}/${a.total} · ${esc(fmtRelative(new Date(a.at).toISOString()))}</span></li>`).join("")}</ul>` : `<p class="muted">Chưa có lượt làm bài nào.</p>`}
+      <p class="muted" style="margin:10px 0 6px;">${esc(s.email || "")}${s.email ? " · " : ""}Đăng ký ${esc(fmtDT(s.requested_at || s.created_at))}${st ? " · học " + st.dayCount + " ngày" : ""}</p>
+      <div class="adm-actions">
+        ${s.approval_status !== "approved" ? `<button class="btn-secondary" type="button" onclick="approveStudent(${s.id})">Duyệt</button>` : ""}
+        ${s.approval_status !== "rejected" && s.approval_status !== "none" ? `<button class="btn-secondary" type="button" onclick="rejectStudent(${s.id})">Từ chối</button>` : ""}
+        <button class="btn-secondary" type="button" onclick="editStudent(${s.id},'${q(s.full_name)}','${q(s.phone)}','${q(s.email)}')">Sửa thông tin</button>
+        <button class="btn-danger" type="button" onclick="deleteStudent(${s.id})">Xoá</button>
+      </div>
+    </div></div>`;
+}
+
+/* ---------- Bảng vinh danh ---------- */
+const HONOR_PERIODS = [[7, "7 ngày qua"], [30, "30 ngày qua"], [0, "Từ đầu khoá"]];
+function stuHonorData(){
+  const since = stu.period ? Date.now() - stu.period * 86400000 : 0;
+  const agg = stuAggregate(stu.attempts.filter(a => a.at >= since), stu.info);
+  const people = stu.students.filter(s => !stu.dup[stuKey(s.full_name)] || true).map(s => ({ s, st: agg[stuKey(s.full_name)] })).filter(x => x.st);
+  const seen = {}; const uniq = people.filter(x => { const k = stuKey(x.s.full_name); if(seen[k]) return false; seen[k] = 1; return true; });
+  const top = (score, fmt, tie) => uniq.map(x => ({ x, v: score(x.st) })).filter(o => o.v > 0).sort((a, b) => b.v - a.v || (tie ? tie(b.x.st) - tie(a.x.st) : 0) || a.x.st.last - b.x.st.last).slice(0, 5)
+    .map(o => ({ name: o.x.s.full_name, dept: stu.showDept ? (o.x.s.department || "") : "", value: fmt(o.x.st) }));
+  return {
+    updated: new Date().toISOString(), period: stu.period, label: (HONOR_PERIODS.find(p => p[0] === stu.period) || [])[1],
+    boards: [
+      { key: "cham", title: "Chăm chỉ nhất", desc: "Số ngày có làm bài", rows: top(st => st.dayCount, st => st.dayCount + " ngày học", st => st.n) },
+      { key: "dat", title: "Về đích nhiều bài nhất", desc: "Số bài học đạt từ " + STU_PASS + "%", rows: top(st => st.passed, st => st.passed + " bài đạt", st => st.avg) },
+      { key: "thi", title: "Điểm thi thử cao nhất", desc: "Lần thi thử tốt nhất", rows: top(st => st.mock ? st.mock.best : 0, st => st.mock.score + "/" + st.mock.total) },
+      { key: "tienbo", title: "Tiến bộ nhất", desc: "Điểm tốt nhất so với lần làm đầu", rows: top(st => st.gainN ? Math.round(st.gain) : 0, st => "+" + Math.round(st.gain) + " điểm %", st => st.gainN) }
+    ]
+  };
+}
+function stuRenderHonor(){
+  const el = document.getElementById("stu-honor"); if(!el) return;
+  const d = stuHonorData();
+  el.innerHTML = `
+    <div class="adm-cardhead">
+      <div class="adm-actions">${HONOR_PERIODS.map(p => `<button type="button" class="adm-chip ${stu.period === p[0] ? "on" : ""}" onclick="stu.period=${p[0]};stuRender()">${p[1]}</button>`).join("")}
+        <label class="adm-check"><input type="checkbox" ${stu.showDept ? "checked" : ""} onchange="stu.showDept=this.checked;stuRender()"> Hiện tên phòng</label></div>
+      <div class="adm-actions"><button class="btn-secondary" type="button" onclick="stuHonorPublish(true)">Gỡ khỏi trang học viên</button><button class="btn-primary" type="button" onclick="stuHonorPublish(false)">Công bố lên trang học viên</button></div>
+    </div>
+    <div id="stu-honor-msg"></div>
+    <div class="honor-grid">${d.boards.map(b => `<div class="honor-board"><h3>${esc(b.title)}</h3><p class="muted">${esc(b.desc)} · ${esc(d.label)}</p>
+      ${b.rows.length ? `<ol>${b.rows.map((r, i) => `<li><span class="rk">${i + 1}</span><span class="nm"><b>${esc(r.name)}</b>${r.dept ? `<span class="muted"> · ${esc(r.dept)}</span>` : ""}</span><span class="vl">${esc(r.value)}</span></li>`).join("")}</ol>` : `<p class="muted">Chưa có ai trong khoảng thời gian này.</p>`}</div>`).join("")}</div>
+    <p class="muted" style="margin-top:12px;">Bảng tính từ lượt làm bài, ghép theo họ tên học viên. Học viên chỉ thấy bảng sau khi bạn bấm “Công bố”; mỗi lần công bố là chụp lại số liệu tại thời điểm đó, muốn cập nhật thì công bố lại. Trang học viên hiện họ tên${stu.showDept ? " và phòng" : ""}, không hiện số điện thoại hay email.</p>`;
+}
+async function stuHonorPublish(remove){
+  const d = remove ? { updated: new Date().toISOString(), boards: [] } : stuHonorData();
+  if(!remove && !d.boards.some(b => b.rows.length)){ document.getElementById("stu-honor-msg").innerHTML = `<div class="msg err">Chưa có số liệu để công bố trong khoảng thời gian này.</div>`; return; }
+  if(!confirm(remove ? "Gỡ bảng vinh danh khỏi trang học viên?" : "Công bố bảng vinh danh này lên trang học viên? Mọi học viên sẽ thấy họ tên các bạn trong bảng.")) return;
+  const res = await contentSave("vinhdanh", d, "vinh-danh.json");
+  admLog(remove ? "Gỡ bảng vinh danh" : "Công bố bảng vinh danh (" + d.label + ")");
+  document.getElementById("stu-honor-msg").innerHTML = contentSavedMsg(res);
+}
+
 
 async function loadOnlineStudentCount(){
   const badge = document.getElementById("students-online-badge");

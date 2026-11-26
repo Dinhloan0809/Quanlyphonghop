@@ -291,6 +291,28 @@
   .calc-sample-box .lbl{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--accent-text);font-size:.82rem;margin-bottom:6px;}
   .calc-sample-box .txt{line-height:1.6;font-size:.93rem;}
   .calc-plain-q{line-height:1.6;font-size:.96rem;margin-bottom:16px;font-weight:600;}
+  .calc-drill-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;padding:10px 12px;border-radius:12px;background:var(--accent-soft);color:var(--accent-text);font-size:.88rem;}
+  .link-btn{background:none;border:none;color:var(--accent-text);font-weight:700;padding:8px 0;font-size:.9rem;cursor:pointer;min-height:40px;}
+  .fl-chapters{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
+  .fl-ch{display:flex;flex-direction:column;gap:4px;text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;cursor:pointer;min-height:0;}
+  .fl-ch:hover{background:var(--surface2);border-color:var(--line-strong);}
+  .fl-ch:disabled{opacity:.5;cursor:default;}
+  .fl-ch .t{font-weight:700;font-size:.92rem;}
+  .fl-ch .m{font-size:.78rem;color:var(--muted);}
+  .fl-bar,.fl-prog{display:block;height:6px;border-radius:99px;background:var(--surface2);overflow:hidden;margin-top:4px;}
+  .fl-bar i,.fl-prog i{display:block;height:100%;background:var(--ok);border-radius:99px;}
+  .fl-prog i{background:var(--accent);}
+  .fl-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .fl-card{display:flex;flex-direction:column;justify-content:center;gap:12px;width:100%;min-height:280px;margin:16px 0 4px;padding:26px 24px;border-radius:18px;border:1px solid var(--line-strong);background:var(--surface);color:var(--text);font:inherit;text-align:center;cursor:pointer;}
+  .fl-card.back{background:var(--accent-soft);border-color:var(--accent);}
+  .fl-ctx{font-size:.76rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);}
+  .fl-front{font-size:1.3rem;font-weight:800;line-height:1.4;}
+  .fl-card.back .fl-front{font-size:1rem;font-weight:600;color:var(--muted);}
+  .fl-hint{font-size:.86rem;color:var(--muted);}
+  .fl-back{display:flex;flex-direction:column;gap:10px;}
+  .fl-row{display:flex;flex-direction:column;gap:2px;}
+  .fl-row .h{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent-text);}
+  .fl-row .v{font-size:1.15rem;font-weight:700;line-height:1.45;}
   .dr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
   .dr-top h2{margin:0 0 4px;font-size:1.2rem;}
   .dr-top p{margin:0;color:var(--muted);font-size:.88rem;}
@@ -426,6 +448,20 @@
   .home-stat b{display:block;font-size:1.4rem;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums;}
   .home-stat span{font-size:.78rem;color:var(--muted);font-weight:600;}
   .home-section-title{font-size:1.05rem;font-weight:800;margin:0 0 14px;}
+  .honor{margin:0 0 26px;}
+  .honor-sub{font-weight:500;font-size:.82rem;color:var(--muted);margin-left:6px;}
+  .honor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;}
+  .honor-board{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;}
+  .honor-title{font-weight:800;font-size:.95rem;}
+  .honor-desc{font-size:.78rem;color:var(--muted);margin-bottom:6px;}
+  .honor-board ol{list-style:none;margin:0;padding:0;}
+  .honor-board li{display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:.86rem;}
+  .honor-board li.me{background:var(--accent-soft);margin:0 -8px;padding:7px 8px;border-radius:8px;border-top-color:transparent;}
+  .honor-board .rk{flex:none;width:24px;height:24px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.76rem;}
+  .honor-board li:first-child .rk{background:var(--hi,#FFD23F);color:#3A2A00;}
+  .honor-board .nm{flex:1;min-width:0;}
+  .honor-board .nm span{color:var(--muted);}
+  .honor-board .vl{flex:none;font-weight:700;font-variant-numeric:tabular-nums;}
   .course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:18px;}
   .course-card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);transition:border-color .15s, transform .15s;}
   .course-card:hover{border-color:var(--line-strong);transform:translateY(-2px);}
@@ -1000,7 +1036,36 @@ async function loadContentConfig(){
     else if(c.sotay === false) delete HANDBOOKS[k];
     if(c.dangbai && c.dangbai.file) DRILL_FILES[k] = c.dangbai.file;
     else if(c.dangbai === false) delete DRILL_FILES[k];
+    // môn này thuộc ô nào trong lộ trình (chọn ở trang quản trị)
+    if("lotrinh" in c){
+      CATALOG.forEach(it => { it.slugs = (it.slugs || []).filter(x => String(x).toLowerCase() !== k); });
+      const target = CATALOG.find(it => it.key === c.lotrinh);
+      if(target) target.slugs.unshift(slug);
+    }
   });
+}
+/* Bảng vinh danh: do trang quản trị công bố (file vinh-danh.json hoặc bản lưu trên hệ thống) */
+let honorData = null;
+function loadHonor(){
+  contentGet("vinhdanh", "vinh-danh.json").then(d => {
+    honorData = (d && Array.isArray(d.boards) && d.boards.some(b => (b.rows || []).length)) ? d : null;
+    const hv = document.getElementById("home-view");
+    if(honorData && hv && hv.offsetParent !== null && typeof renderHome === "function") renderHome();
+  }).catch(() => {});
+}
+function honorHtml(){
+  if(!honorData) return "";
+  const me = (currentStudent && currentStudent.full_name) ? String(currentStudent.full_name).trim().toLowerCase() : "";
+  const when = honorData.updated ? new Date(honorData.updated).toLocaleDateString("vi-VN") : "";
+  return `<section class="honor" aria-label="Bảng vinh danh">
+    <h3 class="home-section-title">Bảng vinh danh <span class="honor-sub">${esc(honorData.label || "")}${when ? " · cập nhật " + when : ""}</span></h3>
+    <div class="honor-grid">
+      ${honorData.boards.filter(b => (b.rows || []).length).map(b => `<div class="honor-board">
+        <div class="honor-title">${esc(b.title)}</div><div class="honor-desc">${esc(b.desc || "")}</div>
+        <ol>${b.rows.map((r, i) => `<li class="${me && String(r.name).trim().toLowerCase() === me ? "me" : ""}"><span class="rk">${i + 1}</span><span class="nm"><b>${esc(r.name)}</b>${r.dept ? `<span> · ${esc(r.dept)}</span>` : ""}</span><span class="vl">${esc(r.value)}</span></li>`).join("")}</ol>
+      </div>`).join("")}
+    </div>
+  </section>`;
 }
 /* ---------- Giao diện sáng / tối ---------- */
 function syncThemeUi(){
@@ -1462,6 +1527,7 @@ let subjectHoursCache = {}; // subject slug -> tổng số giờ học (ước t
 async function init(){
   const [data] = await Promise.all([callRpc("list_subjects_public", {}), loadContentConfig()]);
   allSubjects = (data && data.subjects) || [];
+  loadHonor();
   callRpc("list_subject_video_hours_public", {}).then(hd => {
     if(hd && hd.status === "ok"){
       (hd.items||[]).forEach(it => { subjectHoursCache[it.slug] = it.total_hours; });
@@ -1493,7 +1559,7 @@ async function init(){
   if(wantIntro === "1"){ showSubjectIntro(wantSubjectSlug); return; }
   if(!isLoggedIn()){
     showSubjectIntro(wantSubjectSlug);
-    const m = initParams.get("sotay") === "1" ? "handbook" : initParams.get("luyen") === "1" ? "drill" : initParams.get("exam") === "1" ? "exam" : initParams.get("calc") === "1" ? "calc" : "lesson";
+    const m = initParams.get("the") === "1" ? "flash" : initParams.get("sotay") === "1" ? "handbook" : initParams.get("luyen") === "1" ? "drill" : initParams.get("exam") === "1" ? "exam" : initParams.get("calc") === "1" ? "calc" : "lesson";
     openAuth("Đăng nhập hoặc đăng ký miễn phí để vào học.", () => enterSubject(wantSubjectSlug, m, m === "handbook" ? initParams.get("vb") : initParams.get("lesson")));
     return;
   }
@@ -1506,7 +1572,9 @@ async function init(){
   const wantExam = initParams.get("exam");
   const wantCalc = initParams.get("calc");
   const wantLessonIdx = wantLesson ? currentSubject.lessons.findIndex(l => l.slug === wantLesson) : -1;
-  if(initParams.get("sotay") === "1" && hasHandbook(currentSubject)){
+  if(initParams.get("the") === "1" && hasHandbook(currentSubject)){
+    selectFlash();
+  } else if(initParams.get("sotay") === "1" && hasHandbook(currentSubject)){
     selectHandbook(initParams.get("vb"));
   } else if(initParams.get("luyen") === "1" && hasDrills(currentSubject) && !isExamLocked()){
     selectDrill();
@@ -1633,16 +1701,19 @@ function renderSidebarForSubject(){
     ${hasHandbook(s) ? `<div class="side-group">Tra cứu</div>
       <button type="button" class="ol-item lesson-item hb-item" data-handbook="1" onclick="closeLessonSheet();selectHandbook()">
         <span class="ol-main"><span class="ol-icon">📒</span><span class="ol-title">${esc(hbCfg(s).name)}</span></span>
+      </button>
+      <button type="button" class="ol-item lesson-item" data-flash="1" onclick="closeLessonSheet();selectFlash()">
+        <span class="ol-main"><span class="ol-icon">🃏</span><span class="ol-title">Thẻ ghi nhớ</span></span>
       </button>` : ""}
     ${(nWrong || hasCalc || hasDrills(s) || s.has_mock_exam) ? `<div class="side-group">Luyện tập</div>` : ""}
     ${nWrong ? `<button type="button" class="ol-item" onclick="closeLessonSheet();startWrongReview('${s.slug.replace(/'/g,"\\'")}')"><span class="ol-main"><span class="ol-icon">🎯</span><span class="ol-title">Ôn câu sai</span><span class="ol-badge" title="${nDueSubj} câu đến hạn / ${nWrong} câu">${nDueSubj ? nDueSubj + " đến hạn" : nWrong}</span></span></button>` : ""}
-    ${hasDrills(s) ? (() => { const locked = isExamLocked(); return `
+    ${(hasDrills(s) && !hasCalc) ? (() => { const locked = isExamLocked(); return `
       <button type="button" class="ol-item lesson-item drill-item ${locked ? "locked" : ""}" data-drill="1" onclick="${locked ? "openAccessModal()" : "closeLessonSheet();selectDrill()"}">
         <span class="ol-main"><span class="ol-icon">🎲</span><span class="ol-title">Luyện theo dạng</span>${locked ? lockMeta : ""}</span>
       </button>`; })() : ""}
     ${hasCalc ? (() => { const locked = isExamLocked(); return `
       <button type="button" class="ol-item lesson-item calc-item ${locked ? "locked" : ""}" data-calc="1" onclick="${locked ? "openAccessModal()" : "closeLessonSheet();selectCalcPractice()"}">
-        <span class="ol-main"><span class="ol-icon">🧮</span><span class="ol-title">Luyện tính toán</span>${locked ? lockMeta : ""}</span>
+        <span class="ol-main"><span class="ol-icon">🧮</span><span class="ol-title">Luyện theo dạng</span>${locked ? lockMeta : ""}</span>
       </button>`; })() : ""}
     ${s.has_mock_exam ? (() => { const locked = isExamLocked(); return `
       <button type="button" class="ol-item lesson-item exam-item ${locked ? "locked" : ""}" data-exam="1" onclick="${locked ? "openAccessModal()" : "closeLessonSheet();selectExam()"}">
@@ -1670,14 +1741,16 @@ function updateActiveStates(){
   setTimeout(updateFocusTitle, 0);
   setTimeout(updateSideSteps, 0);
   document.querySelectorAll(".lesson-item").forEach(el => {
-    if(el.dataset.handbook){
+    if(el.dataset.flash){
+      el.classList.toggle("active", currentMode === "flash");
+    } else if(el.dataset.handbook){
       el.classList.toggle("active", currentMode === "handbook");
     } else if(el.dataset.drill){
       el.classList.toggle("active", currentMode === "drill");
     } else if(el.dataset.exam){
       el.classList.toggle("active", currentMode === "exam");
     } else if(el.dataset.calc){
-      el.classList.toggle("active", currentMode === "calc");
+      el.classList.toggle("active", currentMode === "calc" || currentMode === "drill");
     } else {
       el.classList.toggle("active", currentMode === "lesson" && el.dataset.slug === currentLessonSlug);
     }
@@ -1705,7 +1778,7 @@ const CATALOG = [
   { key: "phai-sinh",   no: 8, short: "CK phái sinh",    title: "Chứng khoán Phái sinh",                          slugs: ["CKPS"] },
   // Các phần thi sát hạch
   { key: "sh-luat",     exam: true, short: "Sát hạch – Luật",        title: "Ôn thi sát hạch – Phần Luật",                         slugs: ["phap-luat"] },
-  { key: "sh-moi-gioi", exam: true, short: "Sát hạch MG – Chuyên môn", title: "Ôn thi sát hạch Môi giới – Phần Chuyên môn",        slugs: [] },
+  { key: "sh-moi-gioi", exam: true, short: "Sát hạch MG – Chuyên môn", title: "Ôn thi sát hạch Môi giới – Phần Chuyên môn",        slugs: ["on-thi-phan-chuyen-mon-cchn", "chuyen-mon"] },
   { key: "sh-pttc",     exam: true, short: "Sát hạch PTTC – Chuyên môn", title: "Ôn thi sát hạch Phân tích tài chính – Phần Chuyên môn", slugs: [] },
   { key: "sh-qlq",      exam: true, short: "Sát hạch QLQ – Chuyên môn", title: "Ôn thi sát hạch Quản lý quỹ – Phần Chuyên môn",   slugs: [] }
 ];
@@ -1788,7 +1861,7 @@ function subjectMetaHtml(s){
   const hl = hoursLabel(s.slug);
   if(hl) parts.push(`<span>${ICONS.play}${hl}</span>`);
   if(s.has_mock_exam) parts.push(`<span>${ICONS.exam}Thi thử ${s.mock_exam_count} câu</span>`);
-  if(calcGroupsCache[s.slug] && calcGroupsCache[s.slug].length) parts.push(`<span>${ICONS.calc}Luyện tính toán</span>`);
+  if(calcGroupsCache[s.slug] && calcGroupsCache[s.slug].length) parts.push(`<span>${ICONS.calc}Luyện theo dạng</span>`);
   return `<div class="course-meta">${parts.join("")}</div>`;
 }
 function setStudyVisible(study){
@@ -1904,6 +1977,7 @@ function renderHome(){
       </div>
     </section>
     ${todayHtml()}
+    ${honorHtml()}
     ${route ? "" : `<h3 class="home-section-title">Chọn lộ trình</h3>`}
     ${route ? "" : pickHtml}
     ${routeHtml}
@@ -1942,9 +2016,9 @@ function renderSubjectIntro(slug){
   if(hasCalc){
     const locked = isExamLocked();
     rows.push(`<button type="button" class="curr-row" onclick="${locked ? "openAccessModal()" : `enterSubject('${sq}','calc')`}">
-      <span class="badge-num">🧮</span><span class="curr-title">Luyện tính toán chuyên sâu<span class="curr-sub">Làm mẫu rồi tự giải từng dạng bài</span></span>${locked ? `<span class="curr-tag lock">🔒 Cần mở khoá</span>` : ""}</button>`);
+      <span class="badge-num">🧮</span><span class="curr-title">Luyện theo dạng<span class="curr-sub">Xem bài mẫu, tự giải bài tập, rồi luyện thêm với bộ số khác</span></span>${locked ? `<span class="curr-tag lock">🔒 Cần mở khoá</span>` : ""}</button>`);
   }
-  if(hasDrills(s)){
+  if(hasDrills(s) && !hasCalc){
     const locked = isExamLocked();
     rows.push(`<button type="button" class="curr-row" onclick="${locked ? "openAccessModal()" : `enterSubject('${sq}','drill')`}">
       <span class="badge-num">🎲</span><span class="curr-title">Luyện theo dạng<span class="curr-sub">Mỗi dạng bài tính tự đổi số, làm đến khi thuộc cách giải</span></span>${locked ? `<span class="curr-tag lock">🔒 Cần mở khoá</span>` : ""}</button>`);
@@ -2008,6 +2082,7 @@ function enterSubject(slug, mode, lessonSlug){
   renderSubjectTabs();
   renderSidebarForSubject();
   window.scrollTo(0, 0);
+  if(mode === "flash" && hasHandbook(s)) return selectFlash();
   if(mode === "handbook" && hasHandbook(s)) return selectHandbook(lessonSlug);
   if(mode === "drill" && hasDrills(s) && !isExamLocked()) return selectDrill();
   if(mode === "exam" && s.has_mock_exam && !isExamLocked()) return selectExam();
@@ -2030,6 +2105,7 @@ function enterSubject(slug, mode, lessonSlug){
 const HANDBOOKS = {
   "phap-luat":  { key: "sotay:phap-luat", url: "sotay-luat.json",      name: "Sổ tay con số Luật",          sub: "Tra nhanh vốn, tỷ lệ %, thời hạn, mức phạt theo chủ điểm và văn bản", ph: "Gõ từ khóa: 24 gio, 5%, chao mua, phat…" },
   "chuyen-mon": { key: "sotay:chuyen-mon", url: "sotay-chuyenmon.json", name: "Sổ tay công thức Chuyên môn", sub: "Tra nhanh công thức và bẫy của từng dạng bài tính", ph: "Gõ từ khóa: gordon, beta, ky quy, npv…" },
+  "on-thi-phan-chuyen-mon-cchn": { key: "sotay:on-thi-phan-chuyen-mon-cchn", url: "sotay-chuyenmon.json", name: "Sổ tay công thức Chuyên môn", sub: "Tra nhanh công thức và bẫy của từng dạng bài tính", ph: "Gõ từ khóa: gordon, beta, ky quy, npv…" },
   "chuyenmon":  { key: "sotay:chuyen-mon", url: "sotay-chuyenmon.json", name: "Sổ tay công thức Chuyên môn", sub: "Tra nhanh công thức và bẫy của từng dạng bài tính", ph: "Gõ từ khóa: gordon, beta, ky quy, npv…" }
 };
 function hbCfg(s){ s = s || currentSubject; return (s && HANDBOOKS[String(s.slug).toLowerCase()]) || null; }
@@ -2086,6 +2162,135 @@ async function selectHandbook(docKey){
   window.scrollTo(0, 0);
 }
 function hbSyncUrl(){ updateUrl(Object.assign({ subject: currentSubject.slug, sotay: "1" }, hb.doc ? { vb: hb.doc } : {})); }
+/* ================= Thẻ ghi nhớ: lấy thẳng từ sổ tay =================
+   Mỗi dòng của sổ tay là một thẻ: mặt trước là cột đầu, mặt sau là các cột còn lại.
+   Sửa sổ tay thì thẻ tự đổi theo. Thẻ nào đã thuộc được nhớ theo từng học viên. */
+const fl = { screen: "pick", queue: [], i: 0, flipped: false, again: [], known: 0, unknownOnly: false, pinsOnly: false, title: "" };
+function flState(){ const all = studyLoad("flash", {}) || {}; return all[currentSubject.slug] || {}; }
+function flMark(key, known){ const all = studyLoad("flash", {}) || {}; const m = all[currentSubject.slug] || (all[currentSubject.slug] = {}); m[key] = { k: known ? 1 : 0, t: Date.now() }; studySave("flash", all); }
+function flCards(chIdx){
+  const out = [];
+  handbookData.chapters.forEach((ch, ci) => {
+    if(chIdx != null && ci !== chIdx) return;
+    ch.sections.forEach(sec => { if(!sec.table) return;
+      sec.table.rows.forEach(r => {
+        const back = r.slice(1).map((v, j) => ({ h: sec.table.head[j + 1] || "", v: String(v || "").trim() })).filter(x => x.v);
+        if(!String(r[0] || "").trim() || !back.length) return;
+        out.push({ key: hbRowKey(ch, sec, r), ch: ch.title, sec: sec.title, front: String(r[0]).trim(), frontHead: sec.table.head[0] || "", back });
+      }); });
+  });
+  return out;
+}
+async function selectFlash(){
+  stopExamTimer();
+  currentMode = "flash";
+  currentLessonSlug = null;
+  updateActiveStates();
+  updateUrl({ subject: currentSubject.slug, the: "1" });
+  const content = document.getElementById("content");
+  content.innerHTML = `<div class="card"><div class="empty">Đang tải thẻ ghi nhớ...</div></div>`;
+  try{ await loadHandbook(); }
+  catch(e){ content.innerHTML = `<div class="card"><div class="empty">Chưa tải được sổ tay nên chưa có thẻ ghi nhớ. Bạn thử tải lại trang nhé.</div></div>`; return; }
+  if(currentMode !== "flash") return;
+  hb.q = "";
+  fl.screen = "pick";
+  renderFlash();
+  window.scrollTo(0, 0);
+}
+function flStart(chIdx){
+  const st = flState(), pins = hbPins();
+  let cards = flCards(chIdx);
+  if(fl.pinsOnly) cards = cards.filter(c => pins[c.key]);
+  if(fl.unknownOnly) cards = cards.filter(c => !(st[c.key] && st[c.key].k));
+  if(!cards.length) return;
+  fl.title = chIdx == null ? "Tất cả chủ điểm" : handbookData.chapters[chIdx].title;
+  fl.queue = shuffleArray(cards); fl.i = 0; fl.flipped = false; fl.again = []; fl.known = 0; fl.screen = "play";
+  renderFlash();
+}
+function flFlip(){ if(fl.screen !== "play") return; fl.flipped = !fl.flipped; renderFlash(); }
+function flAnswer(known){
+  if(fl.screen !== "play" || !fl.flipped) return;
+  const c = fl.queue[fl.i];
+  flMark(c.key, known);
+  if(known) fl.known++; else fl.again.push(c);
+  bumpDay("review");
+  fl.i++; fl.flipped = false;
+  if(fl.i >= fl.queue.length) fl.screen = "done";
+  renderFlash();
+}
+function flRetry(){ fl.queue = shuffleArray(fl.again); fl.i = 0; fl.flipped = false; fl.again = []; fl.known = 0; fl.screen = "play"; renderFlash(); }
+function flToggle(name){ fl[name] = !fl[name]; renderFlash(); }
+function renderFlash(){
+  if(currentMode !== "flash" || !handbookData) return;
+  const content = document.getElementById("content");
+  const st = flState(), pins = hbPins();
+  if(fl.screen === "pick"){
+    const pass = c => (!fl.pinsOnly || pins[c.key]) && (!fl.unknownOnly || !(st[c.key] && st[c.key].k));
+    const all = flCards(null), knownAll = all.filter(c => st[c.key] && st[c.key].k).length, nAll = all.filter(pass).length;
+    content.innerHTML = `
+      <div class="card">
+        <div class="dr-top">
+          <div><h2>🃏 Thẻ ghi nhớ</h2><p>Thẻ lấy từ ${esc((hbCfg() || {}).name || "sổ tay")}: đọc mặt trước, tự nhớ lại, rồi lật thẻ để đối chiếu.</p></div>
+          <div class="dr-stats"><div class="dr-stat"><b>${knownAll}/${all.length}</b><span>thẻ đã thuộc</span></div></div>
+        </div>
+        <div class="dr-chips">
+          <button type="button" class="dr-chip ${fl.unknownOnly ? "active" : ""}" aria-pressed="${fl.unknownOnly}" onclick="flToggle('unknownOnly')">Chỉ thẻ chưa thuộc</button>
+          <button type="button" class="dr-chip ${fl.pinsOnly ? "active" : ""}" aria-pressed="${fl.pinsOnly}" onclick="flToggle('pinsOnly')">⭐ Chỉ dòng đã ghim</button>
+        </div>
+        <button type="button" class="btn-primary" style="margin-bottom:16px;" ${nAll ? "" : "disabled"} onclick="flStart(null)">Học tất cả · ${nAll} thẻ</button>
+        <div class="fl-chapters">
+          ${handbookData.chapters.map((ch, ci) => { const cs = flCards(ci); if(!cs.length) return "";
+            const k = cs.filter(c => st[c.key] && st[c.key].k).length, n = cs.filter(pass).length;
+            return `<button type="button" class="fl-ch" ${n ? "" : "disabled"} onclick="flStart(${ci})">
+              <span class="t">${esc(ch.title)}</span>
+              <span class="m">${n} thẻ${fl.unknownOnly || fl.pinsOnly ? " theo bộ lọc" : ""} · đã thuộc ${k}/${cs.length}</span>
+              <span class="fl-bar"><i style="width:${cs.length ? k / cs.length * 100 : 0}%"></i></span></button>`; }).join("")}
+        </div>
+        <button type="button" class="link-btn" style="margin-top:14px;" onclick="selectHandbook()">‹ Về sổ tay</button>
+      </div>`;
+    return;
+  }
+  if(fl.screen === "done"){
+    content.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <h2 style="margin:6px 0 4px;">Xong lượt này</h2>
+        <p class="muted">${esc(fl.title)} · đã thuộc <b>${fl.known}</b> thẻ${fl.again.length ? `, còn <b>${fl.again.length}</b> thẻ chưa thuộc` : ""}.</p>
+        <div class="dr-actions" style="justify-content:center;">
+          ${fl.again.length ? `<button type="button" class="btn-primary" onclick="flRetry()">Ôn lại ${fl.again.length} thẻ chưa thuộc</button>` : ""}
+          <button type="button" class="${fl.again.length ? "btn-secondary" : "btn-primary"}" onclick="fl.screen='pick';renderFlash()">Chọn chủ điểm khác</button>
+        </div>
+      </div>`;
+    return;
+  }
+  const c = fl.queue[fl.i];
+  content.innerHTML = `
+    <div class="card">
+      <div class="fl-top">
+        <button type="button" class="link-btn" onclick="fl.screen='pick';renderFlash()">‹ Chọn chủ điểm</button>
+        <span class="muted">${esc(fl.title)} · thẻ ${fl.i + 1}/${fl.queue.length}</span>
+      </div>
+      <div class="fl-prog"><i style="width:${fl.i / fl.queue.length * 100}%"></i></div>
+      <button type="button" class="fl-card ${fl.flipped ? "back" : ""}" onclick="flFlip()" aria-label="${fl.flipped ? "Mặt sau, bấm để xem lại mặt trước" : "Mặt trước, bấm để lật thẻ"}">
+        <span class="fl-ctx">${esc(c.ch)}${c.sec ? " · " + esc(c.sec) : ""}</span>
+        <span class="fl-front">${hbFmt(c.front)}</span>
+        ${fl.flipped ? `<span class="fl-back">${c.back.map(x => `<span class="fl-row">${x.h ? `<span class="h">${esc(x.h)}</span>` : ""}<span class="v">${hbFmt(x.v)}</span></span>`).join("")}</span>`
+                     : `<span class="fl-hint">Tự nhớ lại rồi bấm vào thẻ để lật</span>`}
+      </button>
+      <div class="dr-actions" style="justify-content:center;">
+        ${fl.flipped ? `<button type="button" class="btn-secondary" onclick="flAnswer(false)">Chưa thuộc</button><button type="button" class="btn-primary" onclick="flAnswer(true)">Đã thuộc</button>`
+                     : `<button type="button" class="btn-primary" onclick="flFlip()">Lật thẻ</button>`}
+      </div>
+      <div class="dr-keys" style="text-align:center;">Phím tắt: Dấu cách để lật · ← chưa thuộc · → đã thuộc</div>
+    </div>`;
+}
+document.addEventListener("keydown", (e) => {
+  if(currentMode !== "flash" || fl.screen !== "play" || e.ctrlKey || e.metaKey || e.altKey) return;
+  const tag = (e.target && e.target.tagName) || "";
+  if(/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+  if(e.key === " " || e.key === "Enter"){ if(tag === "BUTTON") return; e.preventDefault(); flFlip(); }
+  else if(e.key === "ArrowLeft" || e.key === "1"){ if(fl.flipped){ e.preventDefault(); flAnswer(false); } }
+  else if(e.key === "ArrowRight" || e.key === "2"){ if(fl.flipped){ e.preventDefault(); flAnswer(true); } }
+});
 function renderHandbookShell(){
   const d = handbookData;
   const total = d.chapters.reduce((a, ch) => a + ch.sections.reduce((b, s) => b + (s.table ? s.table.rows.length : 0), 0), 0);
@@ -2097,6 +2302,7 @@ function renderHandbookShell(){
         <h2 style="font-size:1.25rem;">📒 ${esc(d.title || hbCfg().name)}</h2>
         <div class="muted">${total} dòng tra cứu theo chủ điểm · cập nhật ${esc(d.updated || "")} · bấm ☆ để ghim dòng cần thuộc</div>
       </div>
+      <button type="button" class="btn-secondary" onclick="selectFlash()">🃏 Học bằng thẻ ghi nhớ</button>
     </div>
     <div class="hb-tools">
       <div class="hb-search" id="hb-searchbox">
@@ -2617,7 +2823,7 @@ function updateFocusTitle(){
   if(!el || !currentSubject) return;
   const subj = (catalogForSubject(currentSubject) || currentSubject).title;
   const idx = currentLessonSlug ? currentSubject.lessons.findIndex(l => l.slug === currentLessonSlug) : -1;
-  const part = currentMode === "handbook" ? "Sổ tay" : currentMode === "drill" ? "Luyện theo dạng" : currentMode === "exam" ? "Tổng ôn" : currentMode === "calc" ? "Ôn luyện tính toán" : (idx >= 0 ? currentSubject.lessons[idx].title : "");
+  const part = currentMode === "handbook" ? "Sổ tay" : currentMode === "flash" ? "Thẻ ghi nhớ" : currentMode === "drill" ? "Luyện theo dạng" : currentMode === "exam" ? "Tổng ôn" : currentMode === "calc" ? "Luyện theo dạng" : currentMode === "__x" ? "Ôn luyện tính toán" : (idx >= 0 ? currentSubject.lessons[idx].title : "");
   el.innerText = subj + (part ? " · " + part : "");
 }
 try{ if(localStorage.getItem("cchn_focus") === "1") document.body.classList.add("focus-mode"); }catch(e){}
@@ -2713,10 +2919,10 @@ async function selectLesson(slug){
       <h2>🧠 Mindmap</h2>
       ${data.mindmap_url ? (isImageUrl(data.mindmap_url) ? `<img class="mindmap-img" src="${esc(data.mindmap_url)}" onclick="openMindmapViewer('${esc(data.mindmap_url).replace(/'/g,"\\'")}')"><div class="mindmap-hint">👆 Bấm vào ảnh để xem phóng to, zoom to/nhỏ cho dễ nhìn</div>` : `<a class="mindmap-link" href="${esc(data.mindmap_url)}" target="_blank" rel="noopener">Xem mindmap</a>`) : `<div class="empty">Mindmap sẽ được cập nhật sau.</div>`}
     </div>
-    <div class="card">
+    ${docs.length ? `<div class="card">
       <h2>📄 Tài liệu bài giảng</h2>
-      ${docs.length ? docs.map(d => `<a class="doc-btn" href="${esc(d.url)}" target="_blank" rel="noopener">⬇️ ${esc(d.label)}</a>`).join("") : `<div class="empty">Chưa có tài liệu cho bài này.</div>`}
-    </div>
+      ${docs.map(d => `<a class="doc-btn" href="${esc(d.url)}" target="_blank" rel="noopener">⬇️ ${esc(d.label)}</a>`).join("")}
+    </div>` : ""}
       <div class="card note-card">
         <h2>✍️ Ghi chú của bạn</h2>
         <label for="my-note" class="muted" style="display:block;margin-bottom:8px;">Tự tóm tắt ý chính, công thức hay chỗ dễ nhầm của bài này. Ghi chú được lưu trên trình duyệt của máy bạn đang dùng.</label>
@@ -2903,7 +3109,7 @@ async function startExamQuiz(){
 /* ================= Luyện theo dạng (tự đổi số) =================
    Mỗi môn có một file dạng bài riêng đặt cùng thư mục, ví dụ dang-bai-chuyenmon.js.
    File đó khai báo window.CCHN_DRILLS = { topics: [{ id, name, drills: [{ id, name, hint, gen }] }] }. */
-const DRILL_FILES = { "chuyen-mon": "dangbai-chuyen-mon.json", "chuyenmon": "dangbai-chuyen-mon.json" };
+const DRILL_FILES = { "chuyen-mon": "dangbai-chuyen-mon.json", "chuyenmon": "dangbai-chuyen-mon.json", "on-thi-phan-chuyen-mon-cchn": "dangbai-chuyen-mon.json" };
 function hasDrills(s){ return !!s && !!DRILL_FILES[String(s.slug).toLowerCase()]; }
 let drillEngineLoad = null;
 const drillDataCache = {};
@@ -2944,7 +3150,8 @@ function drMake(){
   }
   return null;
 }
-async function selectDrill(){
+async function selectDrill(opt){
+  opt = (opt && typeof opt === "object") ? opt : null;
   stopExamTimer();
   if(isExamLocked()){ openAccessModal(); return; }
   currentMode = "drill";
@@ -2961,7 +3168,8 @@ async function selectDrill(){
   }
   if(dr.data !== data) dr.cur = null;
   dr.data = data;
-  const last = (studyLoad("drillpos", {}) || {})[currentSubject.slug];
+  dr.from = opt ? opt.from : "";
+  const last = (opt && data.topics[opt.t]) ? opt : (studyLoad("drillpos", {}) || {})[currentSubject.slug];
   if(last && data.topics[last.t] && data.topics[last.t].drills[last.d]){ dr.t = last.t; dr.d = last.d; } else { dr.t = 0; dr.d = 0; }
   drNew();
 }
@@ -3019,6 +3227,7 @@ function renderDrill(){
   const letters = ["A", "B", "C", "D"];
   content.innerHTML = `
     <div class="card dr-card">
+      ${dr.from === "calc" ? `<button type="button" class="btn-secondary" style="margin-bottom:12px;" onclick="selectCalcPractice(true)">‹ Quay lại bài mẫu và bài tập</button>` : ""}
       <div class="dr-top">
         <div><h2>🎲 Luyện theo dạng</h2><p>Mỗi lần bấm “Bộ số khác” là một đề mới cùng dạng. Đúng 3 lần liên tiếp thì coi như đã thuộc dạng đó.</p></div>
         <div class="dr-stats">
@@ -3075,7 +3284,25 @@ document.addEventListener("keydown", (e) => {
 
 let calcCtx = { sections: [], sectionIdx: 0, groupIdx: 0, itemIdx: 0, answered: {}, entered: {}, selected: {} }; // key `${sectionIdx}-${groupIdx}-${itemIdx}`
 
-async function selectCalcPractice(){
+/* Ghép "khuôn đảo số" với dạng bài tập theo tên dạng (bỏ tiền tố "Dạng 1.2:", bỏ dấu, không phân biệt hoa thường) */
+function drillNameKey(t){ return String(t || "").replace(/^\s*Dạng\s*[\d.]+\s*[:.\-–]?\s*/i, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+let calcDrillMap = {};
+async function calcLoadDrillMap(){
+  calcDrillMap = {};
+  if(!hasDrills(currentSubject)) return;
+  const data = await loadDrills();
+  if(!data) return;
+  data.topics.forEach((t, ti) => t.drills.forEach((d, di) => { const k = drillNameKey(d.name); if(k && !calcDrillMap[k]) calcDrillMap[k] = { t: ti, d: di }; }));
+}
+function calcDrillBtn(group, big){
+  const m = group && calcDrillMap[drillNameKey(group.title)];
+  if(!m) return "";
+  return `<button type="button" class="${big ? "btn-primary" : "btn-secondary"} calc-drill-btn" onclick="openDrillFromCalc(${m.t},${m.d})">🎲 Luyện thêm với bộ số khác</button>`;
+}
+async function openDrillFromCalc(t, d){
+  await selectDrill({ t, d, from: "calc" });
+}
+async function selectCalcPractice(keep){
   stopExamTimer();
   if(isExamLocked()){ openAccessModal(); return; }
   currentMode = "calc";
@@ -3093,6 +3320,9 @@ async function selectCalcPractice(){
     calcGroupsCache[currentSubject.slug] = sections;
   }
   if(currentMode !== "calc") return; // người dùng đã bấm sang chỗ khác trong lúc chờ tải
+  await calcLoadDrillMap().catch(() => {});
+  if(currentMode !== "calc") return;
+  if(keep === true && calcCtx.sections === sections && sections.length){ renderCalcPractice(); return; }
 
   calcCtx = { sections, sectionIdx: 0, groupIdx: 0, itemIdx: 0, answered: {}, entered: {}, selected: {} };
   renderCalcPractice();
@@ -3172,6 +3402,7 @@ function renderCalcPractice(){
         </button>
       `).join("")}
     </div>
+    ${calcDrillBtn(group) ? `<div class="calc-drill-bar"><span>Dạng này có bộ đề tự đổi số để luyện đến khi thuộc cách giải.</span>${calcDrillBtn(group)}</div>` : ""}
   `;
 
   if(!items.length){
@@ -3189,7 +3420,7 @@ function renderCalcPractice(){
             <div class="big">✅</div>
             <h2 style="margin:0 0 8px;">Xong ${esc(group.title)}!</h2>
             <p class="muted">Sẵn sàng sang dạng tiếp theo chưa?</p>
-            <button class="btn-primary" style="margin-top:10px;" onclick="jumpToCalcGroup(${calcCtx.groupIdx+1})">Sang: ${esc(groups[calcCtx.groupIdx+1].title)} →</button>
+            <button class="${calcDrillBtn(group) ? "btn-secondary" : "btn-primary"}" style="margin-top:10px;" onclick="jumpToCalcGroup(${calcCtx.groupIdx+1})">Sang: ${esc(groups[calcCtx.groupIdx+1].title)} →</button>
           </div>
         </div>
       `;
