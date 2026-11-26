@@ -77,7 +77,7 @@
   .user-menu button:hover{background:var(--surface2);}
 
   /* ---------- Layout ---------- */
-  .layout{max-width:1180px;margin:0 auto;padding:28px 20px 10px;display:flex;gap:28px;align-items:flex-start;}
+  .layout{max-width:1180px;margin:0 auto;padding:20px 20px 10px;display:flex;gap:28px;align-items:flex-start;}
   .sidebar{flex:0 0 320px;min-width:0;}
   .content{flex:1 1 auto;min-width:0;max-width:760px;}
 
@@ -113,7 +113,15 @@
   /* ---------- Content cards ---------- */
   .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow);}
   .card h2{margin:0 0 14px;font-size:1.08rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;letter-spacing:-.01em;}
-  .video-wrap{position:relative;width:100%;padding-top:56.25%;border-radius:12px;overflow:hidden;background:#000;}
+  /* Video luôn vừa 1 màn hình: giới hạn chiều rộng theo chiều cao cửa sổ, giữ tỷ lệ 16:9 */
+  .video-wrap{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000;margin:0 auto;
+    max-width:max(320px, calc((100vh - 390px) * 16 / 9));max-width:max(320px, calc((100svh - 390px) * 16 / 9));}
+  body.focus-mode .video-wrap{max-width:max(320px, calc((100vh - 440px) * 16 / 9));max-width:max(320px, calc((100svh - 440px) * 16 / 9));}
+  .lesson-video{display:block;width:100%;border-radius:12px;background:#000;max-height:max(200px, calc(100vh - 390px));max-height:max(200px, calc(100svh - 390px));}
+  body.focus-mode .lesson-video{max-height:max(200px, calc(100svh - 440px));}
+  .video-item{margin-bottom:14px;}
+  .video-item:last-child{margin-bottom:0;}
+  .video-label{font-weight:600;font-size:.88rem;margin-bottom:6px;color:var(--muted);}
   .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;}
   .doc-btn{display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:48px;border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--text);background:var(--surface2);margin-bottom:8px;font-weight:600;font-size:.9rem;}
   .doc-btn:hover{border-color:var(--accent);}
@@ -242,29 +250,28 @@
   }
 
   /* ---------- Luyện tính toán chuyên sâu ---------- */
-  .calc-phan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:14px;}
-  .calc-phan-card{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;text-align:left;color:var(--text);}
+  /* Chọn phần: 1 hàng gọn, cuộn ngang nếu nhiều */
+  .calc-phan-grid{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin-bottom:10px;scrollbar-width:thin;}
+  .calc-phan-card{flex:none;display:flex;align-items:center;gap:10px;max-width:280px;min-height:52px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 14px 8px 8px;cursor:pointer;text-align:left;color:var(--text);}
   .calc-phan-card:hover{border-color:var(--line-strong);background:var(--surface2);}
-  .calc-phan-card .icon{width:36px;height:36px;border-radius:10px;background:var(--surface2);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex:none;}
-  .calc-phan-card .txt{line-height:1.3;}
-  .calc-phan-card .txt .num{font-size:.72rem;font-weight:700;color:var(--muted);}
-  .calc-phan-card .txt .ttl{font-weight:700;font-size:.88rem;color:var(--text);}
+  .calc-phan-card .icon{width:34px;height:34px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1rem;flex:none;}
+  .calc-phan-card .txt{line-height:1.25;min-width:0;}
+  .calc-phan-card .txt .num{display:block;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .calc-phan-card .txt .ttl{display:block;font-weight:700;font-size:.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .calc-phan-card.active{background:var(--accent-soft);border-color:var(--accent);}
-  .calc-phan-card.active .icon{background:var(--accent);color:var(--on-accent);}
+  .calc-phan-card.active .icon{background:var(--accent);}
   .calc-phan-card.active .txt .num{color:var(--accent-text);}
-  .calc-phan-card.active .txt .ttl{color:var(--text);}
-  .calc-phan-card.done .icon::after{content:"✓";margin-left:2px;}
+  .calc-phan-card.done .txt .num::after{content:" · ✓ xong";color:var(--ok);}
 
-  .calc-dang-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:16px;}
-  .calc-dang-tabs button{flex:none;min-width:92px;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);text-align:left;cursor:pointer;}
+  /* Chọn dạng: chip gọn, tên dài thì rút gọn (rê chuột xem đủ) */
+  .calc-dang-tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;margin-bottom:12px;scrollbar-width:thin;}
+  .calc-dang-tabs button{flex:none;display:flex;align-items:center;gap:8px;max-width:260px;min-height:40px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);text-align:left;cursor:pointer;}
   .calc-dang-tabs button:hover{background:var(--surface2);}
-  .calc-dang-tabs button .num{display:block;font-weight:800;color:var(--text);font-size:.85rem;}
-  .calc-dang-tabs button .lbl{display:block;font-size:.7rem;color:var(--muted);line-height:1.25;margin-top:1px;}
+  .calc-dang-tabs button .num{flex:none;font-weight:800;color:var(--text);font-size:.8rem;font-variant-numeric:tabular-nums;}
+  .calc-dang-tabs button .lbl{font-size:.8rem;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
   .calc-dang-tabs button.active{background:var(--accent-soft);border-color:var(--accent);}
-  .calc-dang-tabs button.active .num{color:var(--accent-text);}
-  .calc-dang-tabs button.active .lbl{color:var(--text);}
+  .calc-dang-tabs button.active .num,.calc-dang-tabs button.active .lbl{color:var(--accent-text);}
   .calc-dang-tabs button.done .num::after{content:" ✓";color:var(--ok);}
-  .calc-dang-tabs button.active.done .num::after{color:var(--ok);}
 
   .calc-main-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start;}
   @media (max-width:860px){ .calc-main-grid{grid-template-columns:1fr;} }
@@ -274,7 +281,12 @@
   .calc-q-nav{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);font-weight:600;}
   .calc-q-nav button{width:36px;height:36px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);font-weight:700;}
   .calc-q-nav button:disabled{opacity:.35;cursor:default;}
-  .calc-q-title{font-weight:800;font-size:1.15rem;margin:2px 0 14px;color:var(--text);}
+  .calc-q-title{font-weight:800;font-size:1.08rem;line-height:1.35;margin:4px 0 12px;color:var(--text);}
+  .calc-kind{display:inline-block;margin-left:6px;font-size:.74rem;font-weight:700;padding:4px 10px;border-radius:999px;vertical-align:middle;}
+  .calc-kind.sample{background:var(--warn-soft);color:var(--warn);}
+  .calc-kind.practice{background:var(--surface2);color:var(--muted);}
+  .calc-sample-note{font-size:.84rem;color:var(--muted);background:var(--surface2);border-radius:10px;padding:9px 12px;margin-top:12px;line-height:1.45;}
+  .calc-progress{font-size:.82rem;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
   .calc-sample-box{background:var(--surface2);border-radius:12px;padding:13px 15px;margin-bottom:16px;}
   .calc-sample-box .lbl{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--accent-text);font-size:.82rem;margin-bottom:6px;}
   .calc-sample-box .txt{line-height:1.6;font-size:.93rem;}
@@ -459,7 +471,7 @@
   .cccm-no{font-size:.74rem;font-weight:700;color:var(--muted);letter-spacing:.04em;}
 
   /* Các bước trong một bài học */
-  .lesson-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px;margin-bottom:16px;position:sticky;top:72px;z-index:6;box-shadow:var(--shadow);}
+  .lesson-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:5px;margin-bottom:12px;position:sticky;top:72px;z-index:6;box-shadow:var(--shadow);}
   .lesson-steps button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:6px 8px;border-radius:11px;background:transparent;color:var(--muted);font-weight:700;font-size:.88rem;}
   .lesson-steps button .n{width:24px;height:24px;border-radius:50%;background:var(--surface2);color:var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:.76rem;flex:none;}
   .lesson-steps button:hover{background:var(--surface2);color:var(--text);}
@@ -479,6 +491,46 @@
     .stage::before{display:none;}
     .stage-num{position:static;margin-bottom:8px;}
   }
+
+  /* ---------- Nhiệm vụ hôm nay / chuỗi ngày / ngày thi ---------- */
+  .today{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;margin:0 0 30px;}
+  @media (max-width:900px){ .today{grid-template-columns:1fr;} }
+  .today-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px 22px;box-shadow:var(--shadow);}
+  .today-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+  .today-ring{--p:0;width:58px;height:58px;border-radius:50%;flex:none;background:conic-gradient(var(--accent) calc(var(--p) * 1%), var(--surface2) 0);display:flex;align-items:center;justify-content:center;}
+  .today-ring span{width:46px;height:46px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.95rem;font-variant-numeric:tabular-nums;}
+  .today-ring.all{background:var(--ok);}
+  .today-head h3{margin:0;font-size:1.1rem;font-weight:800;}
+  .today-head p{margin:2px 0 0;color:var(--muted);font-size:.86rem;}
+  .task{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--text);text-align:left;margin-top:8px;cursor:pointer;font-weight:600;}
+  .task:hover{border-color:var(--accent);}
+  .task .tk{width:26px;height:26px;border-radius:50%;border:2px solid var(--line-strong);flex:none;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--surface);}
+  .task .tt{flex:1;min-width:0;line-height:1.35;}
+  .task .tt small{display:block;font-weight:500;color:var(--muted);font-size:.8rem;margin-top:1px;}
+  .task .go{color:var(--accent-text);font-weight:700;font-size:.84rem;flex:none;}
+  .task.done{background:var(--ok-soft);border-color:transparent;}
+  .task.done .tk{background:var(--ok);border-color:var(--ok);}
+  .task.done .tt{color:var(--muted);}
+  .task.done .go{color:var(--ok);}
+  .today-done{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--ok-soft);color:var(--ok);font-weight:700;font-size:.88rem;}
+  .side-stack{display:flex;flex-direction:column;gap:16px;}
+  .streak-big{display:flex;align-items:baseline;gap:8px;}
+  .streak-big b{font-size:2.2rem;font-weight:800;line-height:1;color:var(--cta);font-variant-numeric:tabular-nums;}
+  .streak-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:12px;}
+  .streak-week div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.7rem;color:var(--muted);font-weight:600;}
+  .streak-week i{width:100%;max-width:30px;height:30px;border-radius:9px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:.8rem;color:var(--surface);}
+  .streak-week i.on{background:var(--cta);}
+  .streak-week i.rest{background:transparent;border:2px dashed var(--line-strong);color:var(--muted);}
+  .streak-week .today i{outline:2px solid var(--accent);outline-offset:1px;}
+  .exam-cd b{font-size:1.8rem;font-weight:800;line-height:1.1;}
+  .exam-cd .row{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;}
+  .exam-cd input[type=date]{width:auto;flex:1;min-width:150px;padding:9px 10px;font-size:.9rem;}
+  .exam-cd button{min-height:42px;padding:8px 14px;}
+  .mini-label{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;}
+  .due-pill{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--warn-soft);color:var(--warn);}
+  .box-dots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:6px;}
+  .box-dots i{width:7px;height:7px;border-radius:50%;background:var(--line-strong);}
+  .box-dots i.on{background:var(--ok);}
 
   /* ---------- Góc học tập ---------- */
   .corner-head{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:var(--shadow);}
@@ -529,18 +581,106 @@
   .focus-toggle{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:.82rem;font-weight:700;}
   .focus-toggle:hover{border-color:var(--accent);color:var(--accent-text);}
   .focus-toggle svg,.focus-bar svg{width:16px;height:16px;flex:none;}
-  .focus-bar{display:none;align-items:center;gap:12px;margin-bottom:14px;}
-  .focus-bar .btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;min-height:42px;font-size:.86rem;}
+  .focus-bar{display:none;align-items:center;gap:12px;margin-bottom:10px;}
+  .focus-bar .btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;min-height:42px;font-size:.86rem;flex:none;white-space:nowrap;}
+  .focus-bar .focus-title{flex:1;}
   .focus-title{font-weight:800;color:var(--muted);font-size:.92rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   body.focus-mode .layout{max-width:1320px;}
   body.focus-mode .sidebar{display:none;}
   body.focus-mode .content{max-width:1180px;margin:0 auto;}
   body.focus-mode .focus-bar{display:flex;}
   body.focus-mode .qr-wrap{grid-template-columns:minmax(0,1fr) 280px;}
+  .fb-home{width:42px;padding:0 !important;justify-content:center;font-size:1.2rem !important;display:none !important;}
+  .fb-lbl-mob,.t-short{display:none;}
+  /* Máy tính: danh sách bài cố định bên trái, tự cuộn riêng để luôn thấy phần Ôn luyện / Tổng ôn */
+  @media (min-width:861px){
+    .sidebar{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto;padding:2px 8px 12px 2px;scrollbar-width:thin;}
+  }
   @media (max-width:860px){
     .focus-toggle{display:none;}
+    /* Điện thoại: đề cương thành bảng trượt lên từ dưới */
+    .sidebar{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:80vh;overflow-y:auto;background:var(--surface);border-radius:22px 22px 0 0;padding:12px 16px 28px;z-index:80;transform:translateY(105%);transition:transform .25s ease;box-shadow:0 -10px 40px rgba(0,0,0,.18);}
+    body.sheet-open .sidebar{transform:none;}
+    .sheet-backdrop{position:fixed;inset:0;background:var(--overlay);z-index:79;}
+    body.sheet-open .sheet-backdrop{display:block;}
+    .sheet-close{display:inline-flex !important;align-items:center;justify-content:center;width:40px;height:40px;padding:0;border-radius:50%;background:var(--surface2);color:var(--text);margin-left:auto;}
+    .lesson-steps button{flex-direction:row !important;gap:2px !important;font-size:.9rem !important;}
+    .side-top .back-home{display:none;}
     body.focus-mode .sidebar{display:block;}
-    body.focus-mode .focus-bar{display:none;}
+    /* Điện thoại: thanh nhỏ trên cùng để về trang chủ / mở danh sách bài nhanh */
+    .focus-bar,body.focus-mode .focus-bar{display:flex;position:sticky;top:62px;z-index:7;background:var(--bg);padding:6px 0;margin:-6px 0 8px;}
+    .fb-home{display:inline-flex !important;}
+    .fb-lbl-desk{display:none;}
+    .fb-lbl-mob{display:inline;}
+    .lesson-steps{top:118px;gap:18px;}
+    .qr-side,.exam-timer,.progress-bar{top:118px;}
+  }
+  @media (max-width:560px){
+    .t-full{display:none;}
+    .t-short{display:inline;}
+    .calc-dots{display:none;}
+    .calc-nav-row button{flex:1;white-space:nowrap;}
+    .calc-nav-ghost,.calc-nav-next{padding:12px 12px;}
+    .corner-avatar{width:48px;height:48px;font-size:1.2rem;border-radius:14px;}
+    .corner-head{padding:16px;gap:12px;}
+    .corner-head h2{font-size:1.12rem;}
+    .corner-head > .btn-secondary{width:100%;}
+    .home-stats{width:100%;}
+    .home-stat{flex:1;}
+    .calc-q-card,.calc-ans-card{padding:16px;}
+  }
+
+  /* ================= Trang học kiểu "đề cương" (hướng B) ================= */
+  .subject-desc,.subject-hours{display:none !important;}
+  .subject-title{font-size:1.12rem;line-height:1.35;margin:2px 0 10px;}
+  .outline-progress{margin:0 0 14px;}
+  .outline-progress .op-row{display:flex;justify-content:space-between;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:6px;}
+  .outline-progress .op-row b{color:var(--text);}
+  .outline-progress .op-bar{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;}
+  .outline-progress .op-bar i{display:block;height:100%;background:var(--accent);border-radius:3px;}
+  .outline-progress .op-link{display:inline-block;margin-top:8px;background:none;border:none;padding:0;min-height:0;color:var(--accent-text);font-weight:700;font-size:.8rem;cursor:pointer;}
+  .lesson-list{gap:2px;}
+  .lesson-list .side-group{margin:14px 6px 6px;}
+  .lesson-list .side-group:first-child{margin-top:4px;}
+  .ol-item{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:6px;width:100%;padding:10px;border-radius:10px;background:transparent;border:0;text-align:left;color:var(--text);font-size:.9rem;font-weight:500;cursor:pointer;min-height:44px;}
+  .ol-item:hover{background:var(--surface2);}
+  .ol-main{display:flex;align-items:center;gap:10px;width:100%;}
+  .ol-title{flex:1;min-width:0;line-height:1.35;}
+  .ol-meta{flex:none;font-size:.74rem;color:var(--faint);font-weight:600;}
+  .ol-dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--line-strong);box-sizing:border-box;flex:none;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:var(--muted);}
+  .ol-item.done .ol-dot{background:var(--ok);border-color:var(--ok);color:var(--surface);}
+  .ol-item.seen .ol-dot{border-color:var(--accent);}
+  .ol-item.locked{opacity:.6;}
+  .ol-item.active{background:var(--accent-soft);color:var(--accent-text);font-weight:700;}
+  .ol-item.active .ol-dot{border-color:var(--accent);border-width:2px;box-shadow:inset 0 0 0 4px var(--accent-soft);background:var(--accent);}
+  .ol-steps{display:none;gap:6px;padding-left:32px;font-size:.76rem;font-weight:600;color:var(--muted);}
+  .ol-item.active .ol-steps{display:flex;}
+  .ol-steps .s-done{color:var(--ok);}
+  .ol-steps .s-cur{color:var(--accent-text);}
+  .ol-item .ol-icon{width:22px;height:22px;flex:none;display:inline-flex;align-items:center;justify-content:center;font-size:.9rem;}
+  .ol-badge{flex:none;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--bad-soft);color:var(--bad);}
+  .focus-toggle{width:38px;height:38px;padding:0 !important;justify-content:center;}
+  .sheet-close,.sheet-backdrop{display:none;}
+
+  /* Nội dung bài: tab gạch chân, bỏ thẻ lồng nhau */
+  .content{max-width:880px;}
+  .lesson-steps{display:flex;gap:26px;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0;box-shadow:none;margin-bottom:20px;top:69px;background:var(--bg);}
+  .lesson-steps button{flex:none;min-height:46px;padding:10px 0 12px;border-radius:0;border-bottom:3px solid transparent;margin-bottom:-1px;background:transparent !important;color:var(--muted);font-size:.95rem;}
+  .lesson-steps button .n{display:none;}
+  .lesson-steps button.seen::before{content:"✓";color:var(--ok);margin-right:2px;}
+  .lesson-steps button.active{border-bottom-color:var(--accent);color:var(--accent-text);}
+  .lesson-steps button:hover{color:var(--text);}
+  #content [data-step] > .card{background:transparent;border:0;box-shadow:none;padding:0;margin-bottom:24px;border-radius:0;}
+  #content [data-step] > .card h2{font-size:1.15rem;}
+  #content [data-step="2"]{display:grid;grid-template-columns:minmax(0,1fr) 270px;column-gap:32px;align-items:start;}
+  #content [data-step="2"] > .card{grid-column:1;}
+  #content [data-step="2"] > .card.note-card{grid-column:2;grid-row:1 / span 3;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;}
+  #content [data-step="2"] > .card.note-card h2{font-size:.95rem;margin-bottom:8px;}
+  .note-card .note-area{min-height:220px;font-size:.9rem;background:var(--bg);}
+  .lesson-step-nav{border-top:1px solid var(--line);padding-top:16px;margin-top:8px;}
+  @media (max-width:1100px){
+    #content [data-step="2"]{display:block;}
+    #content [data-step="2"] > .card.note-card{margin-top:4px;}
   }
 
   .back-home{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-weight:600;font-size:.86rem;padding:4px 0;margin:0 0 12px;cursor:pointer;}
@@ -658,7 +798,7 @@
   <div class="topbar-left clickable" onclick="showHome()" title="Về trang chọn môn học">
     <div class="logo-icon"><span></span><span></span><span></span><span></span></div>
     <div>
-      <h1>Hệ thống ôn luyện Chứng chỉ Hành nghề</h1>
+      <h1><span class="t-full">Hệ thống ôn luyện Chứng chỉ Hành nghề</span><span class="t-short">Ôn luyện CCHN</span></h1>
       <p>Chọn môn học để bắt đầu ôn tập</p>
     </div>
   </div>
@@ -687,26 +827,28 @@
 <div class="home-view" id="home-view" style="display:none;"></div>
 
 <div class="layout" id="study-view">
+  <div class="sheet-backdrop" onclick="closeLessonSheet()"></div>
   <aside class="sidebar">
     <div class="side-top">
       <button type="button" class="back-home" onclick="showHome()">‹ Tất cả môn học</button>
-      <button type="button" class="focus-toggle" onclick="setFocusMode(true)" title="Ẩn danh sách bài để xem bài giảng toàn màn hình">
+      <button type="button" class="focus-toggle" onclick="setFocusMode(true)" title="Ẩn đề cương để xem bài toàn màn hình" aria-label="Toàn màn hình">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
-        Toàn màn hình
       </button>
+      <button type="button" class="sheet-close" onclick="closeLessonSheet()" aria-label="Đóng đề cương">✕</button>
     </div>
     <div class="subject-tabs" id="subject-tabs" style="display:none;"></div>
     <div class="subject-title" id="subject-title">Đang tải...</div>
     <div class="subject-desc" id="subject-desc"></div>
-    <button type="button" class="intro-link" onclick="showSubjectIntro(currentSubject.slug)">Xem lộ trình môn học ›</button>
+    <div class="outline-progress" id="outline-progress"></div>
     <div class="subject-hours" id="subject-hours" style="display:none;"></div>
     <div class="lesson-list" id="lesson-list"></div>
   </aside>
   <div class="content">
     <div class="focus-bar" id="focus-bar">
-      <button type="button" class="btn-secondary" onclick="setFocusMode(false)">
+      <button type="button" class="btn-secondary fb-home" onclick="showHome()" aria-label="Về tất cả môn học">‹</button>
+      <button type="button" class="btn-secondary" onclick="openLessonList()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        Hiện danh sách bài
+        <span class="fb-lbl-desk">Hiện danh sách bài</span><span class="fb-lbl-mob">Danh sách bài</span>
       </button>
       <span class="focus-title" id="focus-title"></span>
     </div>
@@ -864,10 +1006,10 @@ function mindmapZoomReset(){
 function renderVideoBlock(v){
   const embedUrl = videoEmbedUrl(v.url);
   if(embedUrl){
-    return `<div style="margin-bottom:14px;"><div style="font-weight:600;font-size:.88rem;margin-bottom:6px;">${esc(v.label||"Video")}</div><div class="video-wrap"><iframe src="${embedUrl}" allowfullscreen></iframe></div></div>`;
+    return `<div class="video-item"><div class="video-label">${esc(v.label||"Video")}</div><div class="video-wrap"><iframe src="${embedUrl}" allowfullscreen></iframe></div></div>`;
   }
   if(isVideoFileUrl(v.url)){
-    return `<div style="margin-bottom:14px;"><div style="font-weight:600;font-size:.88rem;margin-bottom:6px;">${esc(v.label||"Video")}</div><video controls style="width:100%;border-radius:8px;background:#000;"><source src="${esc(v.url)}"></video></div>`;
+    return `<div class="video-item"><div class="video-label">${esc(v.label||"Video")}</div><video controls class="lesson-video"><source src="${esc(v.url)}"></video></div>`;
   }
   return `<a class="doc-btn" href="${esc(v.url)}" target="_blank" rel="noopener">▶️ ${esc(v.label||"Video")}</a>`;
 }
@@ -1317,45 +1459,80 @@ function renderSubjectHours(){
   }
 }
 
+function lessonStatus(subjectSlug){
+  const visited = (studyLoad("visited", {})[subjectSlug]) || [];
+  const done = (studyLoad("done", {})[subjectSlug]) || [];
+  return { visited, done };
+}
+function renderOutlineProgress(){
+  const s = currentSubject; const el = document.getElementById("outline-progress");
+  if(!el || !s) return;
+  const st = lessonStatus(s.slug);
+  const n = s.lessons.length;
+  const nDone = s.lessons.filter(l => st.done.includes(l.slug)).length;
+  const pct = n ? Math.round(nDone / n * 100) : 0;
+  el.innerHTML = n ? `<div class="op-row"><span>Tiến độ môn</span><b>${nDone}/${n} bài</b></div><div class="op-bar"><i style="width:${pct}%"></i></div>
+    <button type="button" class="op-link" onclick="closeLessonSheet();showSubjectIntro(currentSubject.slug)">Giới thiệu môn học ›</button>` : "";
+}
 function renderSidebarForSubject(){
   const s = currentSubject;
-  document.getElementById("subject-title").innerText = s.title;
+  document.getElementById("subject-title").innerText = (catalogForSubject(s) || s).title;
   document.getElementById("subject-desc").innerText = s.description || "";
   renderSubjectHours();
+  renderOutlineProgress();
   const listEl = document.getElementById("lesson-list");
   if(!s.lessons.length && !s.has_mock_exam){
     listEl.innerHTML = `<div class="empty">Chưa có bài học nào.</div>`;
     return;
   }
+  const st = lessonStatus(s.slug);
+  const bank = isLoggedIn() ? studyLoad("wrong", {}) : {};
+  const nWrong = Object.values(bank).filter(w => w.subject === s.slug).length;
+  const nDueSubj = isLoggedIn() ? srsDue(s.slug).length : 0;
+  const hasCalc = calcGroupsCache[s.slug] && calcGroupsCache[s.slug].length;
+  const lockMeta = `<span class="ol-meta">🔒</span>`;
   listEl.innerHTML = `
     ${s.lessons.length ? `<div class="side-group">Bài học</div>` : ""}
     ${s.lessons.map((l,i) => {
       const locked = isLessonLocked(i);
+      const done = st.done.includes(l.slug), seen = st.visited.includes(l.slug);
+      const cls = `${locked ? "locked" : ""} ${done ? "done" : seen ? "seen" : ""}`;
       return `
-      <div class="lesson-item ${locked ? "locked" : ""}" data-slug="${esc(l.slug)}" onclick="${locked ? "openAccessModal()" : `selectLesson('${l.slug.replace(/'/g,"\\'")}')`}">
-        <span><span class="badge-num">${i+1}</span><span class="name">${esc(l.title)}${locked ? `<span class="lock-ic">🔒</span>` : ""}</span></span>
-        <span class="arrow">›</span>
-      </div>
-    `;}).join("")}
-    ${(calcGroupsCache[s.slug] && calcGroupsCache[s.slug].length) ? (() => { const locked = isExamLocked(); return `
-      <div class="side-group">Ôn luyện</div>
-      <div class="lesson-item calc-item ${locked ? "locked" : ""}" data-calc="1" onclick="${locked ? "openAccessModal()" : "selectCalcPractice()"}">
-        <span><span class="badge-num">🧮</span><span class="name">Luyện tính toán chuyên sâu${locked ? `<span class="lock-ic">🔒</span>` : ""}<span class="sub">(làm mẫu rồi tự giải từng dạng)</span></span></span>
-        <span class="arrow">›</span>
-      </div>
-    `; })() : ""}
+      <button type="button" class="ol-item lesson-item ${cls}" data-slug="${esc(l.slug)}" onclick="${locked ? "openAccessModal()" : `closeLessonSheet();selectLesson('${l.slug.replace(/'/g,"\\'")}')`}">
+        <span class="ol-main"><span class="ol-dot">${done ? "✓" : ""}</span><span class="ol-title">${esc(l.title)}</span>${locked ? lockMeta : ""}</span>
+        <span class="ol-steps" data-steps="1"></span>
+      </button>`;}).join("")}
+    ${(nWrong || hasCalc || s.has_mock_exam) ? `<div class="side-group">Luyện tập</div>` : ""}
+    ${nWrong ? `<button type="button" class="ol-item" onclick="closeLessonSheet();startWrongReview('${s.slug.replace(/'/g,"\\'")}')"><span class="ol-main"><span class="ol-icon">🎯</span><span class="ol-title">Ôn câu sai</span><span class="ol-badge" title="${nDueSubj} câu đến hạn / ${nWrong} câu">${nDueSubj ? nDueSubj + " đến hạn" : nWrong}</span></span></button>` : ""}
+    ${hasCalc ? (() => { const locked = isExamLocked(); return `
+      <button type="button" class="ol-item lesson-item calc-item ${locked ? "locked" : ""}" data-calc="1" onclick="${locked ? "openAccessModal()" : "closeLessonSheet();selectCalcPractice()"}">
+        <span class="ol-main"><span class="ol-icon">🧮</span><span class="ol-title">Luyện tính toán</span>${locked ? lockMeta : ""}</span>
+      </button>`; })() : ""}
     ${s.has_mock_exam ? (() => { const locked = isExamLocked(); return `
-      <div class="side-group">Tổng ôn</div>
-      <div class="lesson-item exam-item ${locked ? "locked" : ""}" data-exam="1" onclick="${locked ? "openAccessModal()" : "selectExam()"}">
-        <span><span class="badge-num">★</span><span class="name">${esc(s.mock_exam_title)}${locked ? `<span class="lock-ic">🔒</span>` : ""}<span class="sub">(đề thi thử ${s.mock_exam_count} câu lấy ngẫu nhiên)</span></span></span>
-        <span class="arrow">›</span>
-      </div>
-    `; })() : ""}
+      <button type="button" class="ol-item lesson-item exam-item ${locked ? "locked" : ""}" data-exam="1" onclick="${locked ? "openAccessModal()" : "closeLessonSheet();selectExam()"}">
+        <span class="ol-main"><span class="ol-icon">★</span><span class="ol-title">${esc(s.mock_exam_title || "Thi thử")}</span><span class="ol-meta">${s.mock_exam_count} câu</span>${locked ? lockMeta : ""}</span>
+      </button>`; })() : ""}
   `;
+  updateSideSteps();
 }
+/* Hiện 3 bước (Video · Ghi chú · Bài tập) ngay dưới bài đang học trong đề cương */
+function updateSideSteps(){
+  document.querySelectorAll(".ol-steps").forEach(el => el.innerHTML = "");
+  if(currentMode !== "lesson" || !currentLessonSlug) return;
+  const item = document.querySelector(`.ol-item[data-slug="${CSS.escape(currentLessonSlug)}"] .ol-steps`);
+  if(!item) return;
+  const names = ["Video", "Ghi chú", "Bài tập"];
+  item.innerHTML = names.map((n, i) => {
+    const k = i + 1;
+    const cls = k < lessonStep ? "s-done" : k === lessonStep ? "s-cur" : "";
+    return `<span class="${cls}">${k < lessonStep ? "✓ " : ""}${n}</span>`;
+  }).join("<span>·</span>");
+}
+function closeLessonSheet(){ document.body.classList.remove("sheet-open"); }
 
 function updateActiveStates(){
   setTimeout(updateFocusTitle, 0);
+  setTimeout(updateSideSteps, 0);
   document.querySelectorAll(".lesson-item").forEach(el => {
     if(el.dataset.exam){
       el.classList.toggle("active", currentMode === "exam");
@@ -1522,7 +1699,7 @@ function courseCardHtml(c, s, i){
 }
 function renderHome(){
   const el = document.getElementById("home-view");
-  const name = (currentStudent && currentStudent.full_name) || displayName || "";
+  const name = displayName || (currentStudent && currentStudent.full_name) || "";
   const route = getChosenRoute();
   const totalLessons = allSubjects.reduce((n, s) => n + s.lessons.length, 0);
   const totalHours = allSubjects.reduce((n, s) => n + (Number(subjectHoursCache[s.slug]) || 0), 0);
@@ -1578,6 +1755,7 @@ function renderHome(){
         <h2>${route ? `Tiếp tục lộ trình <span class="hl">${esc(route.title)}</span>` : `Bạn muốn thi <span class="hl">chứng chỉ nào?</span>`}</h2>
         <p>${route ? "Học lần lượt từng môn theo giai đoạn: xem video, ghi chú, làm bài, ôn luyện rồi tổng ôn." : "Chọn một lộ trình bên dưới, hệ thống sẽ sắp xếp các môn cần học theo đúng thứ tự cho bạn."}</p>
         ${isLoggedIn() ? `<button type="button" class="btn-secondary corner-btn" style="margin-top:14px;" onclick="showCorner()">📚 Góc học tập của tôi</button>` : ""}
+        ${!isLoggedIn() ? `<button type="button" class="btn-primary" style="margin-top:14px;" onclick="openAuth('Đăng nhập để nhận nhiệm vụ học mỗi ngày và lưu tiến độ.')">Đăng nhập để bắt đầu</button>` : ""}
       </div>
       <div class="home-stats">
         <div class="home-stat"><b>${allSubjects.length}</b><span>môn đã có bài</span></div>
@@ -1585,6 +1763,7 @@ function renderHome(){
         ${hoursTxt ? `<div class="home-stat"><b>${hoursTxt}</b><span>giờ video</span></div>` : ""}
       </div>
     </section>
+    ${todayHtml()}
     ${route ? "" : `<h3 class="home-section-title">Chọn lộ trình</h3>`}
     ${route ? "" : pickHtml}
     ${routeHtml}
@@ -1716,6 +1895,188 @@ setInterval(() => {
 let lastUserActivity = Date.now();
 ["click", "keydown", "scroll", "touchstart", "mousemove"].forEach(ev => document.addEventListener(ev, () => { lastUserActivity = Date.now(); }, { passive: true }));
 
+/* ================= Ôn giãn cách (Leitner) =================
+   Câu sai → ô 0, đến hạn ôn từ ngày mai. Ôn đúng → lên ô tiếp theo, giãn 1 → 3 → 7 ngày.
+   Đúng ở ô cuối → coi như đã thuộc, rời danh sách. Sai bất kỳ lúc nào → về ô 0. */
+const SRS_GAP_DAYS = [1, 3, 7];
+const DAY_MS = 86400000;
+function startOfDay(t){ const d = new Date(t || Date.now()); d.setHours(0,0,0,0); return d.getTime(); }
+function srsNormalize(w){
+  if(typeof w.box !== "number"){ w.box = 0; w.due = startOfDay(); }
+  if(typeof w.due !== "number") w.due = startOfDay();
+  return w;
+}
+function srsAll(){ const bank = studyLoad("wrong", {}); return Object.values(bank).map(srsNormalize); }
+function srsDue(subject){
+  const now = Date.now();
+  return srsAll().filter(w => w.due <= now && (!subject || w.subject === subject));
+}
+function srsNextDueText(){
+  const future = srsAll().filter(w => w.due > Date.now()).sort((a, b) => a.due - b.due);
+  if(!future.length) return "";
+  const days = Math.round((startOfDay(future[0].due) - startOfDay()) / DAY_MS);
+  const n = future.filter(w => startOfDay(w.due) === startOfDay(future[0].due)).length;
+  return `${n} câu đến hạn ${days <= 1 ? "ngày mai" : "sau " + days + " ngày"}`;
+}
+
+/* ================= Nhật ký học theo ngày ================= */
+function dayLog(d){ const all = studyLoad("daylog", {}); return all[d || todayStr()] || {}; }
+function bumpDay(field, n){
+  if(!isLoggedIn()) return;
+  const all = studyLoad("daylog", {});
+  const k = todayStr();
+  all[k] = all[k] || {};
+  all[k][field] = (all[k][field] || 0) + (n || 1);
+  // giữ 120 ngày gần nhất
+  Object.keys(all).sort().slice(0, -120).forEach(x => delete all[x]);
+  studySave("daylog", all);
+}
+function dayStudySeconds(k){ const time = studyLoad("time", {}); return Object.values(time[k] || {}).reduce((a, b) => a + b, 0); }
+function isStudyDay(k){
+  const l = studyLoad("daylog", {})[k] || {};
+  return dayStudySeconds(k) >= 5 * 60 || (l.quiz || 0) > 0 || (l.review || 0) >= 5 || (l.step || 0) > 0;
+}
+/* Chuỗi ngày học: được nghỉ tối đa 1 ngày trong mỗi 7 ngày mà không mất chuỗi */
+function calcStreak(){
+  const days = [];
+  const today = new Date();
+  for(let i = 0; i < 400; i++){ const d = new Date(today); d.setDate(today.getDate() - i); days.push(todayStr(d)); }
+  let streak = 0, rests = [], i = isStudyDay(days[0]) ? 0 : 1; // hôm nay chưa học thì tính từ hôm qua
+  for(; i < days.length; i++){
+    if(isStudyDay(days[i])){ streak++; continue; }
+    const recentRest = rests.some(r => r - i < 7 && i - r < 7);
+    if(streak > 0 && !recentRest){ rests.push(i); continue; }
+    break;
+  }
+  // bỏ ngày nghỉ ở cuối chuỗi
+  return { streak, todayDone: isStudyDay(days[0]) };
+}
+function weekStrip(){
+  const out = [];
+  const now = new Date();
+  for(let i = 6; i >= 0; i--){
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    const k = todayStr(d);
+    out.push({ k, label: ["CN","T2","T3","T4","T5","T6","T7"][d.getDay()], on: isStudyDay(k), today: i === 0 });
+  }
+  // đánh dấu ngày nghỉ được phép (1 ngày trống nằm giữa 2 ngày học)
+  out.forEach((x, i) => { if(!x.on && !x.today && i > 0 && i < 6 && out[i-1].on && out[i+1].on) x.rest = true; });
+  return out;
+}
+
+/* ================= Nhiệm vụ hôm nay ================= */
+function nextLessonTarget(){
+  // ưu tiên môn đang học dở, theo lộ trình đã chọn
+  const route = getChosenRoute();
+  const order = [];
+  if(route) route.stages.forEach(st => st.items.forEach(k => { const c = catalogItem(k); const s = c && subjectForCatalog(c); if(s && !order.includes(s)) order.push(s); }));
+  allSubjects.forEach(s => { if(!order.includes(s)) order.push(s); });
+  const doneMap = studyLoad("done", {});
+  let best = null;
+  for(const s of order){
+    const last = getLastLesson(s);
+    if(last && !(doneMap[s.slug] || []).includes(last.lesson.slug)) return { s, idx: last.idx, lesson: last.lesson, resume: true };
+    if(!best){
+      const idx = s.lessons.findIndex(l => !(doneMap[s.slug] || []).includes(l.slug));
+      if(idx >= 0 && !isLessonLockedFor(s, idx)) best = { s, idx, lesson: s.lessons[idx], resume: false };
+    }
+  }
+  return best;
+}
+function isLessonLockedFor(s, idx){
+  const prev = currentSubject; currentSubject = s;
+  let r = false; try{ r = isLessonLocked(idx); }catch(e){}
+  currentSubject = prev; return r;
+}
+function todayTasks(){
+  const log = dayLog();
+  const tasks = [];
+  const t = nextLessonTarget();
+  if(t){
+    const sq = t.s.slug.replace(/'/g, "\\'"), lq = t.lesson.slug.replace(/'/g, "\\'");
+    tasks.push({ done: (log.step || 0) > 0 || (log.lessonQuiz || 0) > 0, title: `${t.resume ? "Học tiếp" : "Học"} ${lessonLabel({ idx: t.idx, lesson: t.lesson })}`, sub: subjectTitleBySlug(t.s.slug), go: `enterSubject('${sq}','lesson','${lq}')`, cta: "Học" });
+  }
+  const due = srsDue().length;
+  const reviewed = log.review || 0;
+  const goal = Math.min(10, due + reviewed);
+  if(goal > 0){
+    tasks.push({ done: reviewed >= goal, title: `Ôn ${goal} câu đến hạn`, sub: reviewed >= goal ? `Đã ôn ${reviewed} câu hôm nay` : `Đã ôn ${reviewed}/${goal} · nhắc lại đúng lúc sắp quên`, go: "startWrongReview()", cta: "Ôn" });
+  } else {
+    tasks.push({ done: (log.quiz || 0) > 0, title: "Làm 1 bài tập bất kỳ", sub: "Quiz cuối bài, luyện tính toán hoặc thi thử", go: t ? `enterSubject('${t.s.slug.replace(/'/g, "\\'")}','lesson','${t.lesson.slug.replace(/'/g, "\\'")}')` : "showHome()", cta: "Làm" });
+  }
+  const mins = Math.floor(dayStudySeconds(todayStr()) / 60);
+  tasks.push({ done: mins >= 15, title: "Học đủ 15 phút", sub: `Hôm nay: ${mins} phút`, go: t ? `enterSubject('${t.s.slug.replace(/'/g, "\\'")}')` : "showHome()", cta: "Tiếp" });
+  return tasks;
+}
+function examDateInfo(){
+  const v = studyLoad("examdate", null);
+  if(!v) return null;
+  const days = Math.ceil((new Date(v + "T00:00:00").getTime() - startOfDay()) / DAY_MS);
+  return { date: v, days };
+}
+function saveExamDate(){
+  const el = document.getElementById("exam-date-input");
+  if(!el || !el.value) return;
+  studySave("examdate", el.value);
+  renderHome();
+}
+function clearExamDate(){ try{ localStorage.removeItem(studyKey("examdate")); }catch(e){} renderHome(); }
+function examPlanText(info){
+  if(!info || info.days <= 0) return "";
+  const route = getChosenRoute();
+  const doneMap = studyLoad("done", {});
+  let remain = 0;
+  const subs = route ? route.stages.flatMap(st => st.items).map(k => { const c = catalogItem(k); return c && subjectForCatalog(c); }).filter(Boolean) : allSubjects;
+  [...new Set(subs)].forEach(s => { remain += s.lessons.filter(l => !(doneMap[s.slug] || []).includes(l.slug)).length; });
+  if(!remain) return "Bạn đã học hết bài, giờ tập trung ôn câu sai và thi thử.";
+  const perDay = remain / info.days;
+  return perDay <= 1 ? `Còn ${remain} bài · khoảng ${Math.max(1, Math.round(info.days / remain))} ngày học 1 bài là kịp, dành thời gian còn lại để ôn.` : `Còn ${remain} bài · mỗi ngày nên học khoảng ${Math.ceil(perDay)} bài.`;
+}
+function todayHtml(){
+  if(!isLoggedIn()) return "";
+  const tasks = todayTasks();
+  const nDone = tasks.filter(t => t.done).length;
+  const pct = Math.round(nDone / tasks.length * 100);
+  const { streak, todayDone } = calcStreak();
+  const week = weekStrip();
+  const ex = examDateInfo();
+  const nextDue = srsNextDueText();
+  return `
+  <section class="today" aria-label="Hôm nay">
+    <div class="today-card">
+      <div class="today-head">
+        <div class="today-ring ${nDone === tasks.length ? "all" : ""}" style="--p:${pct}"><span>${nDone}/${tasks.length}</span></div>
+        <div><h3>Nhiệm vụ hôm nay</h3><p>Khoảng 20 phút là xong. Học đều mỗi ngày hiệu quả hơn học dồn.</p></div>
+      </div>
+      ${tasks.map(t => `<button type="button" class="task ${t.done ? "done" : ""}" onclick="${t.go}">
+        <span class="tk">${t.done ? "✓" : ""}</span>
+        <span class="tt">${esc(t.title)}<small>${esc(t.sub)}</small></span>
+        <span class="go">${t.done ? "Xong" : t.cta + " ›"}</span></button>`).join("")}
+      ${nDone === tasks.length ? `<div class="today-done">Tuyệt vời, bạn đã xong nhiệm vụ hôm nay! Nghỉ ngơi hoặc làm thêm nếu muốn.</div>` : ""}
+      ${nextDue && !srsDue().length ? `<p class="muted" style="margin:10px 2px 0;">Ôn câu sai: ${esc(nextDue)}.</p>` : ""}
+    </div>
+    <div class="side-stack">
+      <div class="today-card">
+        <div class="mini-label">Chuỗi ngày học</div>
+        <div class="streak-big"><b>${streak}</b><span class="muted">ngày${todayDone ? "" : streak ? " · học hôm nay để giữ chuỗi" : ""}</span></div>
+        <div class="streak-week">${week.map(d => `<div class="${d.today ? "today" : ""}"><i class="${d.on ? "on" : d.rest ? "rest" : ""}">${d.on ? "✓" : ""}</i>${d.label}</div>`).join("")}</div>
+        <p class="muted" style="margin:10px 0 0;font-size:.8rem;">Được nghỉ 1 ngày mỗi tuần mà không mất chuỗi.</p>
+      </div>
+      <div class="today-card exam-cd">
+        <div class="mini-label">Ngày thi</div>
+        ${ex && ex.days >= 0 ? `
+          <b>${ex.days === 0 ? "Hôm nay thi!" : "Còn " + ex.days + " ngày"}</b>
+          <p class="muted" style="margin:6px 0 0;">${esc(examPlanText(ex))}</p>
+          <div class="row"><span class="muted">${ex.date.split("-").reverse().join("/")}</span><button type="button" class="btn-secondary" onclick="clearExamDate()">Đổi ngày</button></div>
+        ` : `
+          <p class="muted" style="margin:0;">Đặt ngày thi để hệ thống chia nhịp học cho bạn.</p>
+          <div class="row"><label for="exam-date-input" class="sr-only" style="position:absolute;left:-9999px;">Ngày thi dự kiến</label><input type="date" id="exam-date-input" min="${todayStr()}"><button type="button" class="btn-primary" onclick="saveExamDate()">Lưu</button></div>
+        `}
+      </div>
+    </div>
+  </section>`;
+}
+
 function recordLessonVisit(subjectSlug, lessonSlug){
   if(!isLoggedIn()) return;
   const v = studyLoad("visited", {});
@@ -1728,6 +2089,13 @@ function recordQuizResult(){
   if(!isLoggedIn() || !qr) return;
   const qs = quizCtx.questions;
   const subj = currentSubject ? currentSubject.slug : "";
+  if(currentMode === "lesson" && currentLessonSlug && currentSubject){
+    const done = studyLoad("done", {});
+    done[subj] = done[subj] || [];
+    if(!done[subj].includes(currentLessonSlug)) done[subj].push(currentLessonSlug);
+    studySave("done", done);
+    setTimeout(() => { renderSidebarForSubject(); updateActiveStates(); }, 0);
+  }
   if(currentMode !== "review"){
     const hist = studyLoad("hist", []);
     const lesson = currentLessonSlug && currentSubject ? currentSubject.lessons.find(l => l.slug === currentLessonSlug) : null;
@@ -1735,17 +2103,33 @@ function recordQuizResult(){
     studySave("hist", hist.slice(0, 100));
   }
   const bank = studyLoad("wrong", {});
+  let mastered = 0;
   qs.forEach(q => {
     const st = qr.results[q.id];
     const key = String(q.id);
-    if(st === "correct"){ if(bank[key]) delete bank[key]; return; }
+    const prev = bank[key] ? srsNormalize(bank[key]) : null;
+    if(st === "correct"){
+      if(!prev) return;
+      // chỉ lên ô khi câu đã đến hạn (ôn đúng lúc), tránh ôn dồn trong một ngày
+      if(prev.due > Date.now()) return;
+      if(prev.box >= SRS_GAP_DAYS.length - 1){ delete bank[key]; mastered++; return; }
+      prev.box += 1;
+      prev.due = startOfDay() + SRS_GAP_DAYS[prev.box] * DAY_MS;
+      prev.last = Date.now();
+      return;
+    }
     if(st === "blank" && currentMode === "review") return;
-    const prev = bank[key];
     bank[key] = {
       q: { id: q.id, question: q.question, option_a: q.option_a, option_b: q.option_b, option_c: q.option_c, option_d: q.option_d, correct_answer: q.correct_answer, explanation: q.explanation, topic: q.topic },
-      subject: prev ? prev.subject : (q.__subject || subj), times: (prev ? prev.times : 0) + 1, last: Date.now()
+      subject: prev ? prev.subject : (q.__subject || subj), times: (prev ? prev.times : 0) + 1, last: Date.now(),
+      box: 0, due: startOfDay() + SRS_GAP_DAYS[0] * DAY_MS
     };
   });
+  if(mastered){ const st = studyLoad("stats", {}); st.mastered = (st.mastered || 0) + mastered; studySave("stats", st); }
+  // nhật ký ngày
+  if(currentMode === "review") bumpDay("review", qs.filter(q => qr.results[q.id] !== "blank").length);
+  else bumpDay("quiz");
+  if(currentMode === "lesson") bumpDay("lessonQuiz");
   // giới hạn 300 câu gần nhất
   const keys = Object.keys(bank).sort((a, b) => bank[b].last - bank[a].last);
   keys.slice(300).forEach(k => delete bank[k]);
@@ -1835,6 +2219,7 @@ function renderCorner(){
       <div class="corner-stat"><b>${hist.length}</b><span>Lần làm bài</span></div>
       <div class="corner-stat"><b>${avg === null ? "—" : avg + "%"}</b><span>Tỷ lệ đúng trung bình</span></div>
       <div class="corner-stat"><b style="color:var(--bad);">${wrongArr.length}</b><span>Câu cần ôn lại</span></div>
+      <div class="corner-stat"><b style="color:var(--cta);">${calcStreak().streak}</b><span>Ngày học liên tiếp</span></div>
     </div>
     <div class="corner-grid">
       <div>
@@ -1861,12 +2246,12 @@ function renderCorner(){
         <div class="card">
           <h2>🎯 Câu hay sai</h2>
           ${wrongArr.length ? `
-            <div class="wrong-sum"><div><b>${wrongArr.length}</b> <span class="muted">câu cần ôn lại</span></div>
-              <button type="button" class="btn-primary" onclick="startWrongReview()">Ôn lại câu sai</button></div>
+            <div class="wrong-sum"><div><b>${wrongArr.length}</b> <span class="muted">câu cần ôn lại</span> ${srsDue().length ? `<span class="due-pill">${srsDue().length} câu đến hạn hôm nay</span>` : ""}</div>
+              <button type="button" class="btn-primary" onclick="startWrongReview()">${srsDue().length ? "Ôn câu đến hạn" : "Ôn thêm"}</button></div>
             <div class="muted" style="margin-bottom:6px;">${Object.entries(bySubj).map(([k, n]) => `${esc(subjectTitleBySlug(k))}: ${n} câu`).join(" · ")}</div>
-            <div class="wrong-list">${wrongArr.slice(0, 5).map(w => `<div class="wrong-item">${esc(w.q.question)}<div class="src"><span>${esc(subjectTitleBySlug(w.subject))}</span><span class="times">Sai ${w.times} lần</span></div></div>`).join("")}</div>
+            <div class="wrong-list">${wrongArr.slice(0, 5).map(w => `<div class="wrong-item">${esc(w.q.question)}<div class="src"><span>${esc(subjectTitleBySlug(w.subject))}</span><span class="times">Sai ${w.times} lần<span class="box-dots" title="Mức thuộc">${[0,1,2].map(i => `<i class="${(srsNormalize(w).box) > i ? "on" : ""}"></i>`).join("")}</span></span></div></div>`).join("")}</div>
             ${wrongArr.length > 5 ? `<p class="muted" style="margin:10px 0 0;">và ${wrongArr.length - 5} câu khác.</p>` : ""}
-            <p class="muted" style="margin:10px 0 0;">Khi ôn lại, câu nào bạn làm đúng sẽ tự rời khỏi danh sách.</p>
+            <p class="muted" style="margin:10px 0 0;">Câu sai được nhắc lại sau 1, 3 rồi 7 ngày. Làm đúng đủ 3 lần đúng hạn là đã thuộc và rời danh sách.${(studyLoad("stats", {}).mastered || 0) ? ` Bạn đã thuộc ${studyLoad("stats", {}).mastered} câu.` : ""}</p>
           ` : `<div class="empty">Chưa có câu sai nào. Các câu bạn làm sai trong quiz và thi thử sẽ tự được gom về đây để ôn lại.</div>`}
         </div>
         <div class="card">
@@ -1877,10 +2262,15 @@ function renderCorner(){
     </div>
   `;
 }
-function startWrongReview(){
-  const bank = studyLoad("wrong", {});
-  const arr = Object.values(bank).sort((a, b) => (b.times - a.times) || (b.last - a.last)).slice(0, 50);
-  if(!arr.length) return renderCorner();
+function startWrongReview(onlySubject){
+  const subj = typeof onlySubject === "string" ? onlySubject : null;
+  let pool = srsDue(subj);
+  let label = "câu đến hạn";
+  if(!pool.length){ pool = srsAll().filter(w => !subj || w.subject === subj); label = "câu sai (ôn thêm, chưa đến hạn)"; }
+  const arr = pool.sort((a, b) => (a.box - b.box) || (b.times - a.times) || (a.due - b.due)).slice(0, 20);
+  if(!arr.length) return showCorner();
+  stopExamTimer();
+  setStudyVisible(false);
   quizCtx.questions = arr.map(w => ({ ...w.q, __subject: w.subject }));
   quizCtx.slug = null;
   quizCtx.score = 0; quizCtx.answered = 0;
@@ -1888,9 +2278,17 @@ function startWrongReview(){
   currentMode = "review";
   homeMode = "corner";
   document.getElementById("home-view").innerHTML = `
-    <button type="button" class="intro-back" onclick="currentMode=null;showCorner()">‹ Góc học tập</button>
-    <div class="card"><h2>🎯 Ôn lại ${arr.length} câu sai</h2><div id="quiz-area"></div></div>`;
+    <button type="button" class="intro-back" onclick="currentMode=null;showHome()">‹ Trang chủ</button>
+    <div class="card"><h2 style="flex-wrap:wrap;">🎯 Ôn ${arr.length} ${label}<span class="muted" style="flex-basis:100%;font-weight:500;font-size:.86rem;">Làm đúng câu nào, câu đó được giãn lịch ôn (1 → 3 → 7 ngày). Đúng đủ 3 lần là đã thuộc.</span></h2>
+      <div id="quiz-area"></div></div>`;
   qrStart(document.getElementById("quiz-area"), "practice");
+}
+
+/* Nút "Danh sách bài": máy tính → thoát toàn màn hình; điện thoại → cuộn tới danh sách bài */
+function openLessonList(){
+  if(window.matchMedia("(max-width:860px)").matches){
+    document.body.classList.add("sheet-open");
+  } else setFocusMode(false);
 }
 
 /* ---------- Toàn màn hình (ẩn danh sách bài) ---------- */
@@ -1915,6 +2313,7 @@ const STEP_NEXT_LABEL = { 1: "Tiếp: Ghi chú ›", 2: "Tiếp: Làm bài ›" 
 function setLessonStep(n){
   n = Math.max(1, Math.min(3, n));
   lessonStep = n;
+  if(n >= 2) bumpDay("step");
   document.querySelectorAll("#content [data-step]").forEach(el => { el.style.display = Number(el.dataset.step) === n ? "" : "none"; });
   document.querySelectorAll(".lesson-steps button").forEach(b => {
     const k = Number(b.dataset.go);
@@ -1932,6 +2331,7 @@ function setLessonStep(n){
   }
   const steps = document.querySelector(".lesson-steps");
   if(steps && steps.getBoundingClientRect().top < 0) steps.scrollIntoView({ block: "start" });
+  updateSideSteps();
 }
 function stepNext(){
   if(lessonStep < 3) return setLessonStep(lessonStep + 1);
@@ -2002,7 +2402,7 @@ async function selectLesson(slug){
       <h2>📄 Tài liệu bài giảng</h2>
       ${docs.length ? docs.map(d => `<a class="doc-btn" href="${esc(d.url)}" target="_blank" rel="noopener">⬇️ ${esc(d.label)}</a>`).join("") : `<div class="empty">Chưa có tài liệu cho bài này.</div>`}
     </div>
-      <div class="card">
+      <div class="card note-card">
         <h2>✍️ Ghi chú của bạn</h2>
         <label for="my-note" class="muted" style="display:block;margin-bottom:8px;">Tự tóm tắt ý chính, công thức hay chỗ dễ nhầm của bài này. Ghi chú được lưu trên trình duyệt của máy bạn đang dùng.</label>
         <textarea id="my-note" class="note-area" placeholder="VD: Công ty chứng khoán có tối đa ... nghiệp vụ; vốn tối thiểu môi giới là ..." oninput="saveMyNote(this.value)">${esc(myNote)}</textarea>
@@ -2253,7 +2653,7 @@ function renderCalcPractice(){
   const phanGridHtml = `
     <div class="calc-phan-grid">
       ${sections.map((s,si) => `
-        <button type="button" class="calc-phan-card ${si===calcCtx.sectionIdx?"active":""} ${isSectionDone(si,s)?"done":""}" onclick="selectCalcSection(${si})">
+        <button type="button" class="calc-phan-card ${si===calcCtx.sectionIdx?"active":""} ${isSectionDone(si,s)?"done":""}" title="${esc(s.title)}" onclick="selectCalcSection(${si})">
           <span class="icon">${CALC_PHAN_ICONS[si % CALC_PHAN_ICONS.length]}</span>
           <span class="txt"><span class="num">Phần ${si+1}</span><span class="ttl">${esc(s.title.replace(/^Phần\s*\d+\s*[:.-]?\s*/i,""))}</span></span>
         </button>
@@ -2261,10 +2661,10 @@ function renderCalcPractice(){
     </div>
   `;
   const videoCardHtml = section.video_url ? `
-    <div class="card">
-      <h2>🎬 Video bài giảng</h2>
+    <details class="calc-video-details">
+      <summary>🎬 Xem video hướng dẫn phần này</summary>
       ${renderVideoBlock({ label: section.video_label || "Video hướng dẫn", url: section.video_url })}
-    </div>
+    </details>
   ` : "";
 
   if(!groups.length){
@@ -2278,7 +2678,7 @@ function renderCalcPractice(){
   const dangTabsHtml = `
     <div class="calc-dang-tabs">
       ${groups.map((g,gi) => `
-        <button type="button" class="${gi===calcCtx.groupIdx?"active":""} ${isGroupDone(calcCtx.sectionIdx,gi,g)?"done":""}" onclick="jumpToCalcGroup(${gi})">
+        <button type="button" class="${gi===calcCtx.groupIdx?"active":""} ${isGroupDone(calcCtx.sectionIdx,gi,g)?"done":""}" title="${esc(g.title)}" onclick="jumpToCalcGroup(${gi})">
           <span class="num">${calcCtx.sectionIdx+1}.${gi+1}</span>
           <span class="lbl">${esc(g.title.replace(/^Dạng\s*[\d.]+\s*[:.-]?\s*/i,""))}</span>
         </button>
@@ -2354,26 +2754,18 @@ function renderCalcPractice(){
 
   const qTopHtml = `
     <div class="calc-q-top">
-      <span class="calc-dang-pill">Dạng ${calcCtx.sectionIdx+1}.${calcCtx.groupIdx+1}</span>
-      <div class="calc-q-nav">
-        <span>Câu ${calcCtx.itemIdx+1}/${items.length}</span>
-        <button type="button" ${calcCtx.itemIdx<=0?"disabled":""} onclick="prevCalcItem()">‹</button>
-        <button type="button" ${already||isSample?"":"disabled"} onclick="nextCalcItem()">›</button>
-      </div>
+      <span><span class="calc-dang-pill">Dạng ${calcCtx.sectionIdx+1}.${calcCtx.groupIdx+1}</span><span class="calc-kind ${isSample ? "sample" : "practice"}">${isSample ? "📄 Bài mẫu" : "✍️ Tự làm"}</span></span>
+      <span class="calc-progress">Câu ${calcCtx.itemIdx+1}/${items.length}</span>
     </div>
   `;
+  const groupTitleClean = String(group.title || "").replace(/^Dạng\s*[\d.]+\s*[:.\-–]?\s*/i, "");
 
   let leftBodyHtml;
   if(isMcq){
     const optKeys = [["A","option_a"],["B","option_b"],["C","option_c"],["D","option_d"]];
     const selected = calcCtx.selected[key];
     leftBodyHtml = `
-      ${isSample ? `
-        <div class="calc-sample-box">
-          <div class="lbl">📄 Bài mẫu</div>
-          <div class="txt">${esc(item.question).replace(/\n/g,"<br>")}</div>
-        </div>
-      ` : `<div class="calc-plain-q">${esc(item.question).replace(/\n/g,"<br>")}</div>`}
+      <div class="calc-plain-q">${esc(item.question).replace(/\n/g,"<br>")}</div>
       <div class="calc-opts">
         ${optKeys.map(([letter,field]) => {
           const isCorrectOpt = item.correct_option === letter;
@@ -2398,11 +2790,7 @@ function renderCalcPractice(){
     const entered = calcCtx.entered[key];
     leftBodyHtml = `
       <div class="calc-plain-q">${esc(item.question).replace(/\n/g,"<br>")}</div>
-      ${isSample ? `
-        <div class="calc-feedback correct">
-          <span class="verdict">Đáp số: ${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}</span>
-        </div>
-      ` : already ? `
+      ${isSample ? "" : already ? `
         <div class="calc-feedback ${calcIsCorrect(entered, item.correct_value, item.tolerance) ? "correct" : "wrong"}">
           <span class="verdict">${calcIsCorrect(entered, item.correct_value, item.tolerance) ? "✅ Chính xác!" : "❌ Chưa đúng."} Đáp số đúng: ${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}</span>
         </div>
@@ -2427,7 +2815,9 @@ function renderCalcPractice(){
         <div class="body">${esc(item.solution_steps).replace(/\n/g,"<br>")}</div>
       </div>
     ` : ""}
-  ` : `<div class="calc-ans-empty">Chọn 1 đáp án bên trái để xem kết quả và lời giải chi tiết.</div>`;
+  ` : `<div class="calc-ans-empty">${isMcq ? "Chọn 1 đáp án bên trái để xem kết quả và lời giải chi tiết." : "Nhập đáp án rồi bấm “Nộp đáp án” để xem kết quả và lời giải chi tiết."}</div>`;
+  const nextItem = items[calcCtx.itemIdx + 1];
+  const nextLabel = calcCtx.itemIdx + 1 >= items.length ? "Hoàn thành dạng này →" : (isSample && nextItem && nextItem.item_type !== "sample" ? "Đã hiểu, tự làm bài →" : "Câu tiếp theo →");
 
   content.innerHTML = `
     ${phanGridHtml}${videoCardHtml}
@@ -2435,15 +2825,16 @@ function renderCalcPractice(){
     <div class="calc-main-grid">
       <div class="calc-q-card">
         ${qTopHtml}
-        <div class="calc-q-title">${esc(group.title)}</div>
+        <div class="calc-q-title">${esc(groupTitleClean)}</div>
         ${leftBodyHtml}
+        ${isSample ? `<div class="calc-sample-note">Đây là bài mẫu đã có lời giải. Xem cách làm ở phần "Lời giải chi tiết", sau đó bấm “${calcCtx.itemIdx + 1 >= items.length ? "Hoàn thành" : "Đã hiểu"}” để tự làm.</div>` : ""}
       </div>
       <div class="calc-ans-card">${rightHtml}</div>
     </div>
     <div class="calc-nav-row">
       <button type="button" class="calc-nav-ghost" ${calcCtx.itemIdx<=0?"disabled":""} onclick="prevCalcItem()">← Câu trước</button>
       ${dotsHtml}
-      <button type="button" class="calc-nav-next" ${(isSample||already)?"":"disabled"} onclick="nextCalcItem()">${calcCtx.itemIdx+1>=items.length ? "Hoàn thành dạng này →" : "Câu tiếp theo →"}</button>
+      <button type="button" class="calc-nav-next" ${(isSample||already)?"":"disabled"} onclick="nextCalcItem()">${nextLabel}</button>
     </div>
   `;
   if(!isMcq && !isSample && !already){
