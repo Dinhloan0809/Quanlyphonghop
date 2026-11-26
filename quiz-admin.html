@@ -107,6 +107,51 @@
     .tabs{top:63px;}
     table{display:block;overflow-x:auto;white-space:nowrap;}
   }
+
+  /* ---------- Sổ tay Luật (soạn thảo) ---------- */
+  .hbe-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .hbe-bar .grow{flex:1;min-width:220px;}
+  .hbe-status{font-size:.84rem;color:var(--muted);margin-top:10px;}
+  .hbe-status b{color:var(--text);}
+  .hbe-draft{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn-line);font-size:.86rem;font-weight:600;}
+  .hbe-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start;}
+  .hbe-list{position:sticky;top:140px;display:flex;flex-direction:column;gap:4px;max-height:calc(100vh - 160px);overflow:auto;padding:8px;}
+  .hbe-ch{display:flex;justify-content:space-between;gap:8px;align-items:center;text-align:left;width:100%;background:transparent;color:var(--text);border-radius:10px;padding:9px 10px;font-weight:600;font-size:.86rem;min-height:40px;}
+  .hbe-ch:hover{background:var(--surface2);}
+  .hbe-ch.on{background:var(--accent-soft);color:var(--accent-text);}
+  .hbe-ch span{color:var(--faint);font-weight:500;font-size:.76rem;flex:none;}
+  .hbe-ch.hit{box-shadow:inset 3px 0 0 var(--hi);}
+  .hbe-sec{border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:14px;background:var(--surface);}
+  .hbe-sec-head{display:flex;gap:8px;align-items:center;}
+  .hbe-sec-head input{font-weight:700;}
+  .hbe-mini{min-height:34px;padding:6px 10px;font-size:.8rem;border-radius:9px;flex:none;}
+  .hbe-docs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 4px;}
+  .hbe-doc{min-height:30px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:.76rem;font-weight:700;}
+  .hbe-doc.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
+  .hbe-table{width:100%;border-collapse:separate;border-spacing:0 6px;margin-top:6px;}
+  .hbe-table th{background:transparent;padding:2px 4px;}
+  .hbe-table td{border:0;padding:0 4px;vertical-align:top;}
+  .hbe-table tr:hover td{background:transparent;}
+  .hbe-table textarea,.hbe-notes textarea{min-height:40px;resize:vertical;padding:8px 10px;font-size:.88rem;line-height:1.45;}
+  .hbe-table td.act{width:1%;white-space:nowrap;}
+  .hbe-table td.act button{min-height:32px;padding:4px 8px;margin-left:2px;}
+  .hbe-table tr.hit textarea,.hbe-notes .hit textarea{border-color:var(--hi);box-shadow:0 0 0 2px color-mix(in srgb, var(--hi) 45%, transparent);}
+  .hbe-notes{margin-top:8px;}
+  .hbe-notes > div{display:flex;gap:6px;margin-top:6px;}
+  .hbe-add{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .hbe-preview{position:fixed;inset:0;z-index:60;background:rgba(15,27,61,.5);display:flex;justify-content:center;align-items:flex-start;padding:30px 16px;overflow:auto;}
+  .hbe-preview .card{max-width:900px;width:100%;}
+  .hbe-preview table td:first-child{font-weight:600;width:38%;}
+  @media (max-width:860px){
+    .hbe-layout{grid-template-columns:1fr;}
+    .hbe-list{position:static;max-height:none;flex-direction:row;overflow-x:auto;}
+    .hbe-ch{width:auto;white-space:nowrap;}
+    .hbe-table,.hbe-table tbody{display:block;width:100%;white-space:normal;}
+    .hbe-table thead{display:none;}
+    .hbe-table td{display:block;}
+    .hbe-table tr{display:grid;width:100%;grid-template-columns:1fr;gap:4px;border-bottom:1px solid var(--line);padding-bottom:8px;}
+    .hbe-table td.act{width:auto;}
+  }
 </style>
 </head>
 <body>
@@ -207,6 +252,7 @@ function renderMain(sets){
       <button class="tab-btn" data-tab="tab-students" onclick="showTab('tab-students')">👤 Tài khoản học viên</button>
       <button class="tab-btn" data-tab="tab-settings" onclick="showTab('tab-settings')">⚙️ Cấu hình hỗ trợ</button>
       <button class="tab-btn" data-tab="tab-feedback" onclick="showTab('tab-feedback')">💬 Phản hồi câu hỏi</button>
+      <button class="tab-btn" data-tab="tab-handbook" onclick="showTab('tab-handbook')">📒 Sổ tay Luật</button>
     </div>
 
     <div id="tab-quiz" class="tab-content">
@@ -366,13 +412,307 @@ function renderMain(sets){
         <div id="feedback-pager" style="margin-top:10px;"></div>
       </div>
     </div>
+    <div id="tab-handbook" class="tab-content hidden">
+      <div class="card">
+        <h2>📒 Sổ tay con số Luật</h2>
+        <p class="muted" style="margin-top:-6px;">Sửa trực tiếp trong bảng dưới đây. Sửa xong bấm <b>Tải file về</b>, rồi upload file <b>sotay-luat.json</b> lên GitHub (cùng thư mục với portal.html), ghi đè file cũ. Bản đang sửa được tự lưu trên máy này nên lỡ đóng trang cũng không mất.</p>
+        <div class="hbe-bar">
+          <input type="text" class="grow" id="hbe-q" placeholder="Tìm dòng cần sửa: 30 tỷ, ĐHĐCĐ, 24 giờ…" oninput="hbeSearch(this.value)" autocomplete="off">
+          <button class="btn-secondary" type="button" onclick="hbePreview()">👁 Xem trước</button>
+          <button class="btn-primary" type="button" onclick="hbeDownload()">⬇️ Tải file về</button>
+        </div>
+        <div class="hbe-bar" style="margin-top:8px;">
+          <button class="btn-secondary hbe-mini" type="button" onclick="hbeLoadFromWeb(true)">↻ Tải lại bản đang chạy trên web</button>
+          <label class="btn-secondary hbe-mini" style="margin:0;display:inline-flex;align-items:center;cursor:pointer;border:1px solid var(--line);font-weight:600;">📂 Mở file từ máy<input type="file" accept=".json,application/json" style="display:none;" onchange="hbeOpenFile(this)"></label>
+        </div>
+        <div id="hbe-draft"></div>
+        <div class="hbe-status" id="hbe-status">Đang tải sổ tay…</div>
+      </div>
+      <div class="hbe-layout">
+        <div class="card hbe-list" id="hbe-list"></div>
+        <div id="hbe-editor"></div>
+      </div>
+    </div>
   `;
   renderSetsTable();
+  hbeInit();
   loadSubjects();
   loadStudents(0);
   loadSettings();
   loadFeedback(0);
   showTab(sessionStorage.getItem("quiz_admin_tab") || "tab-quiz");
+}
+
+
+/* ================= Soạn sổ tay con số Luật =================
+   Dữ liệu: file sotay-luat.json đặt cạnh portal.html. Trang này đọc file đó, cho sửa,
+   rồi tải về file mới để upload đè lên GitHub. Bản nháp lưu trong localStorage của máy đang dùng. */
+const HBE_URL = "sotay-luat.json";
+const HBE_DRAFT = "cchn_hbe_draft";
+let hbe = { data: null, cur: 0, q: "", dirty: false, source: "" };
+function hbeClone(o){ return JSON.parse(JSON.stringify(o)); }
+function hbeFold(t){ return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase(); }
+function hbeNormalize(d){
+  d = d || {};
+  d.title = d.title || "Sổ tay con số Luật Chứng khoán";
+  d.docs = Array.isArray(d.docs) ? d.docs : [];
+  d.chapters = Array.isArray(d.chapters) ? d.chapters : [];
+  d.chapters.forEach(ch => {
+    ch.id = ch.id || hbeNewId(ch.title, d);
+    ch.summary = ch.summary || "";
+    ch.sections = Array.isArray(ch.sections) ? ch.sections : [];
+    ch.sections.forEach(sec => {
+      sec.title = sec.title || ""; sec.docs = sec.docs || []; sec.notes = sec.notes || [];
+      if(sec.table && (!sec.table.head || !sec.table.head.length)) sec.table.head = ["Nội dung", "Quy định"];
+    });
+  });
+  return d;
+}
+function hbeNewId(title, d){
+  const base = hbeFold(title).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 30) || "chu-diem";
+  let id = base, n = 2; const ids = new Set(((d || hbe.data || {}).chapters || []).map(c => c.id));
+  while(ids.has(id)) id = base + "-" + (n++);
+  return id;
+}
+function hbeSaveDraft(downloaded){
+  hbe.dirty = !downloaded;
+  try{ localStorage.setItem(HBE_DRAFT, JSON.stringify({ at: Date.now(), data: hbe.data, downloaded: !!downloaded })); }catch(e){}
+  hbeRenderStatus();
+}
+function hbeReadDraft(){ try{ return JSON.parse(localStorage.getItem(HBE_DRAFT) || "null"); }catch(e){ return null; } }
+function hbeClearDraft(){ try{ localStorage.removeItem(HBE_DRAFT); }catch(e){} hbe.dirty = false; }
+async function hbeInit(){
+  const draft = hbeReadDraft();
+  if(draft && draft.data){
+    hbe.data = hbeNormalize(draft.data); hbe.dirty = !draft.downloaded; hbe.source = "Bản sửa trên máy này";
+    const when = new Date(draft.at).toLocaleString("vi-VN");
+    document.getElementById("hbe-draft").innerHTML = draft.downloaded
+      ? `<div class="hbe-draft">Đang mở bản bạn đã tải về lúc ${when}. Nếu đã upload lên GitHub rồi thì có thể mở bản trên web. <button class="btn-secondary hbe-mini" type="button" onclick="hbeLoadFromWeb(false)">Mở bản trên web</button></div>`
+      : `<div class="hbe-draft">Đang mở bản bạn sửa dở lúc ${when} (chưa tải về). <button class="btn-secondary hbe-mini" type="button" onclick="hbeLoadFromWeb(true)">Bỏ chỗ sửa, mở bản trên web</button></div>`;
+    hbeRender();
+    return;
+  }
+  await hbeLoadFromWeb(false);
+}
+async function hbeLoadFromWeb(confirmFirst){
+  if(confirmFirst && hbe.dirty && !confirm("Bỏ các chỗ đang sửa (chưa tải về) và mở lại bản đang chạy trên web?")) return;
+  document.getElementById("hbe-status").innerText = "Đang tải sổ tay…";
+  try{
+    const r = await fetch(HBE_URL + "?t=" + Date.now(), { cache: "no-store" });
+    if(!r.ok) throw new Error(r.status);
+    hbe.data = hbeNormalize(await r.json());
+    hbe.source = "Bản đang chạy trên web"; hbe.cur = 0;
+    hbeClearDraft();
+    document.getElementById("hbe-draft").innerHTML = "";
+    hbeRender();
+  }catch(e){
+    document.getElementById("hbe-status").innerHTML = `<span style="color:var(--bad);">Chưa đọc được file sotay-luat.json trên web.</span> Nếu file chưa được upload, bấm <b>📂 Mở file từ máy</b> để mở file bạn đã tải về.`;
+  }
+}
+function hbeOpenFile(input){
+  const f = input.files && input.files[0]; input.value = "";
+  if(!f) return;
+  if(hbe.dirty && !confirm("Mở file này sẽ thay bản đang sửa. Tiếp tục?")) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try{
+      const d = JSON.parse(rd.result);
+      if(!d || !Array.isArray(d.chapters)) throw new Error("sai cấu trúc");
+      hbe.data = hbeNormalize(d); hbe.cur = 0; hbe.source = "File " + f.name;
+      hbeSaveDraft(); document.getElementById("hbe-draft").innerHTML = ""; hbeRender();
+    }catch(e){ alert("File này không phải file sổ tay hợp lệ (sotay-luat.json)."); }
+  };
+  rd.readAsText(f, "utf-8");
+}
+function hbeCounts(){
+  const d = hbe.data; let rows = 0;
+  d.chapters.forEach(ch => ch.sections.forEach(s => { rows += s.table ? s.table.rows.length : 0; }));
+  return { ch: d.chapters.length, rows };
+}
+function hbeRenderStatus(){
+  const el = document.getElementById("hbe-status"); if(!el || !hbe.data) return;
+  const c = hbeCounts();
+  el.innerHTML = `<b>${c.ch}</b> chủ điểm · <b>${c.rows}</b> dòng · nguồn: ${esc(hbe.source)}${hbe.dirty ? ` · <span style="color:var(--warn);font-weight:700;">Có thay đổi chưa tải về</span>` : ""}`;
+}
+function hbeChapterHit(ch){
+  const fq = hbeFold(hbe.q); if(!fq) return false;
+  return hbeFold(JSON.stringify(ch)).includes(fq);
+}
+function hbeRender(){ hbeRenderStatus(); hbeRenderList(); hbeRenderEditor(); }
+function hbeRenderList(){
+  const d = hbe.data, el = document.getElementById("hbe-list"); if(!el) return;
+  el.innerHTML = d.chapters.map((ch, i) => {
+    const n = ch.sections.reduce((a, s) => a + (s.table ? s.table.rows.length : 0), 0);
+    return `<button type="button" class="hbe-ch ${i === hbe.cur ? "on" : ""} ${hbeChapterHit(ch) ? "hit" : ""}" onclick="hbeGo(${i})">${esc(ch.title || "(chưa đặt tên)")}<span>${n}</span></button>`;
+  }).join("") + `<button type="button" class="btn-secondary hbe-mini" style="margin-top:6px;" onclick="hbeAddChapter()">+ Thêm chủ điểm</button>
+    <button type="button" class="btn-secondary hbe-mini" onclick="hbeEditDocs()">📚 Danh sách văn bản</button>`;
+}
+function hbeGo(i){ hbe.cur = i; hbe.docsMode = false; hbeRenderList(); hbeRenderEditor(); document.getElementById("hbe-editor").scrollIntoView({ behavior: "smooth", block: "start" }); }
+function hbeTa(val, path, ph, hit){ return `<textarea rows="1" data-p="${path}" placeholder="${esc(ph || "")}" oninput="hbeInput(this)">${esc(val)}</textarea>`; }
+function hbeRenderEditor(){
+  const el = document.getElementById("hbe-editor"); if(!el) return;
+  if(hbe.docsMode) return hbeRenderDocs();
+  const d = hbe.data, ch = d.chapters[hbe.cur];
+  if(!ch){ el.innerHTML = `<div class="card"><p class="muted">Chưa có chủ điểm nào. Bấm “+ Thêm chủ điểm”.</p></div>`; return; }
+  const fq = hbeFold(hbe.q), hit = t => fq && hbeFold(t).includes(fq);
+  const c = hbe.cur;
+  el.innerHTML = `<div class="card">
+    <div class="hbe-sec-head">
+      <input type="text" data-p="c.${c}.title" value="${esc(ch.title)}" oninput="hbeInput(this)" placeholder="Tên chủ điểm" aria-label="Tên chủ điểm" style="font-size:1.05rem;font-weight:800;">
+      <button class="btn-secondary hbe-mini" type="button" title="Chuyển lên" onclick="hbeMoveChapter(-1)">↑</button>
+      <button class="btn-secondary hbe-mini" type="button" title="Chuyển xuống" onclick="hbeMoveChapter(1)">↓</button>
+      <button class="btn-danger hbe-mini" type="button" onclick="hbeDelChapter()">Xoá chủ điểm</button>
+    </div>
+    <label>Nhớ nhanh (câu mẹo nhớ hiện đầu chủ điểm)</label>
+    ${hbeTa(ch.summary, `c.${c}.summary`, "VD: Họp trên 50% → từ 33% → không cần tỷ lệ")}
+    ${ch.sections.map((sec, si) => {
+      const head = sec.table ? sec.table.head : ["Nội dung", "Quy định"];
+      return `<div class="hbe-sec">
+        <div class="hbe-sec-head">
+          <input type="text" data-p="c.${c}.s.${si}.title" value="${esc(sec.title)}" oninput="hbeInput(this)" placeholder="Tên mục" aria-label="Tên mục">
+          <button class="btn-secondary hbe-mini" type="button" title="Chuyển mục lên" onclick="hbeMoveSec(${si},-1)">↑</button>
+          <button class="btn-secondary hbe-mini" type="button" title="Chuyển mục xuống" onclick="hbeMoveSec(${si},1)">↓</button>
+          <button class="btn-danger hbe-mini" type="button" onclick="hbeDelSec(${si})">Xoá mục</button>
+        </div>
+        <div class="hbe-docs" aria-label="Văn bản quy định">${d.docs.map(x => `<button type="button" class="hbe-doc ${sec.docs.includes(x.key) ? "on" : ""}" title="${esc(x.full || "")}" onclick="hbeToggleDoc(${si},'${esc(x.key)}')">${esc(x.label)}</button>`).join("") || `<span class="muted">Chưa có văn bản nào trong danh sách.</span>`}</div>
+        <table class="hbe-table">
+          <thead><tr>${head.map((h, hi) => `<th><input type="text" data-p="c.${c}.s.${si}.h.${hi}" value="${esc(h)}" oninput="hbeInput(this)" aria-label="Tiêu đề cột ${hi + 1}"></th>`).join("")}<th></th></tr></thead>
+          <tbody>${(sec.table ? sec.table.rows : []).map((r, ri) => `<tr class="${hit(r.join(" ")) ? "hit" : ""}">${head.map((_, ci) => `<td>${hbeTa(r[ci] || "", `c.${c}.s.${si}.r.${ri}.${ci}`, head[ci])}</td>`).join("")}
+            <td class="act"><button class="btn-secondary" type="button" title="Lên" onclick="hbeMoveRow(${si},${ri},-1)">↑</button><button class="btn-secondary" type="button" title="Xuống" onclick="hbeMoveRow(${si},${ri},1)">↓</button><button class="btn-danger" type="button" title="Xoá dòng" onclick="hbeDelRow(${si},${ri})">✕</button></td></tr>`).join("")}</tbody>
+        </table>
+        <div class="hbe-add">
+          <button class="btn-secondary hbe-mini" type="button" onclick="hbeAddRow(${si})">+ Thêm dòng</button>
+          ${head.length < 3 ? `<button class="btn-secondary hbe-mini" type="button" onclick="hbeAddCol(${si})">+ Thêm cột</button>` : `<button class="btn-secondary hbe-mini" type="button" onclick="hbeDelCol(${si})">− Bỏ cột cuối</button>`}
+        </div>
+        <div class="hbe-notes">
+          <div class="muted" style="display:block;margin-top:10px;">Ghi chú dưới bảng (mỗi ô là một gạch đầu dòng)</div>
+          ${sec.notes.map((n, ni) => `<div class="${hit(n) ? "hit" : ""}">${hbeTa(n, `c.${c}.s.${si}.n.${ni}`, "Ghi chú")}<button class="btn-danger hbe-mini" type="button" title="Xoá ghi chú" onclick="hbeDelNote(${si},${ni})">✕</button></div>`).join("")}
+          <div class="hbe-add"><button class="btn-secondary hbe-mini" type="button" onclick="hbeAddNote(${si})">+ Thêm ghi chú</button></div>
+        </div>
+      </div>`;
+    }).join("")}
+    <div class="hbe-add" style="margin-top:14px;"><button class="btn-secondary" type="button" onclick="hbeAddSec()">+ Thêm mục vào chủ điểm này</button></div>
+  </div>`;
+  hbeAutosize(el);
+  const first = el.querySelector("tr.hit, .hbe-notes .hit"); if(first && fq) first.scrollIntoView({ block: "center" });
+}
+function hbeAutosize(root){ root.querySelectorAll("textarea").forEach(t => { t.style.height = "auto"; t.style.height = Math.max(40, t.scrollHeight + 2) + "px"; }); }
+let hbeSaveTimer = null;
+function hbeInput(el){
+  const p = el.dataset.p.split("."), d = hbe.data, v = el.value;
+  const ch = d.chapters[+p[1]];
+  if(p[2] === "title") ch.title = v;
+  else if(p[2] === "summary") ch.summary = v;
+  else if(p[2] === "s"){
+    const sec = ch.sections[+p[3]];
+    if(p[4] === "title") sec.title = v;
+    else if(p[4] === "h") sec.table.head[+p[5]] = v;
+    else if(p[4] === "r") sec.table.rows[+p[5]][+p[6]] = v;
+    else if(p[4] === "n") sec.notes[+p[5]] = v;
+  } else if(p[0] === "d"){ d.docs[+p[1]][p[2]] = v; }
+  if(el.tagName === "TEXTAREA"){ el.style.height = "auto"; el.style.height = Math.max(40, el.scrollHeight + 2) + "px"; }
+  clearTimeout(hbeSaveTimer); hbeSaveTimer = setTimeout(() => { hbeSaveDraft(); if(p[2] === "title") hbeRenderList(); }, 300);
+}
+function hbeCh(){ return hbe.data.chapters[hbe.cur]; }
+function hbeChanged(){ hbeSaveDraft(); hbeRender(); }
+function hbeSwap(arr, i, j){ if(j < 0 || j >= arr.length) return false; [arr[i], arr[j]] = [arr[j], arr[i]]; return true; }
+function hbeAddChapter(){
+  const t = prompt("Tên chủ điểm mới:", ""); if(!t) return;
+  hbe.data.chapters.push({ id: hbeNewId(t), title: t, summary: "", sections: [{ title: "", docs: [], notes: [], table: { head: ["Nội dung", "Quy định"], rows: [["", ""]] } }] });
+  hbe.cur = hbe.data.chapters.length - 1; hbe.docsMode = false; hbeChanged();
+}
+function hbeDelChapter(){ const ch = hbeCh(); if(!confirm(`Xoá cả chủ điểm “${ch.title}”?`)) return; hbe.data.chapters.splice(hbe.cur, 1); hbe.cur = Math.max(0, hbe.cur - 1); hbeChanged(); }
+function hbeMoveChapter(dir){ if(hbeSwap(hbe.data.chapters, hbe.cur, hbe.cur + dir)){ hbe.cur += dir; hbeChanged(); } }
+function hbeAddSec(){ hbeCh().sections.push({ title: "", docs: [], notes: [], table: { head: ["Nội dung", "Quy định"], rows: [["", ""]] } }); hbeChanged(); }
+function hbeDelSec(si){ const sec = hbeCh().sections[si]; if(!confirm(`Xoá mục “${sec.title || "(chưa đặt tên)"}” và toàn bộ dòng trong mục?`)) return; hbeCh().sections.splice(si, 1); hbeChanged(); }
+function hbeMoveSec(si, dir){ if(hbeSwap(hbeCh().sections, si, si + dir)) hbeChanged(); }
+function hbeToggleDoc(si, key){ const sec = hbeCh().sections[si]; const i = sec.docs.indexOf(key); if(i >= 0) sec.docs.splice(i, 1); else sec.docs.push(key); hbeChanged(); }
+function hbeEnsureTable(sec){ if(!sec.table) sec.table = { head: ["Nội dung", "Quy định"], rows: [] }; return sec.table; }
+function hbeAddRow(si){ const t = hbeEnsureTable(hbeCh().sections[si]); t.rows.push(t.head.map(() => "")); hbeChanged(); setTimeout(() => { const ts = document.querySelectorAll(`[data-p^="c.${hbe.cur}.s.${si}.r.${t.rows.length - 1}."]`); if(ts[0]) ts[0].focus(); }, 0); }
+function hbeDelRow(si, ri){ const t = hbeCh().sections[si].table; const r = t.rows[ri]; if(r.join("").trim() && !confirm(`Xoá dòng “${r[0]}”?`)) return; t.rows.splice(ri, 1); hbeChanged(); }
+function hbeMoveRow(si, ri, dir){ if(hbeSwap(hbeCh().sections[si].table.rows, ri, ri + dir)) hbeChanged(); }
+function hbeAddCol(si){ const t = hbeEnsureTable(hbeCh().sections[si]); t.head.push("Ghi chú"); t.rows.forEach(r => r.push("")); hbeChanged(); }
+function hbeDelCol(si){ const t = hbeCh().sections[si].table; if(t.head.length <= 2) return; if(!confirm(`Bỏ cột “${t.head[t.head.length - 1]}” và nội dung trong cột?`)) return; t.head.pop(); t.rows.forEach(r => r.pop()); hbeChanged(); }
+function hbeAddNote(si){ hbeCh().sections[si].notes.push(""); hbeChanged(); }
+function hbeDelNote(si, ni){ hbeCh().sections[si].notes.splice(ni, 1); hbeChanged(); }
+let hbeSearchTimer = null;
+function hbeSearch(v){
+  clearTimeout(hbeSearchTimer);
+  hbeSearchTimer = setTimeout(() => {
+    hbe.q = String(v || "").trim();
+    if(hbe.q){ const i = hbe.data.chapters.findIndex(hbeChapterHit); if(i >= 0 && !hbeChapterHit(hbeCh() || {})) hbe.cur = i; hbe.docsMode = false; }
+    hbeRenderList(); hbeRenderEditor();
+  }, 200);
+}
+/* Danh sách văn bản (nhãn lọc trên trang học) */
+function hbeEditDocs(){ hbe.docsMode = true; hbeRenderList(); hbeRenderEditor(); }
+function hbeRenderDocs(){
+  const d = hbe.data;
+  document.getElementById("hbe-editor").innerHTML = `<div class="card">
+    <h2>📚 Danh sách văn bản</h2>
+    <p class="muted" style="margin-top:-6px;">Mỗi văn bản là một nút lọc trên trang sổ tay. “Tên ngắn” hiện trên nút, “Tên đầy đủ” hiện khi lọc.</p>
+    <table class="hbe-table"><thead><tr><th>Tên ngắn</th><th>Tên đầy đủ, số hiệu</th><th></th></tr></thead><tbody>
+    ${d.docs.map((x, i) => `<tr><td><input type="text" data-p="d.${i}.label" value="${esc(x.label)}" oninput="hbeInput(this)"></td><td>${hbeTa(x.full || "", `d.${i}.full`, "VD: Thông tư 96/2020/TT-BTC: công bố thông tin")}</td>
+      <td class="act"><button class="btn-secondary" type="button" onclick="hbeMoveDoc(${i},-1)">↑</button><button class="btn-secondary" type="button" onclick="hbeMoveDoc(${i},1)">↓</button><button class="btn-danger" type="button" onclick="hbeDelDoc(${i})">✕</button></td></tr>`).join("")}
+    </tbody></table>
+    <div class="hbe-add"><button class="btn-secondary hbe-mini" type="button" onclick="hbeAddDoc()">+ Thêm văn bản</button><button class="btn-secondary hbe-mini" type="button" onclick="hbeGo(hbe.cur)">‹ Quay lại chủ điểm</button></div>
+  </div>`;
+  hbeAutosize(document.getElementById("hbe-editor"));
+}
+function hbeAddDoc(){
+  const label = prompt("Tên ngắn của văn bản (VD: TT 96):", ""); if(!label) return;
+  let key = hbeFold(label).replace(/[^a-z0-9]+/g, ""), n = 2; const keys = new Set(hbe.data.docs.map(x => x.key));
+  if(!key) key = "vb"; const base = key; while(keys.has(key)) key = base + (n++);
+  hbe.data.docs.push({ key, label, full: "" }); hbeSaveDraft(); hbeRenderDocs();
+}
+function hbeDelDoc(i){
+  const x = hbe.data.docs[i]; if(!confirm(`Xoá văn bản “${x.label}”? Các mục đang gắn văn bản này sẽ bỏ nhãn.`)) return;
+  hbe.data.docs.splice(i, 1);
+  hbe.data.chapters.forEach(ch => ch.sections.forEach(s => { s.docs = s.docs.filter(k => k !== x.key); }));
+  hbeSaveDraft(); hbeRenderDocs();
+}
+function hbeMoveDoc(i, dir){ if(hbeSwap(hbe.data.docs, i, i + dir)){ hbeSaveDraft(); hbeRenderDocs(); } }
+/* Làm sạch trước khi tải về: bỏ dòng trống, ghi chú trống, mục trống */
+function hbeCleanCopy(){
+  const d = hbeClone(hbe.data), warn = [];
+  d.chapters.forEach(ch => {
+    if(!String(ch.title).trim()) warn.push("Có chủ điểm chưa đặt tên.");
+    ch.sections = ch.sections.map(s => {
+      s.notes = s.notes.map(n => String(n).trim()).filter(Boolean);
+      if(s.table){
+        s.table.rows = s.table.rows.map(r => r.map(c => String(c || "").trim())).filter(r => r.some(Boolean));
+        if(!s.table.rows.length) s.table = null;
+      }
+      return s;
+    }).filter(s => s.table || s.notes.length);
+  });
+  const now = new Date(); d.updated = String(now.getMonth() + 1).padStart(2, "0") + "/" + now.getFullYear();
+  return { d, warn };
+}
+function hbeDownload(){
+  const { d, warn } = hbeCleanCopy();
+  if(warn.length && !confirm(warn.join("\n") + "\n\nVẫn tải file về?")) return;
+  const blob = new Blob([JSON.stringify(d, null, 1)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "sotay-luat.json";
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  hbeSaveDraft(true);
+  document.getElementById("hbe-draft").innerHTML = `<div class="hbe-draft" style="background:var(--ok-soft);color:var(--ok);border-color:transparent;">Đã tải file sotay-luat.json về máy. Bước tiếp: vào GitHub → Add file → Upload files → kéo file vào → Commit changes. Khoảng 1–2 phút sau trang học sẽ cập nhật.</div>`;
+}
+function hbePreview(){
+  const { d } = hbeCleanCopy(); const ch = d.chapters.find(c => c.id === (hbeCh() || {}).id) || d.chapters[0];
+  if(!ch) return;
+  const doc = k => (d.docs.find(x => x.key === k) || {}).label || k;
+  const box = document.createElement("div"); box.className = "hbe-preview";
+  box.onclick = e => { if(e.target === box) box.remove(); };
+  box.innerHTML = `<div class="card">
+    <div class="row" style="align-items:center;"><h2 style="margin:0;">${esc(ch.title)}</h2><div style="flex:none;min-width:0;"><button class="btn-secondary" type="button" onclick="this.closest('.hbe-preview').remove()">Đóng</button></div></div>
+    <p class="muted">Xem trước chủ điểm đang mở, giống cách học viên thấy (dòng trống đã được bỏ).</p>
+    ${ch.summary ? `<div class="msg ok" style="background:var(--accent-soft);color:var(--text);"><b style="color:var(--accent-text);">Nhớ nhanh:</b> ${esc(ch.summary)}</div>` : ""}
+    ${ch.sections.map(s => `<h3 style="margin:18px 0 6px;font-size:.98rem;">${esc(s.title)} ${s.docs.map(k => `<span class="pill">${esc(doc(k))}</span>`).join(" ")}</h3>
+      ${s.table ? `<table><tr>${s.table.head.map(h => `<th>${esc(h)}</th>`).join("")}</tr>${s.table.rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</table>` : ""}
+      ${s.notes.length ? `<ul>${s.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}`).join("")}
+  </div>`;
+  document.body.appendChild(box);
 }
 
 function showTab(id){

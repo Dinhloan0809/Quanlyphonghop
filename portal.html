@@ -738,14 +738,15 @@
   .hb-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
   .hb-head h2{margin:0 !important;}
   .hb-head .muted{font-size:.84rem;}
-  .hb-tools{position:sticky;top:68px;z-index:5;background:var(--bg);padding:10px 0 8px;margin:0 0 6px;}
+  .hb-tools{position:sticky;top:68px;z-index:5;background:var(--bg);padding:10px 0 8px;}
+  .hb-filters{margin:0 0 14px;}
   .hb-search{position:relative;}
   .hb-search svg{position:absolute;left:14px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:var(--faint);pointer-events:none;}
   .hb-search input{width:100%;min-height:48px;padding:10px 44px 10px 42px;border-radius:14px;border:1px solid var(--line-strong);background:var(--surface);color:var(--text);font:inherit;font-size:1rem;}
   .hb-search input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent);}
   .hb-clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:10px;background:transparent;color:var(--muted);font-size:1rem;cursor:pointer;}
   .hb-clear:hover{background:var(--surface2);}
-  .hb-chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none;}
+  .hb-chips{display:flex;flex-wrap:wrap;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none;}
   .hb-chips::-webkit-scrollbar{display:none;}
   .hb-chip{flex:none;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap;}
   .hb-chip:hover{border-color:var(--line-strong);color:var(--text);}
@@ -757,9 +758,10 @@
   .hb-toc a{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:8px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--text);text-decoration:none;font-size:.88rem;font-weight:600;}
   .hb-toc a:hover{border-color:var(--accent);color:var(--accent-text);}
   .hb-toc a span{color:var(--faint);font-weight:500;font-size:.78rem;}
-  .hb-chapter{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow);scroll-margin-top:190px;}
+  .hb-chapter{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow);scroll-margin-top:140px;}
   .hb-chapter > h3{margin:0;font-size:1.12rem;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-  .hb-tag{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent-text);font-size:.74rem;font-weight:700;}
+  .hb-tag{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;margin:2px 0 2px 4px;border-radius:999px;border:0;background:var(--accent-soft);color:var(--accent-text);font:inherit;font-size:.72rem;font-weight:700;vertical-align:middle;cursor:pointer;}
+  .hb-tag:hover{background:var(--accent);color:var(--on-accent);}
   .hb-memo{margin:12px 0 4px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);color:var(--text);font-size:.92rem;line-height:1.55;}
   .hb-memo b{color:var(--accent-text);}
   .hb-sec{margin-top:18px;}
@@ -778,9 +780,10 @@
   .hb-notes{margin:10px 0 0;padding-left:20px;font-size:.9rem;line-height:1.55;}
   .hb-notes li{margin:4px 0;}
   .hb-table mark,.hb-notes mark,.hb-memo mark{background:var(--hi);color:var(--on-hi);border-radius:3px;padding:0 1px;}
-  .hb-lesson-card .hb-open{margin-top:12px;}
   @media (max-width:640px){
     .hb-tools{position:static;}
+    .hb-chapter{scroll-margin-top:70px;}
+    .hb-chips{flex-wrap:nowrap;}
     .hb-chapter{padding:16px;border-radius:16px;}
     .hb-table,.hb-table tbody,.hb-table tr,.hb-table td{display:block;width:100% !important;}
     .hb-table{border:0;border-radius:0;}
@@ -1428,7 +1431,7 @@ async function init(){
   if(!isLoggedIn()){
     showSubjectIntro(wantSubjectSlug);
     const m = initParams.get("sotay") === "1" ? "handbook" : initParams.get("exam") === "1" ? "exam" : initParams.get("calc") === "1" ? "calc" : "lesson";
-    openAuth("Đăng nhập hoặc đăng ký miễn phí để vào học.", () => enterSubject(wantSubjectSlug, m, m === "handbook" ? initParams.get("bai") : initParams.get("lesson")));
+    openAuth("Đăng nhập hoặc đăng ký miễn phí để vào học.", () => enterSubject(wantSubjectSlug, m, m === "handbook" ? initParams.get("vb") : initParams.get("lesson")));
     return;
   }
 
@@ -1441,7 +1444,7 @@ async function init(){
   const wantCalc = initParams.get("calc");
   const wantLessonIdx = wantLesson ? currentSubject.lessons.findIndex(l => l.slug === wantLesson) : -1;
   if(initParams.get("sotay") === "1" && hasHandbook(currentSubject)){
-    selectHandbook(initParams.get("bai"));
+    selectHandbook(initParams.get("vb"));
   } else if(wantExam === "1" && currentSubject.has_mock_exam && !isExamLocked()){
     selectExam();
   } else if(wantCalc === "1" && !isExamLocked()){
@@ -1872,7 +1875,7 @@ function renderSubjectIntro(slug){
   }
   if(hasHandbook(s)){
     rows.push(`<button type="button" class="curr-row" onclick="enterSubject('${sq}','handbook')">
-      <span class="badge-num" style="background:var(--accent-soft);color:var(--accent-text);">📒</span><span class="curr-title">Sổ tay con số Luật<span class="curr-sub">Tra nhanh vốn, tỷ lệ %, thời hạn, mức phạt theo từng bài</span></span></button>`);
+      <span class="badge-num" style="background:var(--accent-soft);color:var(--accent-text);">📒</span><span class="curr-title">Sổ tay con số Luật<span class="curr-sub">Tra nhanh vốn, tỷ lệ %, thời hạn, mức phạt theo chủ điểm và văn bản</span></span></button>`);
   }
   if(s.has_mock_exam){
     const locked = isExamLocked();
@@ -1947,19 +1950,8 @@ function enterSubject(slug, mode, lessonSlug){
    Muốn cập nhật sổ tay: sửa file Word → nhờ chuyển lại thành sotay-luat.json → upload đè file cũ. */
 const HANDBOOK_SUBJECTS = ["phap-luat"];
 const HANDBOOK_URL = "sotay-luat.json";
-const LUAT_LESSON_TOPICS = {
-  1: "Khái quát, công ty đại chúng, quản trị công ty",
-  2: "Chào bán và chào mua công khai",
-  3: "Sở giao dịch, niêm yết, sở hữu nước ngoài",
-  4: "Công ty chứng khoán, người hành nghề",
-  5: "Quỹ đầu tư, công ty quản lý quỹ",
-  6: "Đăng ký, lưu ký, bù trừ, thanh toán",
-  7: "Công bố thông tin, báo cáo sở hữu",
-  8: "Xử phạt vi phạm, giải quyết tranh chấp",
-  9: "Tổng ôn: cặp số dễ nhầm, bẫy đề"
-};
 let handbookData = null, handbookLoading = null;
-const hb = { q: "", lesson: 0, pinsOnly: false };
+const hb = { q: "", doc: "", pinsOnly: false };
 function hasHandbook(s){ return !!s && HANDBOOK_SUBJECTS.includes(String(s.slug).toLowerCase()); }
 function loadHandbook(){
   if(handbookData) return Promise.resolve(handbookData);
@@ -1970,9 +1962,14 @@ function loadHandbook(){
   return handbookLoading;
 }
 function hbFold(t){ return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase(); }
+/* Từ viết tắt hay gặp: tìm "dai hoi" vẫn ra dòng ghi "ĐHĐCĐ" và ngược lại */
+const HB_ABBR = { "ĐHĐCĐ": "đại hội đồng cổ đông", "HĐQT": "hội đồng quản trị", "BKS": "ban kiểm soát", "UBKT": "ủy ban kiểm toán", "CTCK": "công ty chứng khoán", "CTQLQ": "công ty quản lý quỹ", "NĐT": "nhà đầu tư", "CCHN": "chứng chỉ hành nghề", "TGĐ": "tổng giám đốc", "UBCKNN": "ủy ban chứng khoán nhà nước", "BCTC": "báo cáo tài chính", "SGDCK": "sở giao dịch chứng khoán", "NAV": "giá trị tài sản ròng", "ESOP": "người lao động", "VSDC": "lưu ký" };
+function hbHay(t){ let x = String(t || ""); for(const k in HB_ABBR) if(x.includes(k)) x += " " + HB_ABBR[k]; for(const k in HB_ABBR) if(x.toLowerCase().includes(HB_ABBR[k])) x += " " + k; return hbFold(x); }
 function hbPins(){ return studyLoad("hbpins", {}); }
-function hbRowKey(ch, si, ri){ return ch.id + ":" + si + ":" + ri; }
-/* Tô sáng từ khóa (không phân biệt dấu) và đổi "(tra lại)" thành nhãn cảnh báo */
+/* Khoá ghim theo nội dung dòng để sửa/sắp xếp lại sổ tay không làm lệch các dòng đã ghim */
+function hbRowKey(ch, sec, r){ return ch.id + ":" + hbFold(sec.title + "|" + (r[0] || "")).replace(/\s+/g, " ").slice(0, 80); }
+function hbDoc(key){ return ((handbookData && handbookData.docs) || []).find(d => d.key === key); }
+/* Tô sáng từ khóa (không phân biệt dấu) và đổi "(tra lại …)" thành nhãn cảnh báo */
 function hbFmt(text){
   const raw = String(text || "");
   let html = "";
@@ -1984,33 +1981,12 @@ function hbFmt(text){
   } else html = esc(raw);
   return html.replace(/\(\s*tra lại[^)]*\)/gi, m => `<span class="hb-check" title="${m.replace(/[()]/g, "")}">Cần đối chiếu</span>`);
 }
-function hbLessonOk(lessons){ return !hb.lesson || (lessons || []).includes(hb.lesson); }
-function hbCountRows(lessonNo){
-  if(!handbookData) return 0;
-  let n = 0;
-  handbookData.chapters.forEach(ch => ch.sections.forEach(sec => {
-    if((sec.lessons || []).includes(lessonNo)) n += (sec.table ? sec.table.rows.length : 0) + sec.notes.length;
-  }));
-  return n;
-}
-function handbookLessonCardHtml(no){
-  const topic = LUAT_LESSON_TOPICS[no] || "";
-  loadHandbook().then(() => { const el = document.getElementById("hb-lesson-count"); if(el) el.innerText = hbCountRows(no) + " con số và ghi nhớ"; }).catch(() => {});
-  return `<div class="card hb-lesson-card">
-    <h2>📒 Sổ tay con số của bài này</h2>
-    <p class="muted" style="margin:0;">${esc(topic)} · <span id="hb-lesson-count">đang tải…</span></p>
-    <button type="button" class="btn-secondary hb-open" onclick="selectHandbook(${no})">Mở sổ tay Bài ${no} ›</button>
-  </div>`;
-}
-async function selectHandbook(lesson){
+async function selectHandbook(docKey){
   stopExamTimer();
   currentMode = "handbook";
   currentLessonSlug = null;
   updateActiveStates();
-  const n = parseInt(String(lesson || "").replace(/\D/g, ""), 10);
-  hb.lesson = n >= 1 && n <= 9 ? n : 0;
-  hb.q = ""; hb.pinsOnly = false;
-  hbSyncUrl();
+  hb.q = ""; hb.pinsOnly = false; hb.doc = "";
   const content = document.getElementById("content");
   content.innerHTML = `<div class="card"><div class="empty">Đang tải sổ tay...</div></div>`;
   try{ await loadHandbook(); }
@@ -2019,29 +1995,33 @@ async function selectHandbook(lesson){
     return;
   }
   if(currentMode !== "handbook") return;
+  if(docKey && hbDoc(docKey)) hb.doc = docKey;
+  hbSyncUrl();
   renderHandbookShell();
   window.scrollTo(0, 0);
 }
-function hbSyncUrl(){ updateUrl(Object.assign({ subject: currentSubject.slug, sotay: "1" }, hb.lesson ? { bai: String(hb.lesson) } : {})); }
+function hbSyncUrl(){ updateUrl(Object.assign({ subject: currentSubject.slug, sotay: "1" }, hb.doc ? { vb: hb.doc } : {})); }
 function renderHandbookShell(){
   const d = handbookData;
   const total = d.chapters.reduce((a, ch) => a + ch.sections.reduce((b, s) => b + (s.table ? s.table.rows.length : 0), 0), 0);
-  const chips = [`<button type="button" class="hb-chip" data-l="0" onclick="hbSetLesson(0)">Tất cả</button>`]
-    .concat([1,2,3,4,5,6,7,8,9].map(i => `<button type="button" class="hb-chip" data-l="${i}" onclick="hbSetLesson(${i})" title="${esc(LUAT_LESSON_TOPICS[i])}">${i === 9 ? "Bẫy đề" : "Bài " + i}</button>`));
+  const chips = [`<button type="button" class="hb-chip" data-doc="" onclick="hbSetDoc('')">Tất cả</button>`]
+    .concat((d.docs || []).map(x => `<button type="button" class="hb-chip" data-doc="${esc(x.key)}" onclick="hbSetDoc('${esc(x.key)}')" title="${esc(x.full || x.label)}">${esc(x.label)}</button>`));
   document.getElementById("content").innerHTML = `
     <div class="hb-head">
       <div>
         <h2 style="font-size:1.25rem;">📒 ${esc(d.title || "Sổ tay con số Luật")}</h2>
-        <div class="muted">${total} con số · cập nhật ${esc(d.updated || "")} · bấm ☆ để ghim dòng cần thuộc</div>
+        <div class="muted">${total} con số theo chủ điểm · cập nhật ${esc(d.updated || "")} · bấm ☆ để ghim dòng cần thuộc</div>
       </div>
     </div>
     <div class="hb-tools">
-      <div class="hb-search">
+      <div class="hb-search" id="hb-searchbox">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
         <input type="text" inputmode="search" enterkeyhint="search" id="hb-q" placeholder="Gõ từ khóa: 24 gio, 5%, chao mua, phat…" aria-label="Tìm trong sổ tay" oninput="hbSearch(this.value)" autocomplete="off">
         <button type="button" class="hb-clear" id="hb-clear" onclick="hbSearch('');document.getElementById('hb-q').value='';document.getElementById('hb-q').focus();" aria-label="Xoá từ khóa" style="display:none;">✕</button>
       </div>
-      <div class="hb-chips" role="toolbar" aria-label="Lọc theo bài">${chips.join("")}</div>
+    </div>
+    <div class="hb-filters">
+      <div class="hb-chips" role="toolbar" aria-label="Lọc theo văn bản">${chips.join("")}</div>
       <div class="hb-meta"><div class="hb-count" id="hb-count" aria-live="polite"></div><button type="button" class="hb-chip pin" data-pin="1" onclick="hbTogglePinsOnly()">⭐ Dòng đã ghim</button></div>
     </div>
     <div id="hb-body"></div>`;
@@ -2052,9 +2032,10 @@ function hbSearch(v){
   clearTimeout(hbSearchTimer);
   hbSearchTimer = setTimeout(() => { hb.q = String(v || "").trim(); renderHandbookBody(); }, 120);
 }
-function hbSetLesson(n){ hb.lesson = n; hbSyncUrl(); renderHandbookBody(); }
+function hbSetDoc(k){ hb.doc = k; hbSyncUrl(); renderHandbookBody(); }
 function hbTogglePinsOnly(){ hb.pinsOnly = !hb.pinsOnly; renderHandbookBody(); }
-function hbTogglePin(key, btn){
+function hbTogglePin(btn){
+  const key = btn.dataset.key;
   const pins = hbPins();
   if(pins[key]) delete pins[key]; else pins[key] = Date.now();
   studySave("hbpins", pins);
@@ -2067,59 +2048,57 @@ function hbTogglePin(key, btn){
 function renderHandbookBody(){
   const d = handbookData, body = document.getElementById("hb-body");
   if(!d || !body) return;
-  document.querySelectorAll(".hb-chip[data-l]").forEach(c => c.classList.toggle("on", Number(c.dataset.l) === hb.lesson));
+  document.querySelectorAll(".hb-chip[data-doc]").forEach(c => c.classList.toggle("on", c.dataset.doc === hb.doc));
   const pc = document.querySelector(".hb-chip[data-pin]"); if(pc) pc.classList.toggle("on", hb.pinsOnly);
   const clr = document.getElementById("hb-clear"); if(clr) clr.style.display = hb.q ? "" : "none";
   const fq = hbFold(hb.q), pins = hbPins();
-  const match = t => !fq || hbFold(t).includes(fq);
+  const match = t => !fq || hbHay(t).includes(fq);
   let rowCount = 0;
   const parts = [], toc = [];
   d.chapters.forEach(ch => {
     const secs = [];
     ch.sections.forEach((sec, si) => {
-      if(hb.lesson && !(sec.lessons || []).includes(hb.lesson)) return;
-      const titleHit = fq && match(sec.title);
+      if(hb.doc && !(sec.docs || []).includes(hb.doc)) return;
+      const titleHit = fq && (match(sec.title) || match(ch.title));
       let rowsHtml = "", nRows = 0;
       if(sec.table){
         const head = sec.table.head;
         sec.table.rows.forEach((r, ri) => {
-          const key = hbRowKey(ch, si, ri), pinned = !!pins[key];
+          const key = hbRowKey(ch, sec, r), pinned = !!pins[key];
           if(hb.pinsOnly && !pinned) return;
           if(fq && !titleHit && !match(r.join(" "))) return;
           nRows++;
-          rowsHtml += `<tr class="${pinned ? "pinned" : ""}">${r.map((c, ci) => `<td data-label="${esc(head[ci] || "")}">${hbFmt(c)}</td>`).join("")}<td class="hb-pin-cell"><button type="button" class="hb-star ${pinned ? "on" : ""}" onclick="hbTogglePin('${key}', this)" aria-label="${pinned ? "Bỏ ghim dòng này" : "Ghim dòng này"}">${pinned ? "★" : "☆"}</button></td></tr>`;
+          rowsHtml += `<tr class="${pinned ? "pinned" : ""}">${r.map((c, ci) => `<td data-label="${esc(head[ci] || "")}">${hbFmt(c)}</td>`).join("")}<td class="hb-pin-cell"><button type="button" class="hb-star ${pinned ? "on" : ""}" onclick="hbTogglePin(this)" data-key="${esc(key)}" aria-label="${pinned ? "Bỏ ghim dòng này" : "Ghim dòng này"}">${pinned ? "★" : "☆"}</button></td></tr>`;
         });
       }
       const notes = hb.pinsOnly ? [] : sec.notes.filter(n => !fq || titleHit || match(n));
       if(!nRows && !notes.length) return;
       rowCount += nRows + notes.length;
+      const badges = (sec.docs || []).map(k => { const x = hbDoc(k); return x ? `<button type="button" class="hb-tag" onclick="hbSetDoc('${esc(k)}')" title="${esc(x.full)}">${esc(x.label)}</button>` : ""; }).join("");
       secs.push(`<div class="hb-sec">
-        ${sec.title ? `<h4>${hbFmt(sec.title)}</h4>` : ""}
+        ${sec.title ? `<h4>${hbFmt(sec.title)} ${badges}</h4>` : ""}
         ${nRows ? `<table class="hb-table"><thead><tr>${sec.table.head.map(h => `<th scope="col">${esc(h)}</th>`).join("")}<th><span class="sr-only">Ghim</span></th></tr></thead><tbody>${rowsHtml}</tbody></table>` : ""}
         ${notes.length ? `<ul class="hb-notes">${notes.map(n => `<li>${hbFmt(n)}</li>`).join("")}</ul>` : ""}
       </div>`);
     });
     if(!secs.length) return;
-    const tags = (ch.lessons || []).map(n => `<span class="hb-tag">${n === 9 ? "Tổng ôn" : "Bài " + n}</span>`).join("");
-    const showMemo = ch.summary && !hb.pinsOnly && (!fq || match(ch.summary));
+    const showMemo = ch.summary && !hb.pinsOnly && !hb.doc && (!fq || match(ch.summary));
     toc.push(`<a href="#hb-${ch.id}" onclick="event.preventDefault();document.getElementById('hb-${ch.id}').scrollIntoView({behavior:'smooth'})">${esc(ch.title)}<span>${ch.sections.length} mục</span></a>`);
     parts.push(`<section class="hb-chapter" id="hb-${ch.id}">
-      <h3>${esc(ch.title)} ${tags}</h3>
+      <h3>${esc(ch.title)}</h3>
       ${showMemo ? `<div class="hb-memo"><b>Nhớ nhanh:</b> ${hbFmt(ch.summary)}</div>` : ""}
       ${secs.join("")}
     </section>`);
   });
   const cnt = document.getElementById("hb-count");
-  if(cnt) cnt.innerText = (hb.q || hb.pinsOnly || hb.lesson)
-    ? (rowCount ? `${rowCount} kết quả${hb.lesson ? " · " + (LUAT_LESSON_TOPICS[hb.lesson] || "") : ""}` : "")
-    : "";
+  const docInfo = hb.doc && hbDoc(hb.doc) ? hbDoc(hb.doc).full : "";
+  if(cnt) cnt.innerText = (hb.q || hb.pinsOnly || hb.doc) ? (rowCount ? `${rowCount} kết quả${docInfo ? " · " + docInfo : ""}` : "") : "";
   if(!parts.length){
     body.innerHTML = `<div class="card"><div class="empty">${hb.pinsOnly ? "Bạn chưa ghim dòng nào. Bấm ☆ ở cuối mỗi dòng để ghim những con số cần thuộc." : `Không tìm thấy “${esc(hb.q)}”. Thử từ khóa ngắn hơn, ví dụ “phat” thay vì “mức phạt tiền tối đa”.`}</div></div>`;
     return;
   }
-  body.innerHTML = (!hb.q && !hb.pinsOnly && parts.length > 2 ? `<nav class="hb-toc" aria-label="Mục lục sổ tay">${toc.join("")}</nav>` : "") + parts.join("");
+  body.innerHTML = (!hb.q && !hb.pinsOnly && !hb.doc ? `<nav class="hb-toc" aria-label="Mục lục sổ tay">${toc.join("")}</nav>` : "") + parts.join("");
 }
-
 /* ---------- Lesson content ---------- */
 /* ================= Góc học tập =================
    Hiện tại dữ liệu học tập lưu trên trình duyệt của máy học viên (localStorage), theo từng số điện thoại.
@@ -2653,7 +2632,6 @@ async function selectLesson(slug){
       <h2>📄 Tài liệu bài giảng</h2>
       ${docs.length ? docs.map(d => `<a class="doc-btn" href="${esc(d.url)}" target="_blank" rel="noopener">⬇️ ${esc(d.label)}</a>`).join("") : `<div class="empty">Chưa có tài liệu cho bài này.</div>`}
     </div>
-      ${hasHandbook(currentSubject) ? handbookLessonCardHtml(lessonIdx + 1) : ""}
       <div class="card note-card">
         <h2>✍️ Ghi chú của bạn</h2>
         <label for="my-note" class="muted" style="display:block;margin-bottom:8px;">Tự tóm tắt ý chính, công thức hay chỗ dễ nhầm của bài này. Ghi chú được lưu trên trình duyệt của máy bạn đang dùng.</label>
