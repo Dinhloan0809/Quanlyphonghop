@@ -856,6 +856,1442 @@
    ]
   },
   {
+   "id": "sl",
+   "name": "Mức sinh lời và rủi ro",
+   "drills": [
+    {
+     "id": "hpr",
+     "name": "Mức sinh lời kỳ nắm giữ",
+     "hint": "R = (P1 − P0 + cổ tức) / P0",
+     "q": "Mua cổ phiếu giá {P0} đồng, sau 1 năm bán giá {P1} đồng và trong năm nhận cổ tức {D} đồng. Mức sinh lời kỳ nắm giữ là:",
+     "vars": [
+      {
+       "k": "P0k",
+       "min": 20,
+       "max": 60,
+       "step": 5,
+       "desc": "Giá mua (nghìn đồng)"
+      },
+      {
+       "k": "up",
+       "min": 2,
+       "max": 10,
+       "step": 1,
+       "desc": "Giá tăng thêm (nghìn đồng)"
+      },
+      {
+       "k": "D",
+       "min": 1000,
+       "max": 3000,
+       "step": 500,
+       "desc": "Cổ tức (đồng)"
+      }
+     ],
+     "calc": [
+      {
+       "k": "P0",
+       "f": "P0k*1000"
+      },
+      {
+       "k": "P1",
+       "f": "P0+up*1000"
+      }
+     ],
+     "cond": "",
+     "ok": "(P1-P0+D)/P0*100",
+     "wrong": [
+      {
+       "f": "(P1-P0)/P0*100",
+       "note": "Quên cổ tức"
+      },
+      {
+       "f": "(P1-P0+D)/P1*100",
+       "note": "Chia cho giá bán"
+      },
+      {
+       "f": "D/P0*100",
+       "note": "Chỉ tính cổ tức"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Lãi vốn = {P1} − {P0} = {=P1-P0} đồng; cổ tức {D} đồng",
+      "R = ({=P1-P0} + {D}) / {P0} = {dapan}"
+     ],
+     "trap": "Mẫu số là giá MUA, và phải cộng cả cổ tức."
+    },
+    {
+     "id": "kyvong",
+     "name": "Mức sinh lời kỳ vọng theo kịch bản",
+     "hint": "E(R) = Σ xác suất × mức sinh lời",
+     "q": "Cổ phiếu có 3 kịch bản: tốt (xác suất {p1}%) lãi {r1}%; trung bình (xác suất {p2}%) lãi {r2}%; xấu (xác suất {p3}%) lãi {r3}%. Mức sinh lời kỳ vọng là:",
+     "vars": [
+      {
+       "k": "p1",
+       "pick": [
+        20,
+        25,
+        30
+       ],
+       "desc": "Xác suất kịch bản tốt %"
+      },
+      {
+       "k": "p3",
+       "pick": [
+        20,
+        25,
+        30
+       ],
+       "desc": "Xác suất kịch bản xấu %"
+      },
+      {
+       "k": "r1",
+       "pick": [
+        20,
+        25,
+        30
+       ],
+       "desc": "Lãi kịch bản tốt %"
+      },
+      {
+       "k": "r2",
+       "pick": [
+        8,
+        10,
+        12
+       ],
+       "desc": "Lãi kịch bản trung bình %"
+      },
+      {
+       "k": "r3",
+       "pick": [
+        -10,
+        -5
+       ],
+       "desc": "Lãi kịch bản xấu %"
+      }
+     ],
+     "calc": [
+      {
+       "k": "p2",
+       "f": "100-p1-p3"
+      }
+     ],
+     "cond": "",
+     "ok": "p1%*r1+p2%*r2+p3%*r3",
+     "wrong": [
+      {
+       "f": "(r1+r2+r3)/3",
+       "note": "Bình quân cộng, bỏ qua xác suất"
+      },
+      {
+       "f": "r2",
+       "note": "Lấy kịch bản trung bình"
+      },
+      {
+       "f": "p1%*r1+p2%*r2",
+       "note": "Bỏ sót kịch bản xấu"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "E(R) = {p1}% × {r1} + {p2}% × {r2} + {p3}% × ({r3})",
+      "= {dapan}"
+     ],
+     "trap": "Phải nhân từng mức sinh lời với xác suất của nó, kể cả kịch bản lỗ."
+    },
+    {
+     "id": "dlc",
+     "name": "Độ lệch chuẩn theo kịch bản",
+     "hint": "σ = căn của Σ xác suất × (R − E(R))²",
+     "q": "Cổ phiếu có 2 kịch bản: xác suất {p}% lãi {a}%, xác suất còn lại lãi {b}%. Độ lệch chuẩn của mức sinh lời là:",
+     "vars": [
+      {
+       "k": "p",
+       "pick": [
+        30,
+        40,
+        60,
+        70
+       ],
+       "desc": "Xác suất kịch bản 1 %"
+      },
+      {
+       "k": "a",
+       "pick": [
+        20,
+        30
+       ],
+       "desc": "Lãi kịch bản 1 %"
+      },
+      {
+       "k": "b",
+       "pick": [
+        -10,
+        0,
+        5
+       ],
+       "desc": "Lãi kịch bản 2 %"
+      }
+     ],
+     "calc": [
+      {
+       "k": "E",
+       "f": "p%*a+(1-p%)*b"
+      },
+      {
+       "k": "v",
+       "f": "p%*(a-E)^2+(1-p%)*(b-E)^2"
+      }
+     ],
+     "cond": "",
+     "ok": "sqrt(v)",
+     "wrong": [
+      {
+       "f": "v",
+       "note": "Quên lấy căn (đây là phương sai)"
+      },
+      {
+       "f": "sqrt(((a-E)^2+(b-E)^2)/2)",
+       "note": "Không nhân xác suất"
+      },
+      {
+       "f": "abs(a-b)",
+       "note": "Lấy chênh lệch hai kịch bản"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "E(R) = {p}% × {a} + {=100-p}% × ({b}) = {E:2}%",
+      "Phương sai = {p}% × ({a} − {E:2})² + {=100-p}% × ({b} − {E:2})² = {v:2}",
+      "σ = căn {v:2} = {dapan}"
+     ],
+     "trap": "{v:2} là phương sai, phải lấy căn mới ra độ lệch chuẩn."
+    },
+    {
+     "id": "lichsu",
+     "name": "Mức sinh lời bình quân cộng",
+     "hint": "Bình quân cộng = tổng các năm / số năm",
+     "q": "Mức sinh lời 4 năm của một cổ phiếu lần lượt là {r1}%, {r2}%, {r3}%, {r4}%. Mức sinh lời bình quân CỘNG mỗi năm là:",
+     "vars": [
+      {
+       "k": "r1",
+       "pick": [
+        10,
+        20,
+        30
+       ],
+       "desc": "Năm 1 %"
+      },
+      {
+       "k": "r2",
+       "pick": [
+        -10,
+        -5,
+        5
+       ],
+       "desc": "Năm 2 %"
+      },
+      {
+       "k": "r3",
+       "pick": [
+        15,
+        25
+       ],
+       "desc": "Năm 3 %"
+      },
+      {
+       "k": "r4",
+       "pick": [
+        0,
+        8,
+        12
+       ],
+       "desc": "Năm 4 %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(r1+r2+r3+r4)/4",
+     "wrong": [
+      {
+       "f": "(((1+r1%)*(1+r2%)*(1+r3%)*(1+r4%))^(1/4)-1)*100",
+       "note": "Tính thành bình quân nhân"
+      },
+      {
+       "f": "(r1+r2+r3+r4)/3",
+       "note": "Chia nhầm số năm"
+      },
+      {
+       "f": "r1+r2+r3+r4",
+       "note": "Quên chia số năm"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Tổng = {r1} + ({r2}) + {r3} + {r4} = {=r1+r2+r3+r4}",
+      "Bình quân cộng = {=r1+r2+r3+r4} / 4 = {dapan}"
+     ],
+     "trap": "Bình quân cộng dùng để ước lượng kỳ vọng một năm; bình quân nhân mới là tốc độ tăng thực tế nhiều năm."
+    },
+    {
+     "id": "nhan",
+     "name": "Mức sinh lời bình quân nhân",
+     "hint": "Bình quân nhân = [(1+R1)(1+R2)…]^(1/n) − 1",
+     "q": "Năm 1 cổ phiếu tăng {r1}%, năm 2 giảm {g}%. Mức sinh lời bình quân NHÂN mỗi năm là:",
+     "vars": [
+      {
+       "k": "r1",
+       "pick": [
+        20,
+        30,
+        50
+       ],
+       "desc": "Năm 1 tăng %"
+      },
+      {
+       "k": "g",
+       "pick": [
+        10,
+        20,
+        30
+       ],
+       "desc": "Năm 2 giảm %"
+      }
+     ],
+     "calc": [
+      {
+       "k": "r2",
+       "f": "-g"
+      }
+     ],
+     "cond": "r1 != g",
+     "ok": "(sqrt((1+r1%)*(1+r2%))-1)*100",
+     "wrong": [
+      {
+       "f": "(r1+r2)/2",
+       "note": "Bình quân cộng"
+      },
+      {
+       "f": "((1+r1%)*(1+r2%)-1)*100",
+       "note": "Lãi lũy kế 2 năm, chưa chia theo năm"
+      },
+      {
+       "f": "r1+r2",
+       "note": "Cộng thẳng"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "(1 + {r1}%) × (1 − {g}%) = {=(1+r1%)*(1+r2%):4}",
+      "Căn bậc 2 rồi trừ 1: {dapan}"
+     ],
+     "trap": "{=(r1+r2)/2:2}% là bình quân cộng, luôn cao hơn bình quân nhân khi lợi nhuận dao động."
+    },
+    {
+     "id": "sdnam",
+     "name": "Quy đổi độ lệch chuẩn theo thời gian",
+     "hint": "σ năm = σ tháng × căn 12",
+     "q": "Độ lệch chuẩn mức sinh lời theo THÁNG của cổ phiếu là {s}%. Độ lệch chuẩn theo NĂM (giả định các tháng độc lập) là:",
+     "vars": [
+      {
+       "k": "s",
+       "pick": [
+        3,
+        4,
+        5,
+        6
+       ],
+       "desc": "Độ lệch chuẩn tháng %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "s*sqrt(12)",
+     "wrong": [
+      {
+       "f": "s*12",
+       "note": "Nhân thẳng với 12"
+      },
+      {
+       "f": "s/sqrt(12)",
+       "note": "Chia cho căn 12"
+      },
+      {
+       "f": "s*2",
+       "note": "Nhân căn 4"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Phương sai tỷ lệ với thời gian nên độ lệch chuẩn tỷ lệ với căn thời gian",
+      "σ năm = {s}% × căn 12 = {dapan}"
+     ],
+     "trap": "{=s*12:2}% là nhân thẳng với 12: chỉ phương sai mới nhân 12."
+    },
+    {
+     "id": "cv",
+     "name": "Hệ số biến thiên",
+     "hint": "CV = độ lệch chuẩn / mức sinh lời kỳ vọng",
+     "q": "Cổ phiếu có mức sinh lời kỳ vọng {e}% và độ lệch chuẩn {sd}%. Hệ số biến thiên (rủi ro trên một đơn vị lợi nhuận) là:",
+     "vars": [
+      {
+       "k": "sd",
+       "min": 12,
+       "max": 30,
+       "step": 2,
+       "desc": "Độ lệch chuẩn %"
+      },
+      {
+       "k": "e",
+       "min": 8,
+       "max": 20,
+       "step": 2,
+       "desc": "Kỳ vọng %"
+      }
+     ],
+     "calc": [],
+     "cond": "sd != e",
+     "ok": "sd/e",
+     "wrong": [
+      {
+       "f": "e/sd",
+       "note": "Đảo tử và mẫu"
+      },
+      {
+       "f": "sd*e/100",
+       "note": "Nhân hai số"
+      },
+      {
+       "f": "sd-e",
+       "note": "Lấy hiệu"
+      }
+     ],
+     "unit": "",
+     "dec": 2,
+     "steps": [
+      "CV = σ / E(R) = {sd} / {e} = {dapan}"
+     ],
+     "trap": "CV càng nhỏ càng tốt; đảo tử mẫu là ra chỉ tiêu kiểu Sharpe."
+    },
+    {
+     "id": "chuan",
+     "name": "Phân phối chuẩn: khoảng 95%",
+     "hint": "Khoảng 95% ≈ E(R) ± 2σ",
+     "q": "Mức sinh lời của cổ phiếu có phân phối chuẩn, kỳ vọng {e}%, độ lệch chuẩn {sd}%. Với xác suất khoảng 95%, mức sinh lời THẤP NHẤT ước tính là:",
+     "vars": [
+      {
+       "k": "e",
+       "pick": [
+        10,
+        12,
+        15
+       ],
+       "desc": "Kỳ vọng %"
+      },
+      {
+       "k": "sd",
+       "pick": [
+        8,
+        10,
+        20
+       ],
+       "desc": "Độ lệch chuẩn %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "e-2*sd",
+     "wrong": [
+      {
+       "f": "e-sd",
+       "note": "Dùng 1σ (khoảng 68%)"
+      },
+      {
+       "f": "e-3*sd",
+       "note": "Dùng 3σ (khoảng 99,7%)"
+      },
+      {
+       "f": "e-sd/2",
+       "note": "Dùng nửa σ"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Khoảng 95% là E(R) ± 2σ",
+      "Cận dưới = {e} − 2 × {sd} = {dapan}"
+     ],
+     "trap": "±1σ là 68%, ±2σ là 95%, ±3σ là 99,7%."
+    },
+    {
+     "id": "tuongquan",
+     "name": "Hệ số tương quan từ hiệp phương sai",
+     "hint": "ρ = Cov(A,B) / (σA × σB)",
+     "q": "Hai cổ phiếu A và B có hiệp phương sai {cov} (đơn vị %²), độ lệch chuẩn của A là {sa}% và của B là {sb}%. Hệ số tương quan là:",
+     "vars": [
+      {
+       "k": "sa",
+       "pick": [
+        10,
+        20,
+        25
+       ],
+       "desc": "σA %"
+      },
+      {
+       "k": "sb",
+       "pick": [
+        8,
+        12,
+        16
+       ],
+       "desc": "σB %"
+      },
+      {
+       "k": "rho",
+       "pick": [
+        0.2,
+        0.4,
+        0.5,
+        -0.3
+       ],
+       "desc": "Tương quan (đáp án)"
+      }
+     ],
+     "calc": [
+      {
+       "k": "cov",
+       "f": "rho*sa*sb"
+      }
+     ],
+     "cond": "",
+     "ok": "rho",
+     "wrong": [
+      {
+       "f": "cov/(sa^2)",
+       "note": "Chia cho phương sai của A"
+      },
+      {
+       "f": "cov/(sa+sb)",
+       "note": "Chia cho tổng độ lệch chuẩn"
+      },
+      {
+       "f": "cov/(sa*sb)/2",
+       "note": "Chia đôi"
+      }
+     ],
+     "unit": "",
+     "dec": 2,
+     "steps": [
+      "ρ = Cov / (σA × σB) = {cov} / ({sa} × {sb}) = {dapan}"
+     ],
+     "trap": "Hệ số tương quan luôn nằm trong khoảng −1 đến +1."
+    },
+    {
+     "id": "huudung",
+     "name": "Hàm hữu dụng",
+     "hint": "U = E(R) − 0,5 × A × σ²",
+     "q": "Danh mục có mức sinh lời kỳ vọng {e}%, độ lệch chuẩn {sd}%. Nhà đầu tư có hệ số ngại rủi ro A = {A}. Mức hữu dụng U = E(R) − 0,5 × A × σ² (tính với số thập phân) là:",
+     "vars": [
+      {
+       "k": "e",
+       "pick": [
+        10,
+        12,
+        15
+       ],
+       "desc": "Kỳ vọng %"
+      },
+      {
+       "k": "sd",
+       "pick": [
+        10,
+        20
+       ],
+       "desc": "Độ lệch chuẩn %"
+      },
+      {
+       "k": "A",
+       "pick": [
+        2,
+        3,
+        4
+       ],
+       "desc": "Hệ số ngại rủi ro"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(e%-0.5*A*(sd%)^2)*100",
+     "wrong": [
+      {
+       "f": "(e%-A*(sd%)^2)*100",
+       "note": "Quên hệ số 0,5"
+      },
+      {
+       "f": "(e%-0.5*A*sd%)*100",
+       "note": "Quên bình phương σ"
+      },
+      {
+       "f": "e",
+       "note": "Bỏ qua rủi ro"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "σ² = ({sd}%)² = {=(sd%)^2:4}",
+      "U = {e}% − 0,5 × {A} × {=(sd%)^2:4} = {dapan}"
+     ],
+     "trap": "Phải đổi % ra số thập phân trước khi bình phương."
+    }
+   ]
+  },
+  {
+   "id": "dm",
+   "name": "Danh mục, CAPM, đánh giá hiệu quả",
+   "drills": [
+    {
+     "id": "erp",
+     "name": "Lợi nhuận kỳ vọng của danh mục",
+     "hint": "E(Rp) = Σ tỷ trọng × E(R)",
+     "q": "Danh mục gồm {w}% cổ phiếu A (kỳ vọng {ra}%) và phần còn lại là cổ phiếu B (kỳ vọng {rb}%). Mức sinh lời kỳ vọng của danh mục là:",
+     "vars": [
+      {
+       "k": "w",
+       "pick": [
+        30,
+        40,
+        60,
+        70
+       ],
+       "desc": "Tỷ trọng A %"
+      },
+      {
+       "k": "ra",
+       "pick": [
+        12,
+        15,
+        18
+       ],
+       "desc": "Kỳ vọng A %"
+      },
+      {
+       "k": "rb",
+       "pick": [
+        6,
+        8,
+        10
+       ],
+       "desc": "Kỳ vọng B %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "w%*ra+(1-w%)*rb",
+     "wrong": [
+      {
+       "f": "(ra+rb)/2",
+       "note": "Bình quân cộng, bỏ qua tỷ trọng"
+      },
+      {
+       "f": "w%*rb+(1-w%)*ra",
+       "note": "Đảo tỷ trọng"
+      },
+      {
+       "f": "w%*ra",
+       "note": "Chỉ tính phần A"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "E(Rp) = {w}% × {ra} + {=100-w}% × {rb} = {dapan}"
+     ],
+     "trap": "Lợi nhuận danh mục là bình quân GIA QUYỀN theo tỷ trọng."
+    },
+    {
+     "id": "rr2",
+     "name": "Rủi ro danh mục 2 tài sản",
+     "hint": "σp² = wA²σA² + wB²σB² + 2·wA·wB·ρ·σA·σB",
+     "q": "Danh mục gồm {w}% cổ phiếu A (σ = {sa}%) và {=100-w}% cổ phiếu B (σ = {sb}%), hệ số tương quan {rho}. Độ lệch chuẩn của danh mục là:",
+     "vars": [
+      {
+       "k": "w",
+       "pick": [
+        40,
+        50,
+        60
+       ],
+       "desc": "Tỷ trọng A %"
+      },
+      {
+       "k": "sa",
+       "pick": [
+        20,
+        30
+       ],
+       "desc": "σA %"
+      },
+      {
+       "k": "sb",
+       "pick": [
+        10,
+        15
+       ],
+       "desc": "σB %"
+      },
+      {
+       "k": "rho",
+       "pick": [
+        0.2,
+        0.5,
+        -0.2
+       ],
+       "desc": "Tương quan"
+      }
+     ],
+     "calc": [
+      {
+       "k": "wa",
+       "f": "w%"
+      },
+      {
+       "k": "wb",
+       "f": "1-w%"
+      },
+      {
+       "k": "v",
+       "f": "wa^2*sa^2+wb^2*sb^2+2*wa*wb*rho*sa*sb"
+      }
+     ],
+     "cond": "",
+     "ok": "sqrt(v)",
+     "wrong": [
+      {
+       "f": "wa*sa+wb*sb",
+       "note": "Bình quân gia quyền độ lệch chuẩn"
+      },
+      {
+       "f": "sqrt(wa^2*sa^2+wb^2*sb^2)",
+       "note": "Quên phần hiệp phương sai"
+      },
+      {
+       "f": "sqrt(wa*sa^2+wb*sb^2+2*wa*wb*rho*sa*sb)",
+       "note": "Quên bình phương tỷ trọng"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "σp² = {wa:2}² × {sa}² + {wb:2}² × {sb}² + 2 × {wa:2} × {wb:2} × {rho} × {sa} × {sb} = {v:2}",
+      "σp = căn {v:2} = {dapan}"
+     ],
+     "trap": "{=wa*sa+wb*sb:2}% chỉ đúng khi ρ = 1; ρ < 1 thì rủi ro danh mục luôn thấp hơn."
+    },
+    {
+     "id": "am1",
+     "name": "Danh mục hết rủi ro khi ρ = −1",
+     "hint": "wA = σB / (σA + σB)",
+     "q": "Hai cổ phiếu A (σ = {sa}%) và B (σ = {sb}%) có hệ số tương quan −1. Tỷ trọng đầu tư vào A để danh mục KHÔNG còn rủi ro là:",
+     "vars": [
+      {
+       "k": "sa",
+       "pick": [
+        10,
+        20,
+        30
+       ],
+       "desc": "σA %"
+      },
+      {
+       "k": "sb",
+       "pick": [
+        15,
+        25,
+        40
+       ],
+       "desc": "σB %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "sb/(sa+sb)*100",
+     "wrong": [
+      {
+       "f": "sa/(sa+sb)*100",
+       "note": "Đảo sang tỷ trọng của B"
+      },
+      {
+       "f": "50",
+       "note": "Chia đều"
+      },
+      {
+       "f": "abs(sa-sb)/(sa+sb)*100",
+       "note": "Lấy hiệu"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Khi ρ = −1: wA × σA = wB × σB",
+      "wA = σB / (σA + σB) = {sb} / ({sa} + {sb}) = {dapan}"
+     ],
+     "trap": "Cổ phiếu rủi ro CAO hơn phải có tỷ trọng THẤP hơn."
+    },
+    {
+     "id": "mvp",
+     "name": "Danh mục rủi ro nhỏ nhất khi ρ = 0",
+     "hint": "wA = σB² / (σA² + σB²)",
+     "q": "Hai cổ phiếu A (σ = {sa}%) và B (σ = {sb}%) không tương quan (ρ = 0). Tỷ trọng của A trong danh mục có rủi ro NHỎ NHẤT là:",
+     "vars": [
+      {
+       "k": "sa",
+       "pick": [
+        10,
+        20,
+        30
+       ],
+       "desc": "σA %"
+      },
+      {
+       "k": "sb",
+       "pick": [
+        15,
+        25,
+        40
+       ],
+       "desc": "σB %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "sb^2/(sa^2+sb^2)*100",
+     "wrong": [
+      {
+       "f": "sa^2/(sa^2+sb^2)*100",
+       "note": "Đảo sang tỷ trọng của B"
+      },
+      {
+       "f": "sb/(sa+sb)*100",
+       "note": "Dùng công thức của ρ = −1"
+      },
+      {
+       "f": "50",
+       "note": "Chia đều"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "wA = σB² / (σA² + σB²) = {sb}² / ({sa}² + {sb}²) = {dapan}"
+     ],
+     "trap": "Với ρ = 0 dùng PHƯƠNG SAI (bình phương), không dùng độ lệch chuẩn."
+    },
+    {
+     "id": "capm",
+     "name": "CAPM: mức sinh lời yêu cầu",
+     "hint": "E(R) = Rf + β × (Rm − Rf)",
+     "q": "Lãi suất phi rủi ro {rf}%, mức sinh lời thị trường {rm}%, beta của cổ phiếu là {b}. Mức sinh lời yêu cầu theo CAPM là:",
+     "vars": [
+      {
+       "k": "rf",
+       "min": 3,
+       "max": 6,
+       "step": 1,
+       "desc": "Phi rủi ro %"
+      },
+      {
+       "k": "rm",
+       "min": 10,
+       "max": 14,
+       "step": 1,
+       "desc": "Thị trường %"
+      },
+      {
+       "k": "b",
+       "pick": [
+        0.8,
+        1.2,
+        1.5,
+        1.8
+       ],
+       "desc": "Beta"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "rf+b*(rm-rf)",
+     "wrong": [
+      {
+       "f": "b*rm",
+       "note": "Nhân beta với Rm"
+      },
+      {
+       "f": "rf+b*rm",
+       "note": "Quên trừ Rf trong phần bù"
+      },
+      {
+       "f": "rm",
+       "note": "Lấy luôn Rm"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Phần bù rủi ro thị trường = {rm} − {rf} = {=rm-rf}%",
+      "E(R) = {rf} + {b} × {=rm-rf} = {dapan}"
+     ],
+     "trap": "Beta nhân với PHẦN BÙ (Rm − Rf), không nhân với Rm."
+    },
+    {
+     "id": "alphakv",
+     "name": "Định giá cao hay thấp theo CAPM",
+     "hint": "Chênh lệch = sinh lời dự báo − sinh lời yêu cầu theo CAPM",
+     "q": "Rf = {rf}%, Rm = {rm}%, beta = {b}. Nhà phân tích dự báo cổ phiếu sinh lời {kd}%. Chênh lệch giữa mức dự báo và mức yêu cầu theo CAPM là (dương: đang bị định giá thấp, nên mua):",
+     "vars": [
+      {
+       "k": "rf",
+       "min": 3,
+       "max": 6,
+       "step": 1,
+       "desc": "Phi rủi ro %"
+      },
+      {
+       "k": "rm",
+       "min": 10,
+       "max": 14,
+       "step": 1,
+       "desc": "Thị trường %"
+      },
+      {
+       "k": "b",
+       "pick": [
+        0.8,
+        1.2,
+        1.5
+       ],
+       "desc": "Beta"
+      },
+      {
+       "k": "kd",
+       "min": 10,
+       "max": 20,
+       "step": 2,
+       "desc": "Dự báo %"
+      }
+     ],
+     "calc": [
+      {
+       "k": "k",
+       "f": "rf+b*(rm-rf)"
+      }
+     ],
+     "cond": "abs(kd-k) > 0.2",
+     "ok": "kd-k",
+     "wrong": [
+      {
+       "f": "kd-b*rm",
+       "note": "Tính sai mức yêu cầu"
+      },
+      {
+       "f": "kd-rm",
+       "note": "So với thị trường"
+      },
+      {
+       "f": "k-kd",
+       "note": "Trừ ngược"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Mức yêu cầu = {rf} + {b} × ({rm} − {rf}) = {k:2}%",
+      "Chênh lệch = {kd} − {k:2} = {dapan}"
+     ],
+     "trap": "Dự báo CAO hơn yêu cầu thì cổ phiếu nằm TRÊN đường SML: định giá thấp, nên mua."
+    },
+    {
+     "id": "beta",
+     "name": "Tính beta",
+     "hint": "β = ρ × σi / σm",
+     "q": "Cổ phiếu có độ lệch chuẩn {si}%, thị trường có độ lệch chuẩn {sm}%, hệ số tương quan giữa cổ phiếu và thị trường là {rho}. Beta của cổ phiếu là:",
+     "vars": [
+      {
+       "k": "rho",
+       "pick": [
+        0.4,
+        0.5,
+        0.6,
+        0.8
+       ],
+       "desc": "Tương quan"
+      },
+      {
+       "k": "si",
+       "pick": [
+        24,
+        30,
+        36
+       ],
+       "desc": "σ cổ phiếu %"
+      },
+      {
+       "k": "sm",
+       "pick": [
+        12,
+        15,
+        20
+       ],
+       "desc": "σ thị trường %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "rho*si/sm",
+     "wrong": [
+      {
+       "f": "rho*sm/si",
+       "note": "Đảo tử và mẫu"
+      },
+      {
+       "f": "si/sm",
+       "note": "Quên hệ số tương quan"
+      },
+      {
+       "f": "rho*si*sm/100",
+       "note": "Nhân thay vì chia"
+      }
+     ],
+     "unit": "",
+     "dec": 2,
+     "steps": [
+      "β = ρ × σi / σm = {rho} × {si} / {sm} = {dapan}"
+     ],
+     "trap": "Cũng có thể viết β = Cov(i,m) / σm²."
+    },
+    {
+     "id": "betadm",
+     "name": "Beta của danh mục",
+     "hint": "βp = Σ tỷ trọng × β",
+     "q": "Danh mục gồm {w}% cổ phiếu có beta {b1} và phần còn lại là cổ phiếu có beta {b2}. Beta của danh mục là:",
+     "vars": [
+      {
+       "k": "w",
+       "pick": [
+        30,
+        40,
+        60,
+        70
+       ],
+       "desc": "Tỷ trọng cổ phiếu 1 %"
+      },
+      {
+       "k": "b1",
+       "pick": [
+        0.8,
+        1.2,
+        1.5
+       ],
+       "desc": "Beta 1"
+      },
+      {
+       "k": "b2",
+       "pick": [
+        0.5,
+        1,
+        1.8
+       ],
+       "desc": "Beta 2"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "w%*b1+(1-w%)*b2",
+     "wrong": [
+      {
+       "f": "(b1+b2)/2",
+       "note": "Bình quân cộng"
+      },
+      {
+       "f": "w%*b2+(1-w%)*b1",
+       "note": "Đảo tỷ trọng"
+      },
+      {
+       "f": "b1*b2",
+       "note": "Nhân hai beta"
+      }
+     ],
+     "unit": "",
+     "dec": 2,
+     "steps": [
+      "βp = {w}% × {b1} + {=100-w}% × {b2} = {dapan}"
+     ],
+     "trap": "Beta danh mục là bình quân gia quyền, khác với độ lệch chuẩn danh mục."
+    },
+    {
+     "id": "timrm",
+     "name": "Suy ngược từ CAPM",
+     "hint": "Rm = Rf + (E(R) − Rf) / β",
+     "q": "Cổ phiếu có beta {b} và mức sinh lời yêu cầu theo CAPM là {r}%. Lãi suất phi rủi ro {rf}%. Mức sinh lời của thị trường là:",
+     "vars": [
+      {
+       "k": "rf",
+       "min": 3,
+       "max": 6,
+       "step": 1,
+       "desc": "Phi rủi ro %"
+      },
+      {
+       "k": "b",
+       "pick": [
+        0.8,
+        1.2,
+        1.5,
+        2
+       ],
+       "desc": "Beta"
+      },
+      {
+       "k": "prem",
+       "pick": [
+        6,
+        8,
+        10
+       ],
+       "desc": "Phần bù thị trường %"
+      }
+     ],
+     "calc": [
+      {
+       "k": "r",
+       "f": "rf+b*prem"
+      }
+     ],
+     "cond": "",
+     "ok": "rf+prem",
+     "wrong": [
+      {
+       "f": "(r-rf)/b",
+       "note": "Mới ra phần bù, quên cộng Rf"
+      },
+      {
+       "f": "r/b",
+       "note": "Chia thẳng cho beta"
+      },
+      {
+       "f": "r-rf",
+       "note": "Lấy phần bù của cổ phiếu"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Phần bù thị trường = ({r} − {rf}) / {b} = {prem}%",
+      "Rm = {rf} + {prem} = {dapan}"
+     ],
+     "trap": "({r} − {rf}) / {b} mới là (Rm − Rf), phải cộng lại Rf."
+    },
+    {
+     "id": "cml",
+     "name": "Đường thị trường vốn (CML)",
+     "hint": "E(Rp) = Rf + (Rm − Rf) / σm × σp",
+     "q": "Rf = {rf}%, Rm = {rm}%, độ lệch chuẩn thị trường {sm}%. Một danh mục hiệu quả trên đường CML có độ lệch chuẩn {sp}%. Mức sinh lời kỳ vọng của danh mục là:",
+     "vars": [
+      {
+       "k": "rf",
+       "min": 3,
+       "max": 6,
+       "step": 1,
+       "desc": "Phi rủi ro %"
+      },
+      {
+       "k": "rm",
+       "min": 10,
+       "max": 14,
+       "step": 1,
+       "desc": "Thị trường %"
+      },
+      {
+       "k": "sm",
+       "pick": [
+        15,
+        20,
+        25
+       ],
+       "desc": "σ thị trường %"
+      },
+      {
+       "k": "sp",
+       "pick": [
+        10,
+        12,
+        30
+       ],
+       "desc": "σ danh mục %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "rf+(rm-rf)/sm*sp",
+     "wrong": [
+      {
+       "f": "rm*sp/sm",
+       "note": "Quên Rf"
+      },
+      {
+       "f": "rf+rm/sm*sp",
+       "note": "Quên trừ Rf trong phần bù"
+      },
+      {
+       "f": "rf+(rm-rf)*sp/100",
+       "note": "Quên chia σm"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Độ dốc CML = ({rm} − {rf}) / {sm} = {=(rm-rf)/sm:3}",
+      "E(Rp) = {rf} + {=(rm-rf)/sm:3} × {sp} = {dapan}"
+     ],
+     "trap": "CML dùng độ lệch chuẩn (rủi ro tổng thể); SML mới dùng beta."
+    },
+    {
+     "id": "sharpe",
+     "name": "Tỷ số Sharpe",
+     "hint": "Sharpe = (Rp − Rf) / σp",
+     "q": "Danh mục đạt mức sinh lời {rp}%, độ lệch chuẩn {sd}%, lãi suất phi rủi ro {rf}%. Tỷ số Sharpe là:",
+     "vars": [
+      {
+       "k": "rp",
+       "min": 10,
+       "max": 20,
+       "step": 2,
+       "desc": "Sinh lời danh mục %"
+      },
+      {
+       "k": "rf",
+       "min": 3,
+       "max": 6,
+       "step": 1,
+       "desc": "Phi rủi ro %"
+      },
+      {
+       "k": "sd",
+       "pick": [
+        10,
+        15,
+        20,
+        25
+       ],
+       "desc": "σ danh mục %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(rp-rf)/sd",
+     "wrong": [
+      {
+       "f": "rp/sd",
+       "note": "Quên trừ Rf"
+      },
+      {
+       "f": "sd/(rp-rf)",
+       "note": "Đảo tử và mẫu"
+      },
+      {
+       "f": "(rp+rf)/sd",
+       "note": "Cộng nhầm Rf"
+      }
+     ],
+     "unit": "",
+     "dec": 2,
+     "steps": [
+      "Sharpe = ({rp} − {rf}) / {sd} = {dapan}"
+     ],
+     "trap": "Sharpe chia cho ĐỘ LỆCH CHUẨN; Treynor chia cho beta."
+    },
+    {
+     "id": "treynor",
+     "name": "Tỷ số Treynor",
+     "hint": "Treynor = (Rp − Rf) / βp",
+     "q": "Danh mục đạt mức sinh lời {rp}%, beta {b}, lãi suất phi rủi ro {rf}%. Tỷ số Treynor là:",
+     "vars": [
+      {
+       "k": "rp",
+       "min": 10,
+       "max": 20,
+       "step": 2,
+       "desc": "Sinh lời danh mục %"
+      },
+      {
+       "k": "rf",
+       "min": 3,
+       "max": 6,
+       "step": 1,
+       "desc": "Phi rủi ro %"
+      },
+      {
+       "k": "b",
+       "pick": [
+        0.8,
+        1.2,
+        1.5
+       ],
+       "desc": "Beta danh mục"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(rp-rf)/b",
+     "wrong": [
+      {
+       "f": "rp/b",
+       "note": "Quên trừ Rf"
+      },
+      {
+       "f": "(rp-rf)*b",
+       "note": "Nhân thay vì chia"
+      },
+      {
+       "f": "(rp+rf)/b",
+       "note": "Cộng nhầm Rf"
+      }
+     ],
+     "unit": "",
+     "dec": 2,
+     "steps": [
+      "Treynor = ({rp} − {rf}) / {b} = {dapan}"
+     ],
+     "trap": "Treynor dùng beta nên chỉ phù hợp với danh mục đã đa dạng hóa tốt."
+    },
+    {
+     "id": "jensen",
+     "name": "Alpha Jensen",
+     "hint": "α = Rp − [Rf + βp × (Rm − Rf)]",
+     "q": "Danh mục đạt mức sinh lời {rp}%, beta {b}. Rf = {rf}%, Rm = {rm}%. Alpha Jensen của danh mục là:",
+     "vars": [
+      {
+       "k": "rp",
+       "min": 10,
+       "max": 20,
+       "step": 2,
+       "desc": "Sinh lời danh mục %"
+      },
+      {
+       "k": "rf",
+       "min": 3,
+       "max": 6,
+       "step": 1,
+       "desc": "Phi rủi ro %"
+      },
+      {
+       "k": "rm",
+       "min": 9,
+       "max": 13,
+       "step": 1,
+       "desc": "Thị trường %"
+      },
+      {
+       "k": "b",
+       "pick": [
+        0.8,
+        1.2,
+        1.5
+       ],
+       "desc": "Beta"
+      }
+     ],
+     "calc": [
+      {
+       "k": "k",
+       "f": "rf+b*(rm-rf)"
+      }
+     ],
+     "cond": "abs(rp-k) > 0.2",
+     "ok": "rp-k",
+     "wrong": [
+      {
+       "f": "rp-rm",
+       "note": "So thẳng với thị trường"
+      },
+      {
+       "f": "rp-b*rm",
+       "note": "Tính sai mức yêu cầu"
+      },
+      {
+       "f": "k-rp",
+       "note": "Trừ ngược"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Mức sinh lời yêu cầu = {rf} + {b} × ({rm} − {rf}) = {k:2}%",
+      "α = {rp} − {k:2} = {dapan}"
+     ],
+     "trap": "Alpha dương nghĩa là nhà quản lý tạo ra lợi nhuận vượt mức bù rủi ro."
+    },
+    {
+     "id": "twr",
+     "name": "Lợi nhuận theo trọng số thời gian (TWR)",
+     "hint": "TWR = (1 + R1) × (1 + R2) − 1",
+     "q": "Một quỹ đạt mức sinh lời {r1}% ở nửa đầu năm và {r2}% ở nửa cuối năm. Mức sinh lời cả năm theo trọng số thời gian là:",
+     "vars": [
+      {
+       "k": "r1",
+       "pick": [
+        10,
+        20,
+        25
+       ],
+       "desc": "Kỳ 1 %"
+      },
+      {
+       "k": "r2",
+       "pick": [
+        -10,
+        -5,
+        5,
+        8
+       ],
+       "desc": "Kỳ 2 %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "((1+r1%)*(1+r2%)-1)*100",
+     "wrong": [
+      {
+       "f": "r1+r2",
+       "note": "Cộng thẳng"
+      },
+      {
+       "f": "(r1+r2)/2",
+       "note": "Bình quân cộng"
+      },
+      {
+       "f": "(sqrt((1+r1%)*(1+r2%))-1)*100",
+       "note": "Bình quân nhân mỗi kỳ"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "(1 + {r1}%) × (1 + {r2}%) − 1 = {dapan}"
+     ],
+     "trap": "TWR ghép lãi các kỳ, không bị ảnh hưởng bởi thời điểm nộp rút tiền."
+    }
+   ]
+  },
+  {
    "id": "cp",
    "name": "Định giá cổ phiếu",
    "drills": [
@@ -1695,6 +3131,2446 @@
    ]
   },
   {
+   "id": "tp",
+   "name": "Trái phiếu",
+   "drills": [
+    {
+     "id": "coupon",
+     "name": "Định giá trái phiếu coupon",
+     "hint": "P = C × [1 − (1+y)^−n] / y + F / (1+y)^n",
+     "q": "Trái phiếu mệnh giá 100.000 đồng, lãi coupon {c}%/năm trả cuối mỗi năm, còn {n} năm đáo hạn. Lãi suất thị trường {y}%/năm. Giá trái phiếu là:",
+     "vars": [
+      {
+       "k": "c",
+       "pick": [
+        8,
+        9,
+        10
+       ],
+       "desc": "Coupon %"
+      },
+      {
+       "k": "y",
+       "pick": [
+        7,
+        11,
+        12
+       ],
+       "desc": "Lãi suất thị trường %"
+      },
+      {
+       "k": "n",
+       "min": 3,
+       "max": 7,
+       "step": 1,
+       "desc": "Số năm còn lại"
+      }
+     ],
+     "calc": [
+      {
+       "k": "F",
+       "f": "100000"
+      },
+      {
+       "k": "Cp",
+       "f": "F*c%"
+      },
+      {
+       "k": "a",
+       "f": "(1-(1+y%)^(-n))/y%"
+      }
+     ],
+     "cond": "",
+     "ok": "Cp*a+F/(1+y%)^n",
+     "wrong": [
+      {
+       "f": "F",
+       "note": "Lấy luôn mệnh giá"
+      },
+      {
+       "f": "Cp*n+F",
+       "note": "Cộng thẳng, không chiết khấu"
+      },
+      {
+       "f": "Cp*a+F",
+       "note": "Quên chiết khấu mệnh giá"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "Coupon mỗi năm = 100.000 × {c}% = {Cp} đồng",
+      "PV coupon = {Cp} × {a:4} = {=Cp*a:0}; PV mệnh giá = 100.000 / (1 + {y}%)^{n} = {=F/(1+y%)^n:0}",
+      "Giá = {dapan}"
+     ],
+     "trap": "Lãi suất thị trường cao hơn coupon thì giá thấp hơn mệnh giá, và ngược lại."
+    },
+    {
+     "id": "bannien",
+     "name": "Trái phiếu trả lãi 6 tháng",
+     "hint": "Chia đôi coupon và lãi suất, nhân đôi số kỳ",
+     "q": "Trái phiếu mệnh giá 100.000 đồng, coupon {c}%/năm trả 6 THÁNG một lần, còn {n} năm đáo hạn. Lãi suất thị trường {y}%/năm. Giá trái phiếu là:",
+     "vars": [
+      {
+       "k": "c",
+       "pick": [
+        8,
+        10
+       ],
+       "desc": "Coupon %"
+      },
+      {
+       "k": "y",
+       "pick": [
+        6,
+        12
+       ],
+       "desc": "Lãi suất thị trường %"
+      },
+      {
+       "k": "n",
+       "min": 2,
+       "max": 5,
+       "step": 1,
+       "desc": "Số năm còn lại"
+      }
+     ],
+     "calc": [
+      {
+       "k": "F",
+       "f": "100000"
+      },
+      {
+       "k": "Cp",
+       "f": "F*c%/2"
+      },
+      {
+       "k": "i",
+       "f": "y%/2"
+      },
+      {
+       "k": "m",
+       "f": "2*n"
+      }
+     ],
+     "cond": "",
+     "ok": "Cp*(1-(1+i)^(-m))/i+F/(1+i)^m",
+     "wrong": [
+      {
+       "f": "F*c%*(1-(1+y%)^(-n))/y%+F/(1+y%)^n",
+       "note": "Tính như trả lãi hằng năm"
+      },
+      {
+       "f": "F*c%*(1-(1+i)^(-m))/i+F/(1+i)^m",
+       "note": "Quên chia đôi coupon"
+      },
+      {
+       "f": "Cp*(1-(1+i)^(-n))/i+F/(1+i)^n",
+       "note": "Quên nhân đôi số kỳ"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "Mỗi kỳ 6 tháng: coupon {Cp} đồng, lãi suất {=y/2}%, số kỳ {m}",
+      "Giá = {Cp} × [1 − (1 + {=y/2}%)^−{m}] / {=y/2}% + 100.000 / (1 + {=y/2}%)^{m} = {dapan}"
+     ],
+     "trap": "Ba thứ phải đổi cùng lúc: coupon, lãi suất, số kỳ."
+    },
+    {
+     "id": "zero",
+     "name": "Trái phiếu không trả lãi",
+     "hint": "P = F / (1 + y)^n",
+     "q": "Trái phiếu không trả lãi (zero-coupon) mệnh giá 100.000 đồng, còn {n} năm đáo hạn. Lãi suất thị trường {y}%/năm. Giá trái phiếu là:",
+     "vars": [
+      {
+       "k": "y",
+       "min": 6,
+       "max": 12,
+       "step": 1,
+       "desc": "Lãi suất thị trường %"
+      },
+      {
+       "k": "n",
+       "min": 2,
+       "max": 8,
+       "step": 1,
+       "desc": "Số năm còn lại"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "100000/(1+y%)^n",
+     "wrong": [
+      {
+       "f": "100000/(1+y%*n)",
+       "note": "Chiết khấu theo lãi đơn"
+      },
+      {
+       "f": "100000/(1+y%)^(n-1)",
+       "note": "Đếm thiếu một kỳ"
+      },
+      {
+       "f": "100000*(1-y%)^n",
+       "note": "Trừ lãi suất thay vì chia"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "P = 100.000 / (1 + {y}%)^{n} = {dapan}"
+     ],
+     "trap": "Trái phiếu không trả lãi luôn bán thấp hơn mệnh giá."
+    },
+    {
+     "id": "hienhanh",
+     "name": "Lãi suất hiện hành",
+     "hint": "Lãi suất hiện hành = coupon năm / giá thị trường",
+     "q": "Trái phiếu mệnh giá 100.000 đồng, coupon {c}%/năm, đang giao dịch ở giá {P} đồng. Lãi suất hiện hành là:",
+     "vars": [
+      {
+       "k": "c",
+       "pick": [
+        8,
+        9,
+        10
+       ],
+       "desc": "Coupon %"
+      },
+      {
+       "k": "Pk",
+       "pick": [
+        90,
+        92,
+        95,
+        104,
+        108
+       ],
+       "desc": "Giá (nghìn đồng)"
+      }
+     ],
+     "calc": [
+      {
+       "k": "P",
+       "f": "Pk*1000"
+      }
+     ],
+     "cond": "",
+     "ok": "100000*c%/P*100",
+     "wrong": [
+      {
+       "f": "c",
+       "note": "Lấy luôn lãi suất coupon"
+      },
+      {
+       "f": "c*P/100000",
+       "note": "Nhân với giá thay vì chia"
+      },
+      {
+       "f": "(100000-P)/P*100",
+       "note": "Tính chênh lệch giá"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Coupon năm = 100.000 × {c}% = {=100000*c%} đồng",
+      "Lãi suất hiện hành = {=100000*c%} / {P} = {dapan}"
+     ],
+     "trap": "Mẫu số là GIÁ THỊ TRƯỜNG, không phải mệnh giá."
+    },
+    {
+     "id": "ytm",
+     "name": "Lợi suất đáo hạn (ước lượng)",
+     "hint": "YTM ≈ [C + (F − P)/n] / [(F + P)/2]",
+     "q": "Trái phiếu mệnh giá 100.000 đồng, coupon {c}%/năm, còn {n} năm đáo hạn, đang giao dịch ở giá {P} đồng. Lợi suất đáo hạn ước lượng theo công thức gần đúng là:",
+     "vars": [
+      {
+       "k": "c",
+       "pick": [
+        8,
+        10
+       ],
+       "desc": "Coupon %"
+      },
+      {
+       "k": "Pk",
+       "pick": [
+        90,
+        92,
+        95,
+        105,
+        108
+       ],
+       "desc": "Giá (nghìn đồng)"
+      },
+      {
+       "k": "n",
+       "min": 3,
+       "max": 6,
+       "step": 1,
+       "desc": "Số năm còn lại"
+      }
+     ],
+     "calc": [
+      {
+       "k": "F",
+       "f": "100000"
+      },
+      {
+       "k": "P",
+       "f": "Pk*1000"
+      },
+      {
+       "k": "Cp",
+       "f": "F*c%"
+      }
+     ],
+     "cond": "",
+     "ok": "(Cp+(F-P)/n)/((F+P)/2)*100",
+     "wrong": [
+      {
+       "f": "Cp/P*100",
+       "note": "Mới là lãi suất hiện hành"
+      },
+      {
+       "f": "(Cp+(F-P)/n)/F*100",
+       "note": "Chia cho mệnh giá"
+      },
+      {
+       "f": "(Cp+(F-P)/n)/P*100",
+       "note": "Chia cho giá mua"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Thu nhập bình quân năm = {Cp} + (100.000 − {P}) / {n} = {=Cp+(F-P)/n:0}",
+      "Vốn bình quân = (100.000 + {P}) / 2 = {=(F+P)/2:0}",
+      "YTM ≈ {dapan}"
+     ],
+     "trap": "Mua dưới mệnh giá thì YTM cao hơn coupon; mua trên mệnh giá thì thấp hơn."
+    },
+    {
+     "id": "ytc",
+     "name": "Lợi suất đến ngày mua lại",
+     "hint": "YTC ≈ [C + (giá mua lại − P)/n] / [(giá mua lại + P)/2]",
+     "q": "Trái phiếu mệnh giá 100.000 đồng, coupon {c}%/năm, đang giao dịch ở giá {P} đồng. Tổ chức phát hành có quyền mua lại sau {n} năm với giá {Fc} đồng. Lợi suất đến ngày mua lại ước lượng là:",
+     "vars": [
+      {
+       "k": "c",
+       "pick": [
+        9,
+        10,
+        12
+       ],
+       "desc": "Coupon %"
+      },
+      {
+       "k": "Pk",
+       "pick": [
+        96,
+        98,
+        104
+       ],
+       "desc": "Giá (nghìn đồng)"
+      },
+      {
+       "k": "Fk",
+       "pick": [
+        102,
+        105
+       ],
+       "desc": "Giá mua lại (nghìn đồng)"
+      },
+      {
+       "k": "n",
+       "min": 2,
+       "max": 4,
+       "step": 1,
+       "desc": "Số năm đến ngày mua lại"
+      }
+     ],
+     "calc": [
+      {
+       "k": "F",
+       "f": "100000"
+      },
+      {
+       "k": "P",
+       "f": "Pk*1000"
+      },
+      {
+       "k": "Fc",
+       "f": "Fk*1000"
+      },
+      {
+       "k": "Cp",
+       "f": "F*c%"
+      }
+     ],
+     "cond": "",
+     "ok": "(Cp+(Fc-P)/n)/((Fc+P)/2)*100",
+     "wrong": [
+      {
+       "f": "(Cp+(F-P)/n)/((F+P)/2)*100",
+       "note": "Dùng mệnh giá thay giá mua lại"
+      },
+      {
+       "f": "Cp/P*100",
+       "note": "Mới là lãi suất hiện hành"
+      },
+      {
+       "f": "(Cp+(Fc-P)/n)/P*100",
+       "note": "Chia cho giá mua"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Thu nhập bình quân năm = {Cp} + ({Fc} − {P}) / {n} = {=Cp+(Fc-P)/n:0}",
+      "Vốn bình quân = ({Fc} + {P}) / 2 = {=(Fc+P)/2:0}",
+      "YTC ≈ {dapan}"
+     ],
+     "trap": "Thay mệnh giá bằng GIÁ MUA LẠI và số năm đến ngày mua lại."
+    },
+    {
+     "id": "congdon",
+     "name": "Lãi cộng dồn",
+     "hint": "Lãi cộng dồn = coupon năm × số ngày đã qua / 365",
+     "q": "Trái phiếu mệnh giá 100.000 đồng, coupon {c}%/năm trả mỗi năm một lần. Đã {d} ngày kể từ lần trả lãi gần nhất (năm 365 ngày). Lãi cộng dồn người mua phải trả thêm cho người bán là:",
+     "vars": [
+      {
+       "k": "c",
+       "pick": [
+        8,
+        10,
+        12
+       ],
+       "desc": "Coupon %"
+      },
+      {
+       "k": "d",
+       "pick": [
+        60,
+        90,
+        120,
+        200
+       ],
+       "desc": "Số ngày đã qua"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "100000*c%*d/365",
+     "wrong": [
+      {
+       "f": "100000*c%*(365-d)/365",
+       "note": "Tính theo số ngày còn lại"
+      },
+      {
+       "f": "100000*c%",
+       "note": "Tính cả năm"
+      },
+      {
+       "f": "100000*c%/2",
+       "note": "Tính nửa năm"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "Coupon năm = {=100000*c%} đồng",
+      "Lãi cộng dồn = {=100000*c%} × {d} / 365 = {dapan}"
+     ],
+     "trap": "Lãi cộng dồn thuộc về người BÁN, tính theo số ngày ĐÃ QUA."
+    },
+    {
+     "id": "macaulay",
+     "name": "Thời gian đáo hạn bình quân Macaulay",
+     "hint": "D = Σ t × PV(CFt) / giá trái phiếu",
+     "q": "Trái phiếu mệnh giá 100.000 đồng, coupon {c}%/năm trả cuối năm, còn 3 năm đáo hạn, lãi suất thị trường {y}%/năm. Thời gian đáo hạn bình quân Macaulay là:",
+     "vars": [
+      {
+       "k": "c",
+       "pick": [
+        8,
+        10
+       ],
+       "desc": "Coupon %"
+      },
+      {
+       "k": "y",
+       "pick": [
+        8,
+        10,
+        12
+       ],
+       "desc": "Lãi suất thị trường %"
+      }
+     ],
+     "calc": [
+      {
+       "k": "Cp",
+       "f": "100000*c%"
+      },
+      {
+       "k": "v1",
+       "f": "Cp/(1+y%)"
+      },
+      {
+       "k": "v2",
+       "f": "Cp/(1+y%)^2"
+      },
+      {
+       "k": "v3",
+       "f": "(Cp+100000)/(1+y%)^3"
+      },
+      {
+       "k": "P",
+       "f": "v1+v2+v3"
+      },
+      {
+       "k": "D",
+       "f": "(v1+2*v2+3*v3)/P"
+      }
+     ],
+     "cond": "",
+     "ok": "D",
+     "wrong": [
+      {
+       "f": "3",
+       "note": "Lấy luôn kỳ hạn"
+      },
+      {
+       "f": "D/(1+y%)",
+       "note": "Đây là duration điều chỉnh"
+      },
+      {
+       "f": "(Cp+2*Cp+3*(Cp+100000))/(3*Cp+100000)",
+       "note": "Không chiết khấu dòng tiền"
+      }
+     ],
+     "unit": "năm",
+     "dec": 2,
+     "steps": [
+      "PV các dòng tiền: năm 1 = {v1:0}; năm 2 = {v2:0}; năm 3 = {v3:0}; giá = {P:0}",
+      "D = (1 × {v1:0} + 2 × {v2:0} + 3 × {v3:0}) / {P:0} = {dapan}"
+     ],
+     "trap": "Trái phiếu có coupon thì Macaulay luôn NHỎ hơn kỳ hạn."
+    },
+    {
+     "id": "md",
+     "name": "Duration điều chỉnh và thay đổi giá",
+     "hint": "%ΔP ≈ −D / (1 + y) × Δy",
+     "q": "Trái phiếu có Macaulay duration {D} năm, lợi suất hiện tại {y}%/năm. Nếu lợi suất TĂNG {dy} điểm phần trăm, giá trái phiếu thay đổi khoảng:",
+     "vars": [
+      {
+       "k": "D",
+       "pick": [
+        4,
+        5,
+        6,
+        8
+       ],
+       "desc": "Macaulay duration (năm)"
+      },
+      {
+       "k": "y",
+       "pick": [
+        8,
+        10
+       ],
+       "desc": "Lợi suất %"
+      },
+      {
+       "k": "dy",
+       "pick": [
+        0.5,
+        1
+       ],
+       "desc": "Lợi suất tăng (điểm %)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "-D/(1+y%)*dy",
+     "wrong": [
+      {
+       "f": "-D*dy",
+       "note": "Dùng Macaulay, quên chia (1 + y)"
+      },
+      {
+       "f": "D/(1+y%)*dy",
+       "note": "Sai dấu"
+      },
+      {
+       "f": "-dy",
+       "note": "Lấy bằng mức tăng lợi suất"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Duration điều chỉnh = {D} / (1 + {y}%) = {=D/(1+y%):2}",
+      "%ΔP ≈ −{=D/(1+y%):2} × {dy} = {dapan}"
+     ],
+     "trap": "Lợi suất tăng thì giá GIẢM: kết quả phải âm."
+    },
+    {
+     "id": "doloi",
+     "name": "Thay đổi giá có độ lồi",
+     "hint": "%ΔP ≈ −MD × Δy + 0,5 × độ lồi × Δy²",
+     "q": "Trái phiếu có duration điều chỉnh {MD} và độ lồi {Cv}. Nếu lợi suất TĂNG {dy} điểm phần trăm, giá thay đổi khoảng (có tính độ lồi):",
+     "vars": [
+      {
+       "k": "MD",
+       "pick": [
+        5,
+        6,
+        8
+       ],
+       "desc": "Duration điều chỉnh"
+      },
+      {
+       "k": "Cv",
+       "pick": [
+        40,
+        60,
+        80
+       ],
+       "desc": "Độ lồi"
+      },
+      {
+       "k": "dy",
+       "pick": [
+        1,
+        2
+       ],
+       "desc": "Lợi suất tăng (điểm %)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(-MD*dy%+0.5*Cv*(dy%)^2)*100",
+     "wrong": [
+      {
+       "f": "-MD*dy",
+       "note": "Bỏ qua độ lồi"
+      },
+      {
+       "f": "(-MD*dy%+Cv*(dy%)^2)*100",
+       "note": "Quên hệ số 0,5"
+      },
+      {
+       "f": "(-MD*dy%-0.5*Cv*(dy%)^2)*100",
+       "note": "Sai dấu phần độ lồi"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Phần duration = −{MD} × {dy}% = {=-MD*dy:2}%",
+      "Phần độ lồi = 0,5 × {Cv} × ({dy}%)² = {=0.5*Cv*(dy%)^2*100:2}%",
+      "Tổng = {dapan}"
+     ],
+     "trap": "Độ lồi luôn CỘNG thêm vào, dù lợi suất tăng hay giảm."
+    },
+    {
+     "id": "ddm",
+     "name": "Duration của danh mục trái phiếu",
+     "hint": "Dp = Σ tỷ trọng × D",
+     "q": "Danh mục gồm {w}% trái phiếu có duration {d1} năm và phần còn lại là trái phiếu có duration {d2} năm. Duration của danh mục là:",
+     "vars": [
+      {
+       "k": "w",
+       "pick": [
+        30,
+        40,
+        60,
+        70
+       ],
+       "desc": "Tỷ trọng trái phiếu 1 %"
+      },
+      {
+       "k": "d1",
+       "pick": [
+        2,
+        3,
+        4
+       ],
+       "desc": "Duration 1 (năm)"
+      },
+      {
+       "k": "d2",
+       "pick": [
+        6,
+        7,
+        8
+       ],
+       "desc": "Duration 2 (năm)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "w%*d1+(1-w%)*d2",
+     "wrong": [
+      {
+       "f": "(d1+d2)/2",
+       "note": "Bình quân cộng"
+      },
+      {
+       "f": "w%*d2+(1-w%)*d1",
+       "note": "Đảo tỷ trọng"
+      },
+      {
+       "f": "d1+d2",
+       "note": "Cộng thẳng"
+      }
+     ],
+     "unit": "năm",
+     "dec": 2,
+     "steps": [
+      "Dp = {w}% × {d1} + {=100-w}% × {d2} = {dapan}"
+     ],
+     "trap": "Tỷ trọng tính theo GIÁ TRỊ THỊ TRƯỜNG của từng trái phiếu."
+    },
+    {
+     "id": "chuyendoi",
+     "name": "Giá trị chuyển đổi của trái phiếu chuyển đổi",
+     "hint": "Giá trị chuyển đổi = tỷ lệ chuyển đổi × giá cổ phiếu",
+     "q": "Trái phiếu chuyển đổi mệnh giá 1.000.000 đồng, mỗi trái phiếu đổi được {k} cổ phiếu. Giá cổ phiếu hiện là {Ps} đồng. Giá trị chuyển đổi của trái phiếu là:",
+     "vars": [
+      {
+       "k": "k",
+       "pick": [
+        20,
+        25,
+        40,
+        50
+       ],
+       "desc": "Tỷ lệ chuyển đổi (cổ phiếu/trái phiếu)"
+      },
+      {
+       "k": "Pk",
+       "pick": [
+        28,
+        32,
+        36,
+        45,
+        55
+       ],
+       "desc": "Giá cổ phiếu (nghìn đồng)"
+      }
+     ],
+     "calc": [
+      {
+       "k": "Ps",
+       "f": "Pk*1000"
+      }
+     ],
+     "cond": "k*Ps != 1000000",
+     "ok": "k*Ps",
+     "wrong": [
+      {
+       "f": "1000000/k",
+       "note": "Đây là giá chuyển đổi"
+      },
+      {
+       "f": "1000000",
+       "note": "Lấy mệnh giá"
+      },
+      {
+       "f": "abs(k*Ps-1000000)",
+       "note": "Lấy chênh lệch với mệnh giá"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "Giá trị chuyển đổi = {k} × {Ps} = {dapan}",
+      "Giá chuyển đổi = 1.000.000 / {k} = {=1000000/k} đồng/cổ phiếu"
+     ],
+     "trap": "Giá trị chuyển đổi cao hơn mệnh giá thì chuyển đổi có lợi."
+    }
+   ]
+  },
+  {
+   "id": "bc",
+   "name": "Phân tích BCTC và thẩm định dự án",
+   "drills": [
+    {
+     "id": "hienhanh2",
+     "name": "Khả năng thanh toán hiện hành",
+     "hint": "Hiện hành = tài sản ngắn hạn / nợ ngắn hạn",
+     "q": "Doanh nghiệp có tài sản ngắn hạn {ts} tỷ đồng (trong đó hàng tồn kho {hk} tỷ) và nợ ngắn hạn {nn} tỷ đồng. Hệ số thanh toán hiện hành là:",
+     "vars": [
+      {
+       "k": "ts",
+       "min": 250,
+       "max": 600,
+       "step": 50,
+       "desc": "TS ngắn hạn (tỷ)"
+      },
+      {
+       "k": "hk",
+       "pick": [
+        60,
+        80,
+        120
+       ],
+       "desc": "Hàng tồn kho (tỷ)"
+      },
+      {
+       "k": "nn",
+       "min": 100,
+       "max": 300,
+       "step": 50,
+       "desc": "Nợ ngắn hạn (tỷ)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "ts/nn",
+     "wrong": [
+      {
+       "f": "(ts-hk)/nn",
+       "note": "Nhầm sang thanh toán nhanh"
+      },
+      {
+       "f": "nn/ts",
+       "note": "Đảo tử và mẫu"
+      },
+      {
+       "f": "(ts+hk)/nn",
+       "note": "Cộng thêm hàng tồn kho"
+      }
+     ],
+     "unit": "lần",
+     "dec": 2,
+     "steps": [
+      "Hiện hành = {ts} / {nn} = {dapan}"
+     ],
+     "trap": "Thanh toán hiện hành KHÔNG trừ hàng tồn kho."
+    },
+    {
+     "id": "nhanh",
+     "name": "Khả năng thanh toán nhanh",
+     "hint": "Nhanh = (tài sản ngắn hạn − hàng tồn kho) / nợ ngắn hạn",
+     "q": "Doanh nghiệp có tài sản ngắn hạn {ts} tỷ đồng, trong đó hàng tồn kho {hk} tỷ, nợ ngắn hạn {nn} tỷ đồng. Hệ số thanh toán nhanh là:",
+     "vars": [
+      {
+       "k": "ts",
+       "min": 250,
+       "max": 600,
+       "step": 50,
+       "desc": "TS ngắn hạn (tỷ)"
+      },
+      {
+       "k": "hk",
+       "pick": [
+        60,
+        80,
+        120
+       ],
+       "desc": "Hàng tồn kho (tỷ)"
+      },
+      {
+       "k": "nn",
+       "min": 100,
+       "max": 300,
+       "step": 50,
+       "desc": "Nợ ngắn hạn (tỷ)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(ts-hk)/nn",
+     "wrong": [
+      {
+       "f": "ts/nn",
+       "note": "Quên trừ hàng tồn kho"
+      },
+      {
+       "f": "hk/nn",
+       "note": "Chỉ lấy hàng tồn kho"
+      },
+      {
+       "f": "(ts-hk)/ts",
+       "note": "Chia cho tài sản ngắn hạn"
+      }
+     ],
+     "unit": "lần",
+     "dec": 2,
+     "steps": [
+      "Tài sản thanh khoản nhanh = {ts} − {hk} = {=ts-hk} tỷ",
+      "Nhanh = {=ts-hk} / {nn} = {dapan}"
+     ],
+     "trap": "Hàng tồn kho khó chuyển thành tiền nên bị loại ra."
+    },
+    {
+     "id": "ngaytk",
+     "name": "Số ngày tồn kho",
+     "hint": "Số ngày tồn kho = 365 × hàng tồn kho bình quân / giá vốn hàng bán",
+     "q": "Giá vốn hàng bán trong năm {gv} tỷ đồng, hàng tồn kho bình quân {htk} tỷ đồng. Số ngày tồn kho bình quân (năm 365 ngày) là:",
+     "vars": [
+      {
+       "k": "gv",
+       "min": 600,
+       "max": 1500,
+       "step": 100,
+       "desc": "Giá vốn (tỷ)"
+      },
+      {
+       "k": "htk",
+       "pick": [
+        100,
+        150,
+        200,
+        250
+       ],
+       "desc": "Tồn kho bình quân (tỷ)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "365*htk/gv",
+     "wrong": [
+      {
+       "f": "gv/htk",
+       "note": "Đây là số vòng quay"
+      },
+      {
+       "f": "12*htk/gv",
+       "note": "Tính ra số tháng"
+      },
+      {
+       "f": "365*htk/(gv+htk)",
+       "note": "Cộng tồn kho vào mẫu"
+      }
+     ],
+     "unit": "ngày",
+     "dec": 1,
+     "steps": [
+      "Vòng quay tồn kho = {gv} / {htk} = {=gv/htk:2} vòng",
+      "Số ngày = 365 / {=gv/htk:2} = {dapan}"
+     ],
+     "trap": "Tồn kho đi với GIÁ VỐN, không phải doanh thu."
+    },
+    {
+     "id": "ccc",
+     "name": "Chu kỳ chuyển đổi tiền mặt",
+     "hint": "CCC = ngày tồn kho + ngày phải thu − ngày phải trả",
+     "q": "Số ngày tồn kho {dio} ngày, số ngày thu tiền {dso} ngày, số ngày trả tiền nhà cung cấp {dpo} ngày. Chu kỳ chuyển đổi tiền mặt là:",
+     "vars": [
+      {
+       "k": "dio",
+       "pick": [
+        40,
+        50,
+        60,
+        75
+       ],
+       "desc": "Ngày tồn kho"
+      },
+      {
+       "k": "dso",
+       "pick": [
+        30,
+        35,
+        45
+       ],
+       "desc": "Ngày phải thu"
+      },
+      {
+       "k": "dpo",
+       "pick": [
+        20,
+        25,
+        38
+       ],
+       "desc": "Ngày phải trả"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "dio+dso-dpo",
+     "wrong": [
+      {
+       "f": "dio+dso+dpo",
+       "note": "Cộng cả ngày phải trả"
+      },
+      {
+       "f": "dio+dso",
+       "note": "Quên ngày phải trả"
+      },
+      {
+       "f": "dio-dso+dpo",
+       "note": "Đảo dấu"
+      }
+     ],
+     "unit": "ngày",
+     "dec": 0,
+     "steps": [
+      "CCC = {dio} + {dso} − {dpo} = {dapan}"
+     ],
+     "trap": "Ngày phải trả là thời gian chiếm dụng vốn nên được TRỪ."
+    },
+    {
+     "id": "roe",
+     "name": "ROE và ROA",
+     "hint": "ROE = LNST / vốn chủ sở hữu; ROA = LNST / tổng tài sản",
+     "q": "Lợi nhuận sau thuế {ln} tỷ đồng, tổng tài sản {ts} tỷ đồng, vốn chủ sở hữu {vc} tỷ đồng. ROE là:",
+     "vars": [
+      {
+       "k": "ln",
+       "min": 50,
+       "max": 150,
+       "step": 10,
+       "desc": "LNST (tỷ)"
+      },
+      {
+       "k": "vc",
+       "min": 400,
+       "max": 1000,
+       "step": 100,
+       "desc": "Vốn chủ (tỷ)"
+      },
+      {
+       "k": "k",
+       "pick": [
+        1.5,
+        2.5,
+        3
+       ],
+       "desc": "Tổng tài sản / vốn chủ"
+      }
+     ],
+     "calc": [
+      {
+       "k": "ts",
+       "f": "vc*k"
+      }
+     ],
+     "cond": "",
+     "ok": "ln/vc*100",
+     "wrong": [
+      {
+       "f": "ln/ts*100",
+       "note": "Đây là ROA"
+      },
+      {
+       "f": "ln/(ts-vc)*100",
+       "note": "Chia cho nợ"
+      },
+      {
+       "f": "ln/(ts+vc)*100",
+       "note": "Cộng tài sản và vốn chủ"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "ROE = {ln} / {vc} = {dapan}",
+      "Để so sánh: ROA = {ln} / {ts} = {=ln/ts*100:2}%"
+     ],
+     "trap": "ROE chia cho VỐN CHỦ, ROA chia cho TỔNG TÀI SẢN."
+    },
+    {
+     "id": "dupont",
+     "name": "Phân tích Dupont",
+     "hint": "ROE = biên lợi nhuận × vòng quay tài sản × đòn bẩy tài chính",
+     "q": "Biên lợi nhuận ròng {m}%, vòng quay tổng tài sản {v} lần, đòn bẩy tài chính (tổng tài sản / vốn chủ) {l} lần. ROE theo Dupont là:",
+     "vars": [
+      {
+       "k": "m",
+       "pick": [
+        5,
+        8,
+        10
+       ],
+       "desc": "Biên lợi nhuận %"
+      },
+      {
+       "k": "v",
+       "pick": [
+        0.8,
+        1.2,
+        1.5
+       ],
+       "desc": "Vòng quay tài sản"
+      },
+      {
+       "k": "l",
+       "pick": [
+        2,
+        2.5,
+        3
+       ],
+       "desc": "Đòn bẩy"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "m*v*l",
+     "wrong": [
+      {
+       "f": "m*v",
+       "note": "Mới là ROA"
+      },
+      {
+       "f": "m*l",
+       "note": "Quên vòng quay tài sản"
+      },
+      {
+       "f": "m+v+l",
+       "note": "Cộng ba thành phần"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "ROA = {m}% × {v} = {=m*v:2}%",
+      "ROE = {=m*v:2}% × {l} = {dapan}"
+     ],
+     "trap": "Dừng ở hai thành phần đầu là ROA, phải nhân thêm đòn bẩy."
+    },
+    {
+     "id": "tie",
+     "name": "Khả năng trả lãi",
+     "hint": "Khả năng trả lãi = EBIT / chi phí lãi vay",
+     "q": "Lợi nhuận trước lãi vay và thuế (EBIT) {e} tỷ đồng, chi phí lãi vay {i} tỷ đồng. Hệ số khả năng trả lãi là:",
+     "vars": [
+      {
+       "k": "e",
+       "min": 100,
+       "max": 300,
+       "step": 20,
+       "desc": "EBIT (tỷ)"
+      },
+      {
+       "k": "i",
+       "pick": [
+        20,
+        25,
+        40,
+        50
+       ],
+       "desc": "Lãi vay (tỷ)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "e/i",
+     "wrong": [
+      {
+       "f": "(e-i)/i",
+       "note": "Dùng lợi nhuận trước thuế"
+      },
+      {
+       "f": "i/e",
+       "note": "Đảo tử và mẫu"
+      },
+      {
+       "f": "(e+i)/i",
+       "note": "Cộng thêm lãi vay"
+      }
+     ],
+     "unit": "lần",
+     "dec": 2,
+     "steps": [
+      "Khả năng trả lãi = {e} / {i} = {dapan}"
+     ],
+     "trap": "Tử số là EBIT, tức là CHƯA trừ lãi vay."
+    },
+    {
+     "id": "lnst",
+     "name": "Lợi nhuận sau thuế từ EBIT",
+     "hint": "LNST = (EBIT − lãi vay) × (1 − thuế suất)",
+     "q": "EBIT {e} tỷ đồng, chi phí lãi vay {i} tỷ đồng, thuế suất thuế TNDN {t}%. Lợi nhuận sau thuế là:",
+     "vars": [
+      {
+       "k": "e",
+       "min": 100,
+       "max": 300,
+       "step": 20,
+       "desc": "EBIT (tỷ)"
+      },
+      {
+       "k": "i",
+       "pick": [
+        20,
+        25,
+        40,
+        50
+       ],
+       "desc": "Lãi vay (tỷ)"
+      },
+      {
+       "k": "t",
+       "pick": [
+        20,
+        25
+       ],
+       "desc": "Thuế suất %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(e-i)*(1-t%)",
+     "wrong": [
+      {
+       "f": "e*(1-t%)",
+       "note": "Quên trừ lãi vay"
+      },
+      {
+       "f": "e-i",
+       "note": "Quên thuế"
+      },
+      {
+       "f": "e*(1-t%)-i",
+       "note": "Trừ lãi vay sau thuế"
+      }
+     ],
+     "unit": "tỷ đồng",
+     "dec": 1,
+     "steps": [
+      "Lợi nhuận trước thuế = {e} − {i} = {=e-i} tỷ",
+      "LNST = {=e-i} × (1 − {t}%) = {dapan}"
+     ],
+     "trap": "Lãi vay được trừ TRƯỚC khi tính thuế."
+    },
+    {
+     "id": "hoavon",
+     "name": "Điểm hòa vốn",
+     "hint": "Sản lượng hòa vốn = định phí / (giá bán − biến phí đơn vị)",
+     "q": "Định phí {fc} triệu đồng/năm, giá bán {p}.000 đồng/sản phẩm, biến phí {vc}.000 đồng/sản phẩm. Sản lượng hòa vốn là:",
+     "vars": [
+      {
+       "k": "fc",
+       "pick": [
+        300,
+        450,
+        600,
+        900
+       ],
+       "desc": "Định phí (triệu)"
+      },
+      {
+       "k": "p",
+       "pick": [
+        50,
+        60,
+        80
+       ],
+       "desc": "Giá bán (nghìn đồng)"
+      },
+      {
+       "k": "vc",
+       "pick": [
+        20,
+        30,
+        35
+       ],
+       "desc": "Biến phí (nghìn đồng)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "fc*1000/(p-vc)",
+     "wrong": [
+      {
+       "f": "fc*1000/p",
+       "note": "Chia cho giá bán"
+      },
+      {
+       "f": "fc*1000/vc",
+       "note": "Chia cho biến phí"
+      },
+      {
+       "f": "fc*1000/(p+vc)",
+       "note": "Cộng giá bán và biến phí"
+      }
+     ],
+     "unit": "sản phẩm",
+     "dec": 0,
+     "steps": [
+      "Lãi góp mỗi sản phẩm = {p}.000 − {vc}.000 = {=p-vc}.000 đồng",
+      "Sản lượng hòa vốn = {fc} triệu / {=p-vc}.000 = {dapan}"
+     ],
+     "trap": "Mẫu số là LÃI GÓP (giá bán trừ biến phí)."
+    },
+    {
+     "id": "khauhao",
+     "name": "Khấu hao đường thẳng",
+     "hint": "Khấu hao năm = (nguyên giá − giá trị thanh lý) / số năm",
+     "q": "Tài sản cố định nguyên giá {ng} triệu đồng, giá trị thanh lý ước tính {tl} triệu đồng, thời gian sử dụng {n} năm. Khấu hao mỗi năm theo phương pháp đường thẳng là:",
+     "vars": [
+      {
+       "k": "ng",
+       "min": 500,
+       "max": 1200,
+       "step": 100,
+       "desc": "Nguyên giá (triệu)"
+      },
+      {
+       "k": "tl",
+       "pick": [
+        50,
+        100,
+        200
+       ],
+       "desc": "Giá trị thanh lý (triệu)"
+      },
+      {
+       "k": "n",
+       "pick": [
+        4,
+        5,
+        8,
+        10
+       ],
+       "desc": "Số năm"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(ng-tl)/n",
+     "wrong": [
+      {
+       "f": "ng/n",
+       "note": "Quên giá trị thanh lý"
+      },
+      {
+       "f": "(ng+tl)/n",
+       "note": "Cộng giá trị thanh lý"
+      },
+      {
+       "f": "(ng-tl)/(n+1)",
+       "note": "Chia nhầm số năm"
+      }
+     ],
+     "unit": "triệu đồng",
+     "dec": 1,
+     "steps": [
+      "Giá trị phải khấu hao = {ng} − {tl} = {=ng-tl} triệu",
+      "Khấu hao năm = {=ng-tl} / {n} = {dapan}"
+     ],
+     "trap": "Giá trị thanh lý không được khấu hao."
+    },
+    {
+     "id": "cfo",
+     "name": "Dòng tiền từ hoạt động kinh doanh",
+     "hint": "CFO = LNST + khấu hao − tăng vốn lưu động",
+     "q": "Lợi nhuận sau thuế {ln} tỷ đồng, khấu hao {kh} tỷ đồng, vốn lưu động ròng TĂNG {dv} tỷ đồng. Dòng tiền từ hoạt động kinh doanh (phương pháp gián tiếp) là:",
+     "vars": [
+      {
+       "k": "ln",
+       "min": 80,
+       "max": 200,
+       "step": 20,
+       "desc": "LNST (tỷ)"
+      },
+      {
+       "k": "kh",
+       "pick": [
+        20,
+        30,
+        40
+       ],
+       "desc": "Khấu hao (tỷ)"
+      },
+      {
+       "k": "dv",
+       "pick": [
+        10,
+        15,
+        25
+       ],
+       "desc": "Vốn lưu động tăng (tỷ)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "ln+kh-dv",
+     "wrong": [
+      {
+       "f": "ln+kh+dv",
+       "note": "Cộng phần tăng vốn lưu động"
+      },
+      {
+       "f": "ln-kh-dv",
+       "note": "Trừ khấu hao"
+      },
+      {
+       "f": "ln+kh",
+       "note": "Quên vốn lưu động"
+      }
+     ],
+     "unit": "tỷ đồng",
+     "dec": 0,
+     "steps": [
+      "Khấu hao không chi tiền nên cộng lại: {ln} + {kh} = {=ln+kh}",
+      "Vốn lưu động tăng là tiền bị giữ lại: {=ln+kh} − {dv} = {dapan}"
+     ],
+     "trap": "Vốn lưu động TĂNG thì TRỪ, giảm thì cộng."
+    },
+    {
+     "id": "wacc",
+     "name": "WACC",
+     "hint": "WACC = wd × rd × (1 − t) + we × re",
+     "q": "Cơ cấu vốn gồm {wd}% nợ (lãi suất {rd}%) và {=100-wd}% vốn chủ (chi phí vốn {re}%). Thuế suất {t}%. WACC là:",
+     "vars": [
+      {
+       "k": "wd",
+       "pick": [
+        30,
+        40,
+        60,
+        70
+       ],
+       "desc": "Tỷ trọng nợ %"
+      },
+      {
+       "k": "rd",
+       "pick": [
+        8,
+        10,
+        12
+       ],
+       "desc": "Lãi suất nợ %"
+      },
+      {
+       "k": "re",
+       "pick": [
+        14,
+        16,
+        18
+       ],
+       "desc": "Chi phí vốn chủ %"
+      },
+      {
+       "k": "t",
+       "pick": [
+        20,
+        25
+       ],
+       "desc": "Thuế suất %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "wd%*rd*(1-t%)+(1-wd%)*re",
+     "wrong": [
+      {
+       "f": "wd%*rd+(1-wd%)*re",
+       "note": "Quên lá chắn thuế của nợ"
+      },
+      {
+       "f": "(rd+re)/2",
+       "note": "Bình quân cộng"
+      },
+      {
+       "f": "(wd%*rd+(1-wd%)*re)*(1-t%)",
+       "note": "Nhân thuế cho cả vốn chủ"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Chi phí nợ sau thuế = {rd}% × (1 − {t}%) = {=rd*(1-t%):2}%",
+      "WACC = {wd}% × {=rd*(1-t%):2} + {=100-wd}% × {re} = {dapan}"
+     ],
+     "trap": "Chỉ chi phí NỢ được nhân (1 − thuế suất)."
+    },
+    {
+     "id": "npv",
+     "name": "NPV",
+     "hint": "NPV = −vốn đầu tư + Σ dòng tiền / (1 + r)^t",
+     "q": "Dự án cần vốn đầu tư ban đầu {I} triệu đồng, mang lại dòng tiền {CF} triệu đồng vào cuối mỗi năm trong {n} năm. Lãi suất chiết khấu {r}%. NPV của dự án là:",
+     "vars": [
+      {
+       "k": "I",
+       "min": 500,
+       "max": 1000,
+       "step": 100,
+       "desc": "Vốn đầu tư (triệu)"
+      },
+      {
+       "k": "CF",
+       "pick": [
+        200,
+        250,
+        300,
+        400
+       ],
+       "desc": "Dòng tiền năm (triệu)"
+      },
+      {
+       "k": "n",
+       "min": 3,
+       "max": 5,
+       "step": 1,
+       "desc": "Số năm"
+      },
+      {
+       "k": "r",
+       "pick": [
+        10,
+        12
+       ],
+       "desc": "Lãi suất chiết khấu %"
+      }
+     ],
+     "calc": [
+      {
+       "k": "a",
+       "f": "(1-(1+r%)^(-n))/r%"
+      }
+     ],
+     "cond": "",
+     "ok": "-I+CF*a",
+     "wrong": [
+      {
+       "f": "CF*n-I",
+       "note": "Không chiết khấu dòng tiền"
+      },
+      {
+       "f": "CF*a",
+       "note": "Quên trừ vốn đầu tư"
+      },
+      {
+       "f": "-I+CF*a/(1+r%)",
+       "note": "Chiết khấu thừa một năm"
+      }
+     ],
+     "unit": "triệu đồng",
+     "dec": 1,
+     "steps": [
+      "PV dòng tiền = {CF} × {a:4} = {=CF*a:1} triệu",
+      "NPV = −{I} + {=CF*a:1} = {dapan}"
+     ],
+     "trap": "NPV dương thì chấp nhận dự án; âm thì loại."
+    },
+    {
+     "id": "irr",
+     "name": "IRR của khoản đầu tư một lần",
+     "hint": "IRR = (tiền thu về / vốn bỏ ra)^(1/n) − 1",
+     "q": "Bỏ ra {I} triệu đồng hôm nay và thu về {F:1} triệu đồng sau {n} năm (không có dòng tiền nào khác). IRR của khoản đầu tư là:",
+     "vars": [
+      {
+       "k": "irr",
+       "pick": [
+        10,
+        12,
+        15,
+        20
+       ],
+       "desc": "IRR % (đáp án)"
+      },
+      {
+       "k": "n",
+       "pick": [
+        2,
+        3
+       ],
+       "desc": "Số năm"
+      },
+      {
+       "k": "I",
+       "pick": [
+        100,
+        200,
+        500
+       ],
+       "desc": "Vốn bỏ ra (triệu)"
+      }
+     ],
+     "calc": [
+      {
+       "k": "F",
+       "f": "I*(1+irr%)^n"
+      }
+     ],
+     "cond": "",
+     "ok": "irr",
+     "wrong": [
+      {
+       "f": "(F/I-1)/n*100",
+       "note": "Chia đều lợi nhuận theo năm"
+      },
+      {
+       "f": "(F/I-1)*100",
+       "note": "Lãi cả kỳ, chưa quy về năm"
+      },
+      {
+       "f": "(F-I)/F/n*100",
+       "note": "Chia cho tiền thu về"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "IRR = ({F:1} / {I})^(1/{n}) − 1 = {dapan}"
+     ],
+     "trap": "IRR là lãi suất làm NPV bằng 0; so với chi phí vốn để quyết định."
+    },
+    {
+     "id": "hoanvon",
+     "name": "Thời gian hoàn vốn",
+     "hint": "Thời gian hoàn vốn = vốn đầu tư / dòng tiền năm",
+     "q": "Dự án cần vốn đầu tư {I} triệu đồng, dòng tiền thu về đều {CF} triệu đồng mỗi năm. Thời gian hoàn vốn (không chiết khấu) là:",
+     "vars": [
+      {
+       "k": "I",
+       "min": 500,
+       "max": 1200,
+       "step": 100,
+       "desc": "Vốn đầu tư (triệu)"
+      },
+      {
+       "k": "CF",
+       "pick": [
+        150,
+        200,
+        250,
+        300
+       ],
+       "desc": "Dòng tiền năm (triệu)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "I/CF",
+     "wrong": [
+      {
+       "f": "CF/I*10",
+       "note": "Đảo tử và mẫu"
+      },
+      {
+       "f": "I/CF+1",
+       "note": "Cộng thêm một năm"
+      },
+      {
+       "f": "I/CF-1",
+       "note": "Trừ bớt một năm"
+      }
+     ],
+     "unit": "năm",
+     "dec": 2,
+     "steps": [
+      "Thời gian hoàn vốn = {I} / {CF} = {dapan}"
+     ],
+     "trap": "Chỉ tiêu này bỏ qua giá trị thời gian của tiền và dòng tiền sau khi hoàn vốn."
+    },
+    {
+     "id": "pi",
+     "name": "Chỉ số sinh lời (PI)",
+     "hint": "PI = PV dòng tiền thu về / vốn đầu tư",
+     "q": "Dự án cần vốn đầu tư {I} triệu đồng, dòng tiền {CF} triệu đồng cuối mỗi năm trong {n} năm, lãi suất chiết khấu {r}%. Chỉ số sinh lời PI là:",
+     "vars": [
+      {
+       "k": "I",
+       "min": 500,
+       "max": 1000,
+       "step": 100,
+       "desc": "Vốn đầu tư (triệu)"
+      },
+      {
+       "k": "CF",
+       "pick": [
+        200,
+        250,
+        300,
+        400
+       ],
+       "desc": "Dòng tiền năm (triệu)"
+      },
+      {
+       "k": "n",
+       "min": 3,
+       "max": 5,
+       "step": 1,
+       "desc": "Số năm"
+      },
+      {
+       "k": "r",
+       "pick": [
+        10,
+        12
+       ],
+       "desc": "Lãi suất chiết khấu %"
+      }
+     ],
+     "calc": [
+      {
+       "k": "a",
+       "f": "(1-(1+r%)^(-n))/r%"
+      }
+     ],
+     "cond": "",
+     "ok": "CF*a/I",
+     "wrong": [
+      {
+       "f": "(CF*a-I)/I",
+       "note": "Lấy NPV chia vốn"
+      },
+      {
+       "f": "I/(CF*a)",
+       "note": "Đảo tử và mẫu"
+      },
+      {
+       "f": "CF*n/I",
+       "note": "Không chiết khấu"
+      }
+     ],
+     "unit": "lần",
+     "dec": 2,
+     "steps": [
+      "PV dòng tiền = {CF} × {a:4} = {=CF*a:1} triệu",
+      "PI = {=CF*a:1} / {I} = {dapan}"
+     ],
+     "trap": "PI lớn hơn 1 tương đương NPV dương."
+    }
+   ]
+  },
+  {
+   "id": "ps",
+   "name": "Phái sinh và phòng ngừa rủi ro",
+   "drills": [
+    {
+     "id": "long",
+     "name": "Lãi lỗ vị thế MUA hợp đồng tương lai VN30",
+     "hint": "Lãi lỗ = (giá sau − giá mua) × 100.000 đồng × số hợp đồng",
+     "q": "Nhà đầu tư MUA {k} hợp đồng tương lai VN30 ở {f} điểm, sau đó đóng vị thế ở {=f+d} điểm. Hệ số nhân 100.000 đồng/điểm. Lãi (+) hoặc lỗ (−) là:",
+     "vars": [
+      {
+       "k": "f",
+       "min": 1200,
+       "max": 1300,
+       "step": 5,
+       "desc": "Điểm mua"
+      },
+      {
+       "k": "d",
+       "pick": [
+        -20,
+        -10,
+        10,
+        15,
+        25
+       ],
+       "desc": "Thay đổi (điểm)"
+      },
+      {
+       "k": "k",
+       "pick": [
+        2,
+        4,
+        5
+       ],
+       "desc": "Số hợp đồng"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "d*0.1*k",
+     "wrong": [
+      {
+       "f": "-d*0.1*k",
+       "note": "Nhầm sang vị thế bán"
+      },
+      {
+       "f": "d*0.1",
+       "note": "Quên số hợp đồng"
+      },
+      {
+       "f": "d*0.01*k",
+       "note": "Sai hệ số nhân"
+      }
+     ],
+     "unit": "triệu đồng",
+     "dec": 1,
+     "steps": [
+      "Chênh lệch = {=f+d} − {f} = {d} điểm",
+      "Lãi lỗ = {d} × 100.000 × {k} = {dapan}"
+     ],
+     "trap": "Vị thế MUA lãi khi giá tăng."
+    },
+    {
+     "id": "short",
+     "name": "Lãi lỗ vị thế BÁN hợp đồng tương lai VN30",
+     "hint": "Lãi lỗ = (giá bán − giá sau) × 100.000 đồng × số hợp đồng",
+     "q": "Nhà đầu tư BÁN {k} hợp đồng tương lai VN30 ở {f} điểm, sau đó đóng vị thế ở {=f+d} điểm. Hệ số nhân 100.000 đồng/điểm. Lãi (+) hoặc lỗ (−) là:",
+     "vars": [
+      {
+       "k": "f",
+       "min": 1200,
+       "max": 1300,
+       "step": 5,
+       "desc": "Điểm bán"
+      },
+      {
+       "k": "d",
+       "pick": [
+        -20,
+        -10,
+        10,
+        15,
+        25
+       ],
+       "desc": "Thay đổi (điểm)"
+      },
+      {
+       "k": "k",
+       "pick": [
+        2,
+        4,
+        5
+       ],
+       "desc": "Số hợp đồng"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "-d*0.1*k",
+     "wrong": [
+      {
+       "f": "d*0.1*k",
+       "note": "Nhầm sang vị thế mua"
+      },
+      {
+       "f": "-d*0.1",
+       "note": "Quên số hợp đồng"
+      },
+      {
+       "f": "-d*0.01*k",
+       "note": "Sai hệ số nhân"
+      }
+     ],
+     "unit": "triệu đồng",
+     "dec": 1,
+     "steps": [
+      "Chênh lệch = {f} − {=f+d} = {=-d} điểm",
+      "Lãi lỗ = {=-d} × 100.000 × {k} = {dapan}"
+     ],
+     "trap": "Vị thế BÁN lãi khi giá giảm."
+    },
+    {
+     "id": "kyquy",
+     "name": "Ký quỹ ban đầu hợp đồng tương lai",
+     "hint": "Ký quỹ = giá × 100.000 × số hợp đồng × tỷ lệ ký quỹ",
+     "q": "Mở vị thế {k} hợp đồng tương lai VN30 ở {f} điểm, hệ số nhân 100.000 đồng/điểm, tỷ lệ ký quỹ ban đầu {kq}%. Số tiền ký quỹ cần có là:",
+     "vars": [
+      {
+       "k": "f",
+       "min": 1200,
+       "max": 1300,
+       "step": 10,
+       "desc": "Điểm"
+      },
+      {
+       "k": "k",
+       "pick": [
+        2,
+        4,
+        5
+       ],
+       "desc": "Số hợp đồng"
+      },
+      {
+       "k": "kq",
+       "pick": [
+        13,
+        15,
+        17
+       ],
+       "desc": "Tỷ lệ ký quỹ %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "f*0.1*k*kq%",
+     "wrong": [
+      {
+       "f": "f*0.1*k",
+       "note": "Lấy cả giá trị hợp đồng"
+      },
+      {
+       "f": "f*0.1*kq%",
+       "note": "Quên số hợp đồng"
+      },
+      {
+       "f": "f*0.01*k*kq%",
+       "note": "Sai hệ số nhân"
+      }
+     ],
+     "unit": "triệu đồng",
+     "dec": 1,
+     "steps": [
+      "Giá trị hợp đồng = {f} × 100.000 × {k} = {=f*0.1*k:0} triệu đồng",
+      "Ký quỹ = {=f*0.1*k:0} × {kq}% = {dapan}"
+     ],
+     "trap": "Tỷ lệ ký quỹ trong đề là giả định; tỷ lệ thực tế do VSDC và công ty chứng khoán quy định từng thời kỳ."
+    },
+    {
+     "id": "giahdtl",
+     "name": "Giá hợp đồng tương lai lý thuyết",
+     "hint": "F = S × [1 + (r − q) × T / 365]",
+     "q": "Chỉ số cơ sở đang ở {S} điểm, lãi suất phi rủi ro {r}%/năm, tỷ suất cổ tức của chỉ số {q}%/năm. Giá lý thuyết của hợp đồng tương lai còn {T} ngày đáo hạn là:",
+     "vars": [
+      {
+       "k": "S",
+       "pick": [
+        1200,
+        1250,
+        1300
+       ],
+       "desc": "Chỉ số cơ sở"
+      },
+      {
+       "k": "r",
+       "pick": [
+        5,
+        6,
+        8
+       ],
+       "desc": "Lãi suất %"
+      },
+      {
+       "k": "q",
+       "pick": [
+        1,
+        2,
+        3
+       ],
+       "desc": "Tỷ suất cổ tức %"
+      },
+      {
+       "k": "T",
+       "pick": [
+        30,
+        60,
+        90
+       ],
+       "desc": "Số ngày còn lại"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "S*(1+(r-q)%*T/365)",
+     "wrong": [
+      {
+       "f": "S*(1+r%*T/365)",
+       "note": "Quên trừ cổ tức"
+      },
+      {
+       "f": "S*(1+(r+q)%*T/365)",
+       "note": "Cộng cổ tức"
+      },
+      {
+       "f": "S*(1+(r-q)%)",
+       "note": "Quên quy đổi theo số ngày"
+      }
+     ],
+     "unit": "điểm",
+     "dec": 2,
+     "steps": [
+      "Chi phí nắm giữ ròng = {r}% − {q}% = {=r-q}%/năm",
+      "F = {S} × [1 + {=r-q}% × {T}/365] = {dapan}"
+     ],
+     "trap": "Cổ tức làm GIẢM giá tương lai vì người giữ hợp đồng không được nhận."
+    },
+    {
+     "id": "sohd",
+     "name": "Số hợp đồng để phòng ngừa",
+     "hint": "N = β × giá trị danh mục / (giá hợp đồng × 100.000)",
+     "q": "Danh mục cổ phiếu trị giá {Vt} tỷ đồng, beta {b}. Hợp đồng tương lai VN30 đang ở {f} điểm, hệ số nhân 100.000 đồng/điểm. Số hợp đồng cần BÁN để phòng ngừa toàn bộ rủi ro thị trường là:",
+     "vars": [
+      {
+       "k": "Vt",
+       "pick": [
+        5,
+        10,
+        20
+       ],
+       "desc": "Giá trị danh mục (tỷ)"
+      },
+      {
+       "k": "b",
+       "pick": [
+        0.8,
+        1.2,
+        1.5
+       ],
+       "desc": "Beta"
+      },
+      {
+       "k": "f",
+       "pick": [
+        1200,
+        1250,
+        1300
+       ],
+       "desc": "Điểm"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "b*Vt*1000000000/(f*100000)",
+     "wrong": [
+      {
+       "f": "Vt*1000000000/(f*100000)",
+       "note": "Quên beta"
+      },
+      {
+       "f": "Vt*1000000000/(f*100000)/b",
+       "note": "Chia cho beta"
+      },
+      {
+       "f": "b*Vt*1000000000/(f*1000000)",
+       "note": "Sai hệ số nhân"
+      }
+     ],
+     "unit": "hợp đồng",
+     "dec": 0,
+     "steps": [
+      "Giá trị một hợp đồng = {f} × 100.000 = {=f*0.1:1} triệu đồng",
+      "N = {b} × {Vt} tỷ / {=f*0.1:1} triệu = {dapan}"
+     ],
+     "trap": "Beta càng cao càng cần nhiều hợp đồng."
+    },
+    {
+     "id": "chinhbeta",
+     "name": "Điều chỉnh beta danh mục bằng hợp đồng tương lai",
+     "hint": "N = (β mục tiêu − β hiện tại) × giá trị danh mục / (giá hợp đồng × 100.000)",
+     "q": "Danh mục trị giá {Vt} tỷ đồng có beta {b}. Nhà quản lý muốn đưa beta về {bt}. Hợp đồng tương lai VN30 ở {f} điểm, hệ số nhân 100.000 đồng/điểm. Số hợp đồng cần giao dịch là (dương: mua, âm: bán):",
+     "vars": [
+      {
+       "k": "Vt",
+       "pick": [
+        10,
+        20
+       ],
+       "desc": "Giá trị danh mục (tỷ)"
+      },
+      {
+       "k": "b",
+       "pick": [
+        1,
+        1.2
+       ],
+       "desc": "Beta hiện tại"
+      },
+      {
+       "k": "bt",
+       "pick": [
+        0.5,
+        0.8,
+        1.5
+       ],
+       "desc": "Beta mục tiêu"
+      },
+      {
+       "k": "f",
+       "pick": [
+        1200,
+        1250
+       ],
+       "desc": "Điểm"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(bt-b)*Vt*1000000000/(f*100000)",
+     "wrong": [
+      {
+       "f": "(b-bt)*Vt*1000000000/(f*100000)",
+       "note": "Sai dấu: nhầm mua với bán"
+      },
+      {
+       "f": "bt*Vt*1000000000/(f*100000)",
+       "note": "Dùng beta mục tiêu, không lấy chênh lệch"
+      },
+      {
+       "f": "-b*Vt*1000000000/(f*100000)",
+       "note": "Phòng ngừa toàn bộ"
+      }
+     ],
+     "unit": "hợp đồng",
+     "dec": 0,
+     "steps": [
+      "Chênh lệch beta = {bt} − {b} = {=bt-b:2}",
+      "N = {=bt-b:2} × {Vt} tỷ / ({f} × 100.000) = {dapan}"
+     ],
+     "trap": "Muốn GIẢM beta thì BÁN hợp đồng tương lai (kết quả âm)."
+    },
+    {
+     "id": "call",
+     "name": "Lãi lỗ của người MUA quyền chọn mua",
+     "hint": "Lãi lỗ = max(S − K, 0) − phí",
+     "q": "Mua quyền chọn MUA cổ phiếu, giá thực hiện {K}.000 đồng, phí quyền chọn {c}.000 đồng/cổ phiếu. Khi đáo hạn giá cổ phiếu là {=K+d}.000 đồng. Lãi (+) hoặc lỗ (−) trên mỗi cổ phiếu là:",
+     "vars": [
+      {
+       "k": "K",
+       "pick": [
+        50,
+        60,
+        80
+       ],
+       "desc": "Giá thực hiện (nghìn đồng)"
+      },
+      {
+       "k": "c",
+       "pick": [
+        2,
+        3,
+        5
+       ],
+       "desc": "Phí (nghìn đồng)"
+      },
+      {
+       "k": "d",
+       "pick": [
+        -10,
+        -5,
+        4,
+        12,
+        15
+       ],
+       "desc": "Giá đáo hạn so với giá thực hiện (nghìn đồng)"
+      }
+     ],
+     "calc": [
+      {
+       "k": "pay",
+       "f": "max(d,0)"
+      }
+     ],
+     "cond": "",
+     "ok": "(pay-c)*1000",
+     "wrong": [
+      {
+       "f": "pay*1000",
+       "note": "Quên trừ phí"
+      },
+      {
+       "f": "(max(-d,0)-c)*1000",
+       "note": "Nhầm sang quyền chọn bán"
+      },
+      {
+       "f": "-(pay-c)*1000",
+       "note": "Nhầm sang người bán quyền"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "Giá trị khi đáo hạn = max({=K+d}.000 − {K}.000; 0) = {=pay*1000} đồng",
+      "Lãi lỗ = {=pay*1000} − {c}.000 = {dapan}"
+     ],
+     "trap": "Giá dưới giá thực hiện thì bỏ quyền, lỗ tối đa bằng phí."
+    },
+    {
+     "id": "put",
+     "name": "Lãi lỗ của người MUA quyền chọn bán",
+     "hint": "Lãi lỗ = max(K − S, 0) − phí",
+     "q": "Mua quyền chọn BÁN cổ phiếu, giá thực hiện {K}.000 đồng, phí quyền chọn {c}.000 đồng/cổ phiếu. Khi đáo hạn giá cổ phiếu là {=K+d}.000 đồng. Lãi (+) hoặc lỗ (−) trên mỗi cổ phiếu là:",
+     "vars": [
+      {
+       "k": "K",
+       "pick": [
+        50,
+        60,
+        80
+       ],
+       "desc": "Giá thực hiện (nghìn đồng)"
+      },
+      {
+       "k": "c",
+       "pick": [
+        2,
+        3,
+        5
+       ],
+       "desc": "Phí (nghìn đồng)"
+      },
+      {
+       "k": "d",
+       "pick": [
+        -15,
+        -12,
+        -4,
+        5,
+        10
+       ],
+       "desc": "Giá đáo hạn so với giá thực hiện (nghìn đồng)"
+      }
+     ],
+     "calc": [
+      {
+       "k": "pay",
+       "f": "max(-d,0)"
+      }
+     ],
+     "cond": "",
+     "ok": "(pay-c)*1000",
+     "wrong": [
+      {
+       "f": "pay*1000",
+       "note": "Quên trừ phí"
+      },
+      {
+       "f": "(max(d,0)-c)*1000",
+       "note": "Nhầm sang quyền chọn mua"
+      },
+      {
+       "f": "-(pay-c)*1000",
+       "note": "Nhầm sang người bán quyền"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "Giá trị khi đáo hạn = max({K}.000 − {=K+d}.000; 0) = {=pay*1000} đồng",
+      "Lãi lỗ = {=pay*1000} − {c}.000 = {dapan}"
+     ],
+     "trap": "Quyền chọn bán có lãi khi giá GIẢM dưới giá thực hiện."
+    },
+    {
+     "id": "hvcall",
+     "name": "Điểm hòa vốn của quyền chọn mua",
+     "hint": "Hòa vốn = giá thực hiện + phí",
+     "q": "Mua quyền chọn MUA với giá thực hiện {K}.000 đồng, phí {c}.000 đồng/cổ phiếu. Giá cổ phiếu khi đáo hạn phải đạt bao nhiêu để người mua hòa vốn?",
+     "vars": [
+      {
+       "k": "K",
+       "pick": [
+        50,
+        60,
+        80
+       ],
+       "desc": "Giá thực hiện (nghìn đồng)"
+      },
+      {
+       "k": "c",
+       "pick": [
+        2,
+        3,
+        5
+       ],
+       "desc": "Phí (nghìn đồng)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(K+c)*1000",
+     "wrong": [
+      {
+       "f": "(K-c)*1000",
+       "note": "Trừ phí (công thức của quyền chọn bán)"
+      },
+      {
+       "f": "K*1000",
+       "note": "Lấy giá thực hiện"
+      },
+      {
+       "f": "(K+2*c)*1000",
+       "note": "Cộng hai lần phí"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "Hòa vốn = {K}.000 + {c}.000 = {dapan}"
+     ],
+     "trap": "Quyền chọn mua: CỘNG phí. Quyền chọn bán: TRỪ phí."
+    },
+    {
+     "id": "hvput",
+     "name": "Điểm hòa vốn của quyền chọn bán",
+     "hint": "Hòa vốn = giá thực hiện − phí",
+     "q": "Mua quyền chọn BÁN với giá thực hiện {K}.000 đồng, phí {c}.000 đồng/cổ phiếu. Giá cổ phiếu khi đáo hạn ở mức nào thì người mua hòa vốn?",
+     "vars": [
+      {
+       "k": "K",
+       "pick": [
+        50,
+        60,
+        80
+       ],
+       "desc": "Giá thực hiện (nghìn đồng)"
+      },
+      {
+       "k": "c",
+       "pick": [
+        2,
+        3,
+        5
+       ],
+       "desc": "Phí (nghìn đồng)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(K-c)*1000",
+     "wrong": [
+      {
+       "f": "(K+c)*1000",
+       "note": "Cộng phí (công thức của quyền chọn mua)"
+      },
+      {
+       "f": "K*1000",
+       "note": "Lấy giá thực hiện"
+      },
+      {
+       "f": "(K-2*c)*1000",
+       "note": "Trừ hai lần phí"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "Hòa vốn = {K}.000 − {c}.000 = {dapan}"
+     ],
+     "trap": "Giá phải giảm đủ để bù phí đã trả."
+    },
+    {
+     "id": "baove",
+     "name": "Mua quyền chọn bán để bảo vệ cổ phiếu",
+     "hint": "Lỗ tối đa = giá mua cổ phiếu − giá thực hiện + phí",
+     "q": "Nhà đầu tư mua cổ phiếu giá {S}.000 đồng và mua kèm quyền chọn BÁN giá thực hiện {K}.000 đồng với phí {c}.000 đồng/cổ phiếu. Lỗ TỐI ĐA trên mỗi cổ phiếu là:",
+     "vars": [
+      {
+       "k": "S",
+       "pick": [
+        50,
+        60,
+        80
+       ],
+       "desc": "Giá mua cổ phiếu (nghìn đồng)"
+      },
+      {
+       "k": "g",
+       "pick": [
+        4,
+        6,
+        8
+       ],
+       "desc": "Giá thực hiện thấp hơn giá mua (nghìn đồng)"
+      },
+      {
+       "k": "c",
+       "pick": [
+        2,
+        3,
+        5
+       ],
+       "desc": "Phí (nghìn đồng)"
+      }
+     ],
+     "calc": [
+      {
+       "k": "K",
+       "f": "S-g"
+      }
+     ],
+     "cond": "",
+     "ok": "(S-K+c)*1000",
+     "wrong": [
+      {
+       "f": "(S-K)*1000",
+       "note": "Quên phí quyền chọn"
+      },
+      {
+       "f": "c*1000",
+       "note": "Chỉ tính phí"
+      },
+      {
+       "f": "(S+c)*1000",
+       "note": "Mất toàn bộ vốn"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "Giá bán tối thiểu được bảo đảm là {K}.000 đồng",
+      "Lỗ tối đa = {S}.000 − {K}.000 + {c}.000 = {dapan}"
+     ],
+     "trap": "Quyền chọn bán đặt mức sàn cho giá bán, nhưng phải trả phí."
+    },
+    {
+     "id": "ngangia",
+     "name": "Ngang giá quyền chọn mua – bán",
+     "hint": "C − P = S − K / (1 + r)^T",
+     "q": "Cổ phiếu giá {S}.000 đồng. Quyền chọn MUA kiểu châu Âu kỳ hạn 1 năm, giá thực hiện {K}.000 đồng có giá {C}.000 đồng. Lãi suất phi rủi ro {r}%/năm. Theo ngang giá, giá quyền chọn BÁN cùng điều kiện là:",
+     "vars": [
+      {
+       "k": "S",
+       "pick": [
+        50,
+        55,
+        60
+       ],
+       "desc": "Giá cổ phiếu (nghìn đồng)"
+      },
+      {
+       "k": "K",
+       "pick": [
+        50,
+        55,
+        60
+       ],
+       "desc": "Giá thực hiện (nghìn đồng)"
+      },
+      {
+       "k": "C",
+       "pick": [
+        7,
+        8,
+        9,
+        10
+       ],
+       "desc": "Giá quyền chọn mua (nghìn đồng)"
+      },
+      {
+       "k": "r",
+       "pick": [
+        5,
+        8,
+        10
+       ],
+       "desc": "Lãi suất %"
+      }
+     ],
+     "calc": [],
+     "cond": "C-S+K/(1+r%) > 0.5",
+     "ok": "(C-S+K/(1+r%))*1000",
+     "wrong": [
+      {
+       "f": "(C-S+K)*1000",
+       "note": "Quên chiết khấu giá thực hiện"
+      },
+      {
+       "f": "(C+S-K/(1+r%))*1000",
+       "note": "Sai dấu giá cổ phiếu"
+      },
+      {
+       "f": "(C-S+K*(1+r%))*1000",
+       "note": "Nhân lãi suất thay vì chia"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "PV giá thực hiện = {K}.000 / (1 + {r}%) = {=K/(1+r%)*1000:0} đồng",
+      "P = C − S + PV(K) = {C}.000 − {S}.000 + {=K/(1+r%)*1000:0} = {dapan}"
+     ],
+     "trap": "Giá thực hiện phải chiết khấu về hiện tại."
+    }
+   ]
+  },
+  {
    "id": "mg",
    "name": "Môi giới và giao dịch",
    "drills": [
@@ -2206,6 +6082,559 @@
       "Lãi ròng = {dapan}"
      ],
      "trap": "Thuế 0,1% tính trên giá trị bán, kể cả khi bán lỗ."
+    }
+   ]
+  },
+  {
+   "id": "vm",
+   "name": "Vĩ mô, phân tích kỹ thuật, quỹ",
+   "drills": [
+    {
+     "id": "gdp",
+     "name": "GDP và chỉ số giảm phát",
+     "hint": "Chỉ số giảm phát = GDP danh nghĩa / GDP thực × 100",
+     "q": "GDP danh nghĩa năm nay là {dn} nghìn tỷ đồng, GDP thực (theo giá năm gốc) là {th} nghìn tỷ đồng. Chỉ số giảm phát GDP là:",
+     "vars": [
+      {
+       "k": "dn",
+       "pick": [
+        9000,
+        9500,
+        10500,
+        11000
+       ],
+       "desc": "GDP danh nghĩa (nghìn tỷ)"
+      },
+      {
+       "k": "th",
+       "pick": [
+        8000,
+        8500,
+        8800
+       ],
+       "desc": "GDP thực (nghìn tỷ)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "dn/th*100",
+     "wrong": [
+      {
+       "f": "th/dn*100",
+       "note": "Đảo tử và mẫu"
+      },
+      {
+       "f": "(dn-th)/th*100",
+       "note": "Mới là mức tăng giá %"
+      },
+      {
+       "f": "(dn-th)/dn*100",
+       "note": "Chia cho GDP danh nghĩa"
+      }
+     ],
+     "unit": "",
+     "dec": 1,
+     "steps": [
+      "Chỉ số giảm phát = {dn} / {th} × 100 = {dapan}",
+      "Mức giá đã tăng {=(dn/th-1)*100:1}% so với năm gốc"
+     ],
+     "trap": "GDP thực dùng giá năm gốc nên là MẪU SỐ."
+    },
+    {
+     "id": "tangtruong",
+     "name": "Tăng trưởng GDP thực",
+     "hint": "g = (GDP thực năm nay − năm trước) / năm trước",
+     "q": "GDP thực năm trước là {g0} nghìn tỷ đồng, năm nay là {=g0+inc} nghìn tỷ đồng. Tốc độ tăng trưởng kinh tế là:",
+     "vars": [
+      {
+       "k": "g0",
+       "pick": [
+        8000,
+        8500
+       ],
+       "desc": "GDP thực năm trước (nghìn tỷ)"
+      },
+      {
+       "k": "inc",
+       "pick": [
+        400,
+        510,
+        600,
+        680
+       ],
+       "desc": "Mức tăng (nghìn tỷ)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "inc/g0*100",
+     "wrong": [
+      {
+       "f": "inc/(g0+inc)*100",
+       "note": "Chia cho năm nay"
+      },
+      {
+       "f": "(g0+inc)/g0*100",
+       "note": "Chưa trừ 100%"
+      },
+      {
+       "f": "inc/100",
+       "note": "Chia mức tăng cho 100"
+      }
+     ],
+     "unit": "%",
+     "dec": 2,
+     "steps": [
+      "Mức tăng = {=g0+inc} − {g0} = {inc} nghìn tỷ",
+      "g = {inc} / {g0} = {dapan}"
+     ],
+     "trap": "Mẫu số là GDP năm TRƯỚC."
+    },
+    {
+     "id": "nav",
+     "name": "NAV mỗi chứng chỉ quỹ",
+     "hint": "NAV/CCQ = (tổng tài sản − tổng nợ) / số chứng chỉ quỹ đang lưu hành",
+     "q": "Quỹ có tổng tài sản {ts} tỷ đồng, tổng nợ phải trả {no} tỷ đồng, đang lưu hành {n} triệu chứng chỉ quỹ. NAV trên mỗi chứng chỉ quỹ là:",
+     "vars": [
+      {
+       "k": "ts",
+       "min": 500,
+       "max": 900,
+       "step": 50,
+       "desc": "Tổng tài sản (tỷ)"
+      },
+      {
+       "k": "no",
+       "pick": [
+        10,
+        20,
+        50
+       ],
+       "desc": "Nợ (tỷ)"
+      },
+      {
+       "k": "n",
+       "pick": [
+        20,
+        25,
+        40,
+        50
+       ],
+       "desc": "Số CCQ (triệu)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(ts-no)*1000/n",
+     "wrong": [
+      {
+       "f": "ts*1000/n",
+       "note": "Quên trừ nợ"
+      },
+      {
+       "f": "(ts+no)*1000/n",
+       "note": "Cộng nợ"
+      },
+      {
+       "f": "no*1000/n",
+       "note": "Chia nợ cho số CCQ"
+      }
+     ],
+     "unit": "đồng",
+     "dec": 0,
+     "steps": [
+      "NAV = {ts} − {no} = {=ts-no} tỷ đồng",
+      "NAV/CCQ = {=ts-no} tỷ / {n} triệu = {dapan}"
+     ],
+     "trap": "NAV là tài sản RÒNG, đã trừ nợ."
+    },
+    {
+     "id": "muaccq",
+     "name": "Số chứng chỉ quỹ mở mua được",
+     "hint": "Số CCQ = tiền mua × (1 − phí phát hành) / NAV",
+     "q": "Nhà đầu tư nộp {t} triệu đồng mua chứng chỉ quỹ mở. NAV/CCQ là {nav} đồng, phí phát hành {f}% tính trên số tiền mua. Số chứng chỉ quỹ nhận được là:",
+     "vars": [
+      {
+       "k": "t",
+       "pick": [
+        50,
+        100,
+        200
+       ],
+       "desc": "Tiền mua (triệu)"
+      },
+      {
+       "k": "f",
+       "pick": [
+        0.75,
+        1,
+        1.5
+       ],
+       "desc": "Phí phát hành %"
+      },
+      {
+       "k": "nav",
+       "pick": [
+        12500,
+        16000,
+        20000,
+        25000
+       ],
+       "desc": "NAV/CCQ (đồng)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "t*1000000*(1-f%)/nav",
+     "wrong": [
+      {
+       "f": "t*1000000/nav",
+       "note": "Quên phí phát hành"
+      },
+      {
+       "f": "t*1000000/(nav*(1-f%))",
+       "note": "Chia cho (1 − phí)"
+      },
+      {
+       "f": "t*1000000*(1+f%)/nav",
+       "note": "Cộng phí"
+      }
+     ],
+     "unit": "chứng chỉ quỹ",
+     "dec": 2,
+     "steps": [
+      "Tiền thực mua sau phí = {t} triệu × (1 − {f}%) = {=t*(1-f%):3} triệu đồng",
+      "Số CCQ = {=t*(1-f%):3} triệu / {nav} = {dapan}"
+     ],
+     "trap": "Phí phát hành làm GIẢM số chứng chỉ quỹ nhận được."
+    },
+    {
+     "id": "banccq",
+     "name": "Tiền nhận khi bán lại chứng chỉ quỹ mở",
+     "hint": "Tiền nhận = số CCQ × NAV × (1 − phí mua lại)",
+     "q": "Nhà đầu tư bán lại {n} chứng chỉ quỹ mở khi NAV/CCQ là {nav} đồng, phí mua lại {f}%. Số tiền nhận được (chưa tính thuế) là:",
+     "vars": [
+      {
+       "k": "n",
+       "pick": [
+        1000,
+        2000,
+        5000
+       ],
+       "desc": "Số CCQ"
+      },
+      {
+       "k": "nav",
+       "pick": [
+        12500,
+        16000,
+        20000,
+        25000
+       ],
+       "desc": "NAV/CCQ (đồng)"
+      },
+      {
+       "k": "f",
+       "pick": [
+        0.5,
+        1,
+        1.5
+       ],
+       "desc": "Phí mua lại %"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "n*nav*(1-f%)/1000000",
+     "wrong": [
+      {
+       "f": "n*nav/1000000",
+       "note": "Quên phí mua lại"
+      },
+      {
+       "f": "n*nav*(1+f%)/1000000",
+       "note": "Cộng phí"
+      },
+      {
+       "f": "n*nav*f%/1000000",
+       "note": "Chỉ tính tiền phí"
+      }
+     ],
+     "unit": "triệu đồng",
+     "dec": 3,
+     "steps": [
+      "Giá trị bán = {n} × {nav} = {=n*nav/1000000:3} triệu đồng",
+      "Tiền nhận = {=n*nav/1000000:3} × (1 − {f}%) = {dapan}"
+     ],
+     "trap": "Phí mua lại bị TRỪ khỏi tiền bán."
+    },
+    {
+     "id": "chiso",
+     "name": "Chỉ số giá theo vốn hóa",
+     "hint": "Chỉ số = vốn hóa hiện tại / vốn hóa kỳ gốc × 100",
+     "q": "Rổ chỉ số gồm 2 cổ phiếu. A: {qa} triệu cổ phiếu, giá kỳ gốc {a0}.000 đồng, giá hiện tại {=a0+da}.000 đồng. B: {qb} triệu cổ phiếu, giá kỳ gốc {b0}.000 đồng, giá hiện tại {=b0+db}.000 đồng. Chỉ số kỳ gốc là 100 điểm. Chỉ số hiện tại tính theo vốn hóa là:",
+     "vars": [
+      {
+       "k": "qa",
+       "pick": [
+        100,
+        200
+       ],
+       "desc": "Số cổ phiếu A (triệu)"
+      },
+      {
+       "k": "a0",
+       "pick": [
+        20,
+        25
+       ],
+       "desc": "Giá gốc A (nghìn)"
+      },
+      {
+       "k": "da",
+       "pick": [
+        2,
+        5
+       ],
+       "desc": "A tăng (nghìn)"
+      },
+      {
+       "k": "qb",
+       "pick": [
+        60,
+        90
+       ],
+       "desc": "Số cổ phiếu B (triệu)"
+      },
+      {
+       "k": "b0",
+       "pick": [
+        40,
+        50
+       ],
+       "desc": "Giá gốc B (nghìn)"
+      },
+      {
+       "k": "db",
+       "pick": [
+        -5,
+        5,
+        10
+       ],
+       "desc": "B thay đổi (nghìn)"
+      }
+     ],
+     "calc": [
+      {
+       "k": "v0",
+       "f": "qa*a0+qb*b0"
+      },
+      {
+       "k": "v1",
+       "f": "qa*(a0+da)+qb*(b0+db)"
+      }
+     ],
+     "cond": "",
+     "ok": "v1/v0*100",
+     "wrong": [
+      {
+       "f": "(a0+da+b0+db)/(a0+b0)*100",
+       "note": "Bình quân giá, bỏ qua khối lượng"
+      },
+      {
+       "f": "v0/v1*100",
+       "note": "Đảo tử và mẫu"
+      },
+      {
+       "f": "((a0+da)/a0+(b0+db)/b0)/2*100",
+       "note": "Bình quân tỷ lệ tăng giá"
+      }
+     ],
+     "unit": "điểm",
+     "dec": 2,
+     "steps": [
+      "Vốn hóa kỳ gốc = {qa} × {a0} + {qb} × {b0} = {v0} tỷ đồng",
+      "Vốn hóa hiện tại = {qa} × {=a0+da} + {qb} × {=b0+db} = {v1} tỷ đồng",
+      "Chỉ số = {v1} / {v0} × 100 = {dapan}"
+     ],
+     "trap": "Cổ phiếu vốn hóa lớn ảnh hưởng đến chỉ số nhiều hơn."
+    },
+    {
+     "id": "sma",
+     "name": "Đường trung bình động giản đơn",
+     "hint": "SMA(n) = trung bình cộng giá đóng cửa n phiên gần nhất",
+     "q": "Giá đóng cửa 5 phiên gần nhất (nghìn đồng), từ cũ đến mới: {p1}; {p2}; {p3}; {p4}; {p5}. SMA(3) tại phiên mới nhất là:",
+     "vars": [
+      {
+       "k": "p1",
+       "pick": [
+        20,
+        21,
+        22
+       ],
+       "desc": "Phiên 1"
+      },
+      {
+       "k": "p2",
+       "pick": [
+        21.5,
+        22.5,
+        23
+       ],
+       "desc": "Phiên 2"
+      },
+      {
+       "k": "p3",
+       "pick": [
+        22,
+        23.5,
+        24
+       ],
+       "desc": "Phiên 3"
+      },
+      {
+       "k": "p4",
+       "pick": [
+        23,
+        24.5,
+        25
+       ],
+       "desc": "Phiên 4"
+      },
+      {
+       "k": "p5",
+       "pick": [
+        24,
+        25.5,
+        26.5
+       ],
+       "desc": "Phiên 5"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "(p3+p4+p5)/3",
+     "wrong": [
+      {
+       "f": "(p1+p2+p3+p4+p5)/5",
+       "note": "Lấy cả 5 phiên"
+      },
+      {
+       "f": "(p1+p2+p3)/3",
+       "note": "Lấy 3 phiên cũ nhất"
+      },
+      {
+       "f": "(p4+p5)/2",
+       "note": "Chỉ lấy 2 phiên"
+      }
+     ],
+     "unit": "nghìn đồng",
+     "dec": 2,
+     "steps": [
+      "Ba phiên gần nhất: {p3}; {p4}; {p5}",
+      "SMA(3) = ({p3} + {p4} + {p5}) / 3 = {dapan}"
+     ],
+     "trap": "Lấy n phiên GẦN NHẤT, tính cả phiên hiện tại."
+    },
+    {
+     "id": "rsi",
+     "name": "Chỉ báo RSI",
+     "hint": "RSI = 100 − 100 / (1 + RS), với RS = mức tăng bình quân / mức giảm bình quân",
+     "q": "Trong 14 phiên, mức tăng bình quân là {u} và mức giảm bình quân là {dn} (cùng đơn vị). Chỉ báo RSI(14) là:",
+     "vars": [
+      {
+       "k": "u",
+       "pick": [
+        1.2,
+        1.5,
+        2,
+        3
+       ],
+       "desc": "Mức tăng bình quân"
+      },
+      {
+       "k": "dn",
+       "pick": [
+        0.5,
+        1,
+        1.6
+       ],
+       "desc": "Mức giảm bình quân"
+      }
+     ],
+     "calc": [],
+     "cond": "u != dn",
+     "ok": "100-100/(1+u/dn)",
+     "wrong": [
+      {
+       "f": "100/(1+u/dn)",
+       "note": "Quên lấy 100 trừ đi"
+      },
+      {
+       "f": "100-100/(u/dn)",
+       "note": "Quên cộng 1 ở mẫu"
+      },
+      {
+       "f": "u/dn*10",
+       "note": "Lấy RS nhân 10"
+      }
+     ],
+     "unit": "",
+     "dec": 1,
+     "steps": [
+      "RS = {u} / {dn} = {=u/dn:2}",
+      "RSI = 100 − 100 / (1 + {=u/dn:2}) = {dapan}"
+     ],
+     "trap": "RSI trên 70 thường coi là quá mua, dưới 30 là quá bán."
+    },
+    {
+     "id": "fibo",
+     "name": "Mức thoái lui Fibonacci",
+     "hint": "Mức thoái lui = đỉnh − tỷ lệ × (đỉnh − đáy)",
+     "q": "Cổ phiếu tăng từ đáy {L} nghìn đồng lên đỉnh {=L+h} nghìn đồng rồi điều chỉnh giảm. Mức thoái lui Fibonacci 38,2% nằm ở giá:",
+     "vars": [
+      {
+       "k": "L",
+       "pick": [
+        20,
+        30,
+        40
+       ],
+       "desc": "Đáy (nghìn đồng)"
+      },
+      {
+       "k": "h",
+       "pick": [
+        10,
+        20
+       ],
+       "desc": "Biên độ tăng (nghìn đồng)"
+      }
+     ],
+     "calc": [],
+     "cond": "",
+     "ok": "L+h-0.382*h",
+     "wrong": [
+      {
+       "f": "L+0.382*h",
+       "note": "Đo từ đáy lên (đây là mức 61,8%)"
+      },
+      {
+       "f": "L+h-0.5*h",
+       "note": "Dùng tỷ lệ 50%"
+      },
+      {
+       "f": "(L+h)*(1-0.382)",
+       "note": "Nhân tỷ lệ với giá đỉnh"
+      }
+     ],
+     "unit": "nghìn đồng",
+     "dec": 2,
+     "steps": [
+      "Biên độ sóng tăng = {=L+h} − {L} = {h} nghìn đồng",
+      "Mức 38,2% = {=L+h} − 0,382 × {h} = {dapan}"
+     ],
+     "trap": "Thoái lui đo từ ĐỈNH xuống trong một sóng tăng."
     }
    ]
   }

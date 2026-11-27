@@ -17,13 +17,13 @@
      Nền tối mặc định; bấm nút ☀ trên thanh trên cùng để đổi sang nền sáng.
      Các biến cũ (--navy, --green, --red...) vẫn giữ để phần mã cũ dùng được. */
   :root{
-    --bg:#F3F7FE; --surface:#FFFFFF; --surface2:#EAF1FD; --line:#D9E4F5; --line-strong:#B9CBE8;
+    --bg:#E6ECF7; --surface:#FFFFFF; --surface2:#EEF3FC; --line:#C6D3E9; --line-strong:#9FB4D8; --box:#7FA8EA; --box-head:#DCE8FD;
     --text:#0F1B3D; --muted:#4F5B78; --faint:#6E7896;
     --accent:#0B6BF5; --on-accent:#FFFFFF; --accent-soft:#E3EEFF; --accent-text:#0A5AD0;
     --cta:#F25F0D; --cta-grad:linear-gradient(135deg,#FF8A2B 0%,#F25F0D 100%); --on-cta:#FFFFFF; --cta-shadow:0 6px 16px rgba(242,95,13,.28);
     --hi:#FFD23F; --on-hi:#0F1B3D;
     --ok:#15803D; --ok-soft:#E5F5EA; --bad:#C81E1E; --bad-soft:#FDE8E8; --warn:#9A5B00; --warn-soft:#FFF4D6; --warn-line:#F2D27A;
-    --shadow:0 1px 2px rgba(15,27,61,.04), 0 6px 18px rgba(11,107,245,.07);
+    --shadow:0 1px 2px rgba(15,27,61,.08), 0 8px 22px rgba(15,27,61,.09);
     --overlay:rgba(15,27,61,.45);
     color-scheme:light;
     /* tên cũ */
@@ -32,7 +32,7 @@
   }
   /* Nền tối: xám than dịu (không xanh navy), giữ xanh dương + cam làm điểm nhấn */
   :root[data-theme="dark"]{
-    --bg:#1A1B1E; --surface:#232428; --surface2:#2C2E33; --line:#36383E; --line-strong:#4A4D55;
+    --bg:#1A1B1E; --surface:#232428; --surface2:#2C2E33; --line:#454850; --line-strong:#5C606A; --box:#4F74B0; --box-head:#26344C;
     --text:#ECEDEF; --muted:#A8ABB2; --faint:#8E929A;
     --accent:#5A9CFF; --on-accent:#0E1A33; --accent-soft:#25344F; --accent-text:#8EBBFF;
     --cta:#FF7A1A; --cta-grad:linear-gradient(135deg,#FF8A2B 0%,#F2600F 100%); --on-cta:#FFFFFF; --cta-shadow:0 4px 14px rgba(255,122,26,.18);
@@ -113,6 +113,16 @@
   /* ---------- Content cards ---------- */
   .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow);}
   .card h2{margin:0 0 14px;font-size:1.08rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;letter-spacing:-.01em;}
+  /* Tách rõ từng khối: tiêu đề khối có nền riêng, cột đề cương nằm trong một hộp */
+  .card > h2:first-child{margin:-20px -22px 16px;padding:13px 22px;background:var(--box-head);border-bottom:1.5px solid var(--box);border-radius:16px 16px 0 0;color:var(--accent-text);}
+  /* Viền màu cho các hộp chính để phân biệt rõ từng phần */
+  .card,.hb-chapter,.qr-card,.course-card{border:1.5px solid var(--box);}
+  .hb-chapter > h3{margin:-20px -22px 16px !important;padding:13px 22px;background:var(--box-head);border-bottom:1.5px solid var(--box);border-radius:16px 16px 0 0;color:var(--accent-text);}
+  .hb-sec:first-of-type{margin-top:0;}
+  @media (min-width:861px){
+    .sidebar{background:var(--surface);border:1.5px solid var(--box);border-radius:18px;padding:16px;box-shadow:var(--shadow);align-self:flex-start;}
+  }
+  @media (max-width:640px){ .card > h2:first-child,.hb-chapter > h3{margin:-16px -16px 14px !important;padding:12px 16px;} }
   /* Video luôn vừa 1 màn hình: giới hạn chiều rộng theo chiều cao cửa sổ, giữ tỷ lệ 16:9 */
   .video-wrap{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000;margin:0 auto;
     max-width:max(320px, calc((100vh - 390px) * 16 / 9));max-width:max(320px, calc((100svh - 390px) * 16 / 9));}
@@ -313,13 +323,15 @@
   .fl-row{display:flex;flex-direction:column;gap:2px;}
   .fl-row .h{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent-text);}
   .fl-row .v{font-size:1.15rem;font-weight:700;line-height:1.45;}
-  .dr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
-  .dr-top h2{margin:0 0 4px;font-size:1.2rem;}
-  .dr-top p{margin:0;color:var(--muted);font-size:.88rem;}
-  .dr-stats{display:flex;gap:8px;}
-  .dr-stat{padding:8px 12px;border-radius:12px;background:var(--surface2);text-align:center;min-width:74px;}
-  .dr-stat b{display:block;font-size:1.05rem;font-variant-numeric:tabular-nums;}
-  .dr-stat span{font-size:.72rem;color:var(--muted);}
+  .dr-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+  .dr-top h2{margin:0;font-size:1.2rem;}
+  .dr-top p,.dr-intro{margin:0 0 14px;color:var(--muted);font-size:.88rem;}
+  .dr-top > div:first-child p{margin-bottom:0;}
+  .dr-stats{display:flex;gap:6px;margin-left:auto;flex:none;}
+  .dr-stat{display:flex;align-items:baseline;gap:5px;padding:4px 9px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);white-space:nowrap;}
+  .dr-stat b{font-size:.82rem;font-variant-numeric:tabular-nums;}
+  .dr-stat span{font-size:.7rem;color:var(--muted);}
+  .dr-list{position:relative;}
   .dr-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
   .dr-chip{padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:.86rem;cursor:pointer;min-height:38px;}
   .dr-chip:hover{background:var(--surface2);}
@@ -553,7 +565,8 @@
   .lesson-step-nav button{min-height:48px;}
   .note-area{width:100%;min-height:140px;resize:vertical;line-height:1.55;}
   .note-saved{font-size:.78rem;color:var(--muted);margin-top:6px;min-height:1em;}
-  .side-group{font-size:.74rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:16px 2px 8px;}
+  .side-group{font-size:.74rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:14px 2px 8px;padding-top:14px;border-top:1px solid var(--line);}
+  .side-group:first-child{border-top:0;padding-top:0;margin-top:4px;}
   .side-group:first-child{margin-top:0;}
   @media (max-width:560px){
     .lesson-steps{top:62px;}
@@ -665,7 +678,7 @@
   .fb-lbl-mob,.t-short{display:none;}
   /* Máy tính: danh sách bài cố định bên trái, tự cuộn riêng để luôn thấy phần Ôn luyện / Tổng ôn */
   @media (min-width:861px){
-    .sidebar{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto;padding:2px 8px 12px 2px;scrollbar-width:thin;}
+    .sidebar{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto;padding:16px 16px 18px;scrollbar-width:thin;}
   }
   @media (max-width:860px){
     .focus-toggle{display:none;}
@@ -825,6 +838,13 @@
   .hb-chip.pin.on{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn);}
   .hb-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;}
   .hb-count{font-size:.84rem;color:var(--muted);margin:0 2px;}
+  .hb-side-toggle{display:flex;justify-content:space-between;align-items:center;gap:8px;width:calc(100% - 34px);margin:2px 0 2px 34px;padding:8px 10px;min-height:36px;border:0;border-radius:10px;background:none;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;cursor:pointer;text-align:left;}
+  .hb-side-toggle:hover{background:var(--surface2);color:var(--text);}
+  .hb-side-list{display:flex;flex-direction:column;gap:1px;margin:0 0 6px 40px;padding-left:8px;border-left:2px solid var(--line);}
+  .hb-side-list button{text-align:left;padding:8px 10px;min-height:36px;border:0;border-radius:9px;background:none;color:var(--text);font:inherit;font-size:.86rem;line-height:1.35;cursor:pointer;}
+  .hb-side-list button:hover{background:var(--surface2);}
+  .hb-side-list button.on{background:var(--accent-soft);color:var(--accent-text);font-weight:700;}
+  @media (min-width:861px){ .hb-toc{display:none !important;} }
   .hb-toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin:4px 0 18px;}
   .hb-toc a{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:8px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--text);text-decoration:none;font-size:.88rem;font-weight:600;}
   .hb-toc a:hover{border-color:var(--accent);color:var(--accent-text);}
@@ -1522,6 +1542,16 @@ let lessonQuizPrefetch = { lessonSlug: null, slug: null, questions: null };
 
 const initParams = new URLSearchParams(location.search);
 
+let subjectMinutesCache = {}; // subject slug -> tổng số phút video
+/* Thời lượng video: từ 1 giờ trở lên ghi theo giờ (2 giờ, 2,5 giờ), dưới 1 giờ ghi theo phút */
+function durationText(slug){
+  let m = Number(subjectMinutesCache[slug]) || 0;
+  if(!m){ const h = Number(subjectHoursCache[slug]) || 0; m = h * 60; }
+  if(m <= 0) return "";
+  if(m < 60) return Math.max(1, Math.round(m)) + " phút";
+  const h = Math.round(m / 60 * 10) / 10;
+  return h.toLocaleString("vi-VN") + " giờ";
+}
 let subjectHoursCache = {}; // subject slug -> tổng số giờ học (ước tính), nếu có khai báo
 
 async function init(){
@@ -1530,8 +1560,11 @@ async function init(){
   loadHonor();
   callRpc("list_subject_video_hours_public", {}).then(hd => {
     if(hd && hd.status === "ok"){
-      (hd.items||[]).forEach(it => { subjectHoursCache[it.slug] = it.total_hours; });
+      (hd.items||[]).forEach(it => { subjectHoursCache[it.slug] = it.total_hours; subjectMinutesCache[it.slug] = Number(it.total_minutes) || 0; });
       renderSubjectHours();
+      // có thời lượng rồi thì vẽ lại trang lộ trình để thẻ môn hiện số giờ/phút video
+      if(homeMode === "home") renderHome();
+      else if(homeMode === "intro" && currentSubject) renderSubjectIntro(currentSubject.slug);
     }
   }).catch(() => {});
   if(allSubjects.length === 0){
@@ -1644,11 +1677,10 @@ function selectSubject(slug){
 function renderSubjectHours(){
   const el = document.getElementById("subject-hours");
   if(!el || !currentSubject) return;
-  const hours = subjectHoursCache[currentSubject.slug];
-  if(hours && hours > 0){
-    const label = Number.isInteger(hours) ? hours : hours.toLocaleString("vi-VN");
+  const dur = durationText(currentSubject.slug);
+  if(dur){
     el.style.display = "inline-flex";
-    el.innerHTML = `⏱ Tổng thời lượng: ${label} giờ`;
+    el.innerHTML = `⏱ Tổng thời lượng video: ${dur}`;
   } else {
     el.style.display = "none";
     el.innerHTML = "";
@@ -1702,6 +1734,7 @@ function renderSidebarForSubject(){
       <button type="button" class="ol-item lesson-item hb-item" data-handbook="1" onclick="closeLessonSheet();selectHandbook()">
         <span class="ol-main"><span class="ol-icon">📒</span><span class="ol-title">${esc(hbCfg(s).name)}</span></span>
       </button>
+      <div id="hb-side"></div>
       <button type="button" class="ol-item lesson-item" data-flash="1" onclick="closeLessonSheet();selectFlash()">
         <span class="ol-main"><span class="ol-icon">🃏</span><span class="ol-title">Thẻ ghi nhớ</span></span>
       </button>` : ""}
@@ -1721,6 +1754,7 @@ function renderSidebarForSubject(){
       </button>`; })() : ""}
   `;
   updateSideSteps();
+  hbRenderSideToc();
 }
 /* Hiện 3 bước (Video · Ghi chú · Bài tập) ngay dưới bài đang học trong đề cương */
 function updateSideSteps(){
@@ -1739,6 +1773,7 @@ function closeLessonSheet(){ document.body.classList.remove("sheet-open"); }
 
 function updateActiveStates(){
   setTimeout(updateFocusTitle, 0);
+  setTimeout(hbRenderSideToc, 0);
   setTimeout(updateSideSteps, 0);
   document.querySelectorAll(".lesson-item").forEach(el => {
     if(el.dataset.flash){
@@ -1851,9 +1886,8 @@ function lessonLabel(last){
   return /^bài\s*\d+\s*$/i.test(t.trim()) ? t.trim() : `Bài ${last.idx + 1} – ${t}`;
 }
 function hoursLabel(slug){
-  const h = subjectHoursCache[slug];
-  if(!h || h <= 0) return "";
-  return (Number.isInteger(h) ? h : h.toLocaleString("vi-VN")) + " giờ video";
+  const t = durationText(slug);
+  return t ? t + " video" : "";
 }
 function subjectMetaHtml(s){
   const parts = [];
@@ -1916,7 +1950,9 @@ function renderHome(){
   const route = getChosenRoute();
   const totalLessons = allSubjects.reduce((n, s) => n + s.lessons.length, 0);
   const totalHours = allSubjects.reduce((n, s) => n + (Number(subjectHoursCache[s.slug]) || 0), 0);
-  const hoursTxt = totalHours > 0 ? (Number.isInteger(totalHours) ? totalHours : Math.round(totalHours * 10) / 10).toLocaleString("vi-VN") : "";
+  const totalMin = allSubjects.reduce((n, s) => n + (Number(subjectMinutesCache[s.slug]) || (Number(subjectHoursCache[s.slug]) || 0) * 60), 0);
+  const hoursTxt = totalMin >= 60 ? (Math.round(totalMin / 60 * 10) / 10).toLocaleString("vi-VN") : totalMin > 0 ? String(Math.max(1, Math.round(totalMin))) : "";
+  const hoursUnit = totalMin >= 60 ? "giờ video" : "phút video";
 
   const pickHtml = `
     <div class="route-pick" id="route-pick">
@@ -1973,7 +2009,7 @@ function renderHome(){
       <div class="home-stats">
         <div class="home-stat"><b>${allSubjects.length}</b><span>môn đã có bài</span></div>
         <div class="home-stat"><b>${totalLessons}</b><span>bài học</span></div>
-        ${hoursTxt ? `<div class="home-stat"><b>${hoursTxt}</b><span>giờ video</span></div>` : ""}
+        ${hoursTxt ? `<div class="home-stat"><b>${hoursTxt}</b><span>${hoursUnit}</span></div>` : ""}
       </div>
     </section>
     ${todayHtml()}
@@ -2016,7 +2052,7 @@ function renderSubjectIntro(slug){
   if(hasCalc){
     const locked = isExamLocked();
     rows.push(`<button type="button" class="curr-row" onclick="${locked ? "openAccessModal()" : `enterSubject('${sq}','calc')`}">
-      <span class="badge-num">🧮</span><span class="curr-title">Luyện theo dạng<span class="curr-sub">Xem bài mẫu, tự giải bài tập, rồi luyện thêm với bộ số khác</span></span>${locked ? `<span class="curr-tag lock">🔒 Cần mở khoá</span>` : ""}</button>`);
+      <span class="badge-num">🧮</span><span class="curr-title">Luyện theo dạng<span class="curr-sub">Xem bài mẫu, tự giải bài tập, rồi đổi số để luyện thêm</span></span>${locked ? `<span class="curr-tag lock">🔒 Cần mở khoá</span>` : ""}</button>`);
   }
   if(hasDrills(s) && !hasCalc){
     const locked = isExamLocked();
@@ -2160,6 +2196,8 @@ async function selectHandbook(docKey){
   hbSyncUrl();
   renderHandbookShell();
   window.scrollTo(0, 0);
+  // đưa mục sổ tay lên đầu cột trái để thấy ngay danh sách chủ điểm bên dưới
+  setTimeout(() => { const it = document.querySelector(".ol-item[data-handbook]"), sb = document.querySelector(".sidebar"); if(it && sb && sb.scrollHeight > sb.clientHeight) sb.scrollTo({ top: it.offsetTop - sb.offsetTop - 10, behavior: "smooth" }); }, 60);
 }
 function hbSyncUrl(){ updateUrl(Object.assign({ subject: currentSubject.slug, sotay: "1" }, hb.doc ? { vb: hb.doc } : {})); }
 /* ================= Thẻ ghi nhớ: lấy thẳng từ sổ tay =================
@@ -2291,6 +2329,26 @@ document.addEventListener("keydown", (e) => {
   else if(e.key === "ArrowLeft" || e.key === "1"){ if(fl.flipped){ e.preventDefault(); flAnswer(false); } }
   else if(e.key === "ArrowRight" || e.key === "2"){ if(fl.flipped){ e.preventDefault(); flAnswer(true); } }
 });
+/* Danh sách chủ điểm của sổ tay nằm dọc ở cột trái, ngay dưới mục sổ tay; bấm dòng "Chủ điểm" để ẩn/hiện */
+let hbTocOpen = true; try{ hbTocOpen = localStorage.getItem("cchn_hb_toc") !== "0"; }catch(e){}
+function hbToggleSideToc(){ hbTocOpen = !hbTocOpen; try{ localStorage.setItem("cchn_hb_toc", hbTocOpen ? "1" : "0"); }catch(e){} hbRenderSideToc(); }
+function hbGoChapter(id){
+  const el = document.getElementById("hb-" + id); if(!el) return;
+  hb.tocCur = id; hbRenderSideToc();
+  closeLessonSheet();
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function hbRenderSideToc(){
+  const box = document.getElementById("hb-side"); if(!box) return;
+  const list = hb.toc || [];
+  if(currentMode !== "handbook" || !list.length){ box.innerHTML = ""; return; }
+  const filtered = !!(hb.q || hb.pinsOnly || hb.doc);
+  box.innerHTML = `
+    <button type="button" class="hb-side-toggle" aria-expanded="${hbTocOpen}" onclick="hbToggleSideToc()">
+      <span>${filtered ? "Chủ điểm có kết quả" : "Chủ điểm"} · ${list.length}</span><span class="car" aria-hidden="true">${hbTocOpen ? "▾" : "▸"}</span>
+    </button>
+    ${hbTocOpen ? `<div class="hb-side-list">${list.map(c => `<button type="button" class="${hb.tocCur === c.id ? "on" : ""}" onclick="hbGoChapter('${esc(c.id)}')">${esc(c.title)}</button>`).join("")}</div>` : ""}`;
+}
 function renderHandbookShell(){
   const d = handbookData;
   const total = d.chapters.reduce((a, ch) => a + ch.sections.reduce((b, s) => b + (s.table ? s.table.rows.length : 0), 0), 0);
@@ -2381,6 +2439,8 @@ function renderHandbookBody(){
       ${secs.join("")}
     </section>`);
   });
+  hb.toc = d.chapters.filter(ch => parts.some(x => x.indexOf(`id="hb-${ch.id}"`) >= 0)).map(ch => ({ id: ch.id, title: ch.title }));
+  hbRenderSideToc();
   const cnt = document.getElementById("hb-count");
   const docInfo = hb.doc && hbDoc(hb.doc) ? hbDoc(hb.doc).full : "";
   if(cnt) cnt.innerText = (hb.q || hb.pinsOnly || hb.doc) ? (rowCount ? `${rowCount} kết quả${docInfo ? " · " + docInfo : ""}` : "") : "";
@@ -3225,17 +3285,22 @@ function renderDrill(){
   const mastered = topics.reduce((n, x) => n + x.drills.filter(y => ((st[x.id + "." + y.id] || {}).run || 0) >= 3).length, 0);
   const done = dr.picked >= 0;
   const letters = ["A", "B", "C", "D"];
+  // giữ nguyên vị trí cuộn của danh sách dạng khi đổi dạng hoặc đổi số (đổi chủ đề thì về đầu)
+  const oldList = content.querySelector(".dr-list");
+  const keep = oldList && dr.listKey === dr.t ? { top: oldList.scrollTop, left: oldList.scrollLeft } : null;
+  dr.listKey = dr.t;
   content.innerHTML = `
     <div class="card dr-card">
       ${dr.from === "calc" ? `<button type="button" class="btn-secondary" style="margin-bottom:12px;" onclick="selectCalcPractice(true)">‹ Quay lại bài mẫu và bài tập</button>` : ""}
       <div class="dr-top">
-        <div><h2>🎲 Luyện theo dạng</h2><p>Mỗi lần bấm “Bộ số khác” là một đề mới cùng dạng. Đúng 3 lần liên tiếp thì coi như đã thuộc dạng đó.</p></div>
+        <h2>🎲 Luyện theo dạng</h2>
         <div class="dr-stats">
           <div class="dr-stat"><b>${mastered}/${total}</b><span>dạng đã thuộc</span></div>
           <div class="dr-stat"><b>${dr.session.ok}/${dr.session.n}</b><span>đúng lượt này</span></div>
           <div class="dr-stat"><b>${dr.session.streak}</b><span>chuỗi đúng</span></div>
         </div>
       </div>
+      <p class="dr-intro">Mỗi lần bấm “Đổi số để luyện” là một đề mới cùng dạng. Đúng 3 lần liên tiếp thì coi như đã thuộc dạng đó.</p>
       <div class="dr-chips" role="tablist" aria-label="Chủ đề">
         ${topics.map((x, i) => `<button type="button" class="dr-chip ${i === dr.t ? "active" : ""}" onclick="drGoTopic(${i})">${esc(x.name)} <span style="opacity:.75">(${x.drills.length})</span></button>`).join("")}
       </div>
@@ -3246,7 +3311,7 @@ function renderDrill(){
         </div>
         <div class="dr-main">
           <div class="dr-kicker">Dạng ${dr.d + 1}/${t.drills.length} · ${esc(d.name)}</div>
-          ${!c ? `<div class="empty">Chưa tạo được đề cho dạng này. Bạn bấm “Bộ số khác” để thử lại.</div>` : `
+          ${!c ? `<div class="empty">Chưa tạo được đề cho dạng này. Bạn bấm “Đổi số để luyện” để thử lại.</div>` : `
           <div class="dr-q">${esc(c.q)}</div>
           ${dr.hint ? `<div class="dr-hint"><b>Công thức:</b> ${esc(d.hint)}</div>` : ""}
           <div>
@@ -3262,25 +3327,24 @@ function renderDrill(){
           </div>` : ""}`}
           <div class="dr-actions">
             ${!done && c ? `<button type="button" class="btn-secondary" onclick="drToggleHint()">${dr.hint ? "Ẩn công thức" : "💡 Gợi ý công thức"}</button>` : ""}
-            <button type="button" class="${done ? "btn-primary" : "btn-secondary"}" onclick="drNew()">🎲 Bộ số khác</button>
+            <button type="button" class="${done ? "btn-primary" : "btn-secondary"}" onclick="drNew()">🎲 Đổi số để luyện</button>
             <button type="button" class="btn-secondary" onclick="drNextDrill()">Dạng tiếp theo ›</button>
           </div>
-          <div class="dr-keys">Phím tắt: 1–4 hoặc A–D để chọn · Enter: bộ số khác · H: công thức · N: dạng tiếp theo</div>
         </div>
       </div>
     </div>`;
+  const list = content.querySelector(".dr-list");
+  if(list){
+    if(keep){ list.scrollTop = keep.top; list.scrollLeft = keep.left; }
+    const on = list.querySelector(".dr-d.active");
+    if(on){ // dạng đang chọn phải nằm trong vùng nhìn thấy của danh sách, không kéo cả trang
+      if(on.offsetTop < list.scrollTop) list.scrollTop = on.offsetTop - 8;
+      else if(on.offsetTop + on.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = on.offsetTop + on.offsetHeight - list.clientHeight + 8;
+      if(on.offsetLeft < list.scrollLeft) list.scrollLeft = on.offsetLeft - 8;
+      else if(on.offsetLeft + on.offsetWidth > list.scrollLeft + list.clientWidth) list.scrollLeft = on.offsetLeft + on.offsetWidth - list.clientWidth + 8;
+    }
+  }
 }
-document.addEventListener("keydown", (e) => {
-  if(currentMode !== "drill" || !dr.data || e.ctrlKey || e.metaKey || e.altKey) return;
-  const tag = (e.target && e.target.tagName) || "";
-  if(/INPUT|TEXTAREA|SELECT/.test(tag) || document.querySelector(".modal-overlay.open, .overlay.open")) return;
-  const k = e.key.toLowerCase();
-  const i = "1234".indexOf(k) >= 0 ? "1234".indexOf(k) : "abcd".indexOf(k);
-  if(k.length === 1 && i >= 0 && dr.picked < 0){ e.preventDefault(); drPick(i); }
-  else if(k === "enter" && dr.picked >= 0 && tag !== "BUTTON"){ e.preventDefault(); drNew(); }
-  else if(k === "h" && dr.picked < 0){ drToggleHint(); }
-  else if(k === "n"){ drNextDrill(); }
-});
 
 let calcCtx = { sections: [], sectionIdx: 0, groupIdx: 0, itemIdx: 0, answered: {}, entered: {}, selected: {} }; // key `${sectionIdx}-${groupIdx}-${itemIdx}`
 
@@ -3297,7 +3361,7 @@ async function calcLoadDrillMap(){
 function calcDrillBtn(group, big){
   const m = group && calcDrillMap[drillNameKey(group.title)];
   if(!m) return "";
-  return `<button type="button" class="${big ? "btn-primary" : "btn-secondary"} calc-drill-btn" onclick="openDrillFromCalc(${m.t},${m.d})">🎲 Luyện thêm với bộ số khác</button>`;
+  return `<button type="button" class="${big ? "btn-primary" : "btn-secondary"} calc-drill-btn" onclick="openDrillFromCalc(${m.t},${m.d})">🎲 Đổi số để luyện</button>`;
 }
 async function openDrillFromCalc(t, d){
   await selectDrill({ t, d, from: "calc" });
@@ -3353,7 +3417,24 @@ function jumpToCalcGroup(groupIdx){
 
 const CALC_PHAN_ICONS = ["📄","📋","🥧","📊","📈","📐","🧮","📑"];
 
+/* Vẽ lại trang nhưng giữ nguyên vị trí cuộn của hàng thẻ dạng (đổi phần thì về đầu), và luôn để dạng đang chọn trong tầm nhìn */
 function renderCalcPractice(){
+  const content = document.getElementById("content");
+  const old = content.querySelector(".calc-dang-tabs");
+  const keep = old && calcCtx.tabsKey === calcCtx.sectionIdx ? old.scrollLeft : null;
+  calcCtx.tabsKey = calcCtx.sectionIdx;
+  renderCalcPracticeInner();
+  const tabs = content.querySelector(".calc-dang-tabs");
+  if(!tabs) return;
+  if(keep != null) tabs.scrollLeft = keep;
+  const on = tabs.querySelector("button.active");
+  if(on){
+    const l = on.offsetLeft - tabs.offsetLeft, r = l + on.offsetWidth;
+    if(l < tabs.scrollLeft) tabs.scrollLeft = l - 8;
+    else if(r > tabs.scrollLeft + tabs.clientWidth) tabs.scrollLeft = r - tabs.clientWidth + 8;
+  }
+}
+function renderCalcPracticeInner(){
   const content = document.getElementById("content");
   const sections = calcCtx.sections;
 
