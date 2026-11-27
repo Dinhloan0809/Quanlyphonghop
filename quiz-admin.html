@@ -16,19 +16,19 @@
 <style>
   /* Bảng màu đồng bộ với trang học viên (portal.html) */
   :root{
-    --bg:#F3F7FE; --surface:#FFFFFF; --surface2:#EAF1FD; --line:#D9E4F5; --line-strong:#B9CBE8;
+    --bg:#E6ECF7; --surface:#FFFFFF; --surface2:#EEF3FC; --line:#C6D3E9; --line-strong:#9FB4D8; --box:#7FA8EA; --box-head:#DCE8FD;
     --text:#0F1B3D; --muted:#4F5B78; --faint:#6E7896;
     --accent:#0B6BF5; --on-accent:#FFFFFF; --accent-soft:#E3EEFF; --accent-text:#0A5AD0;
     --cta-grad:linear-gradient(135deg,#FF8A2B 0%,#F25F0D 100%); --on-cta:#FFFFFF; --cta-shadow:0 6px 16px rgba(242,95,13,.25);
     --hi:#FFD23F;
     --ok:#15803D; --ok-soft:#E5F5EA; --bad:#C81E1E; --bad-soft:#FDE8E8; --warn:#9A5B00; --warn-soft:#FFF4D6; --warn-line:#F2D27A;
-    --shadow:0 1px 2px rgba(15,27,61,.04), 0 6px 18px rgba(11,107,245,.07);
+    --shadow:0 1px 2px rgba(15,27,61,.08), 0 8px 22px rgba(15,27,61,.09);
     color-scheme:light;
     /* tên cũ dùng trong mã */
     --navy:var(--accent-text); --ice:var(--accent-soft); --white:var(--surface); --dark:var(--text); --light:var(--surface2); --green:var(--ok); --red:var(--bad);
   }
   :root[data-theme="dark"]{
-    --bg:#1A1B1E; --surface:#232428; --surface2:#2C2E33; --line:#36383E; --line-strong:#4A4D55;
+    --bg:#1A1B1E; --surface:#232428; --surface2:#2C2E33; --line:#454850; --line-strong:#5C606A; --box:#4F74B0; --box-head:#26344C;
     --text:#ECEDEF; --muted:#A8ABB2; --faint:#8E929A;
     --accent:#5A9CFF; --on-accent:#0E1A33; --accent-soft:#25344F; --accent-text:#8EBBFF;
     --cta-grad:linear-gradient(135deg,#FF8A2B 0%,#F2600F 100%); --cta-shadow:0 4px 14px rgba(255,122,26,.18);
@@ -109,6 +109,14 @@
     table{display:block;overflow-x:auto;white-space:nowrap;}
   }
 
+  /* Tách rõ từng khối: mỗi hộp có dải tiêu đề nền riêng, các mục con trong hộp có nền nhạt */
+  .card:not(.card .card) > h2:first-child,.card:not(.card .card) > .adm-cardhead:first-child{margin:-20px -22px 16px;padding:13px 22px;background:var(--box-head);border-bottom:1.5px solid var(--box);border-radius:16px 16px 0 0;}
+  .card:not(.card .card) > h2:first-child,.card:not(.card .card) > .adm-cardhead:first-child h2{color:var(--accent-text);}
+  /* Viền màu cho các hộp chính để phân biệt rõ từng phần */
+  .card:not(.card .card),.adm-nav,.adm-kpi{border:1.5px solid var(--box);}
+  .card .card{background:var(--surface2);}
+  .adm-cardhead:first-child h2{margin:0;}
+  @media (max-width:640px){ .card:not(.card .card) > h2:first-child,.card:not(.card .card) > .adm-cardhead:first-child{margin:-16px -16px 14px;padding:12px 16px;} }
   /* ---------- Bố cục trang quản trị: cột mục bên trái, nội dung bên phải ---------- */
   body.adm-on main{max-width:1480px;}
   .adm{display:flex;gap:20px;align-items:flex-start;}
@@ -127,7 +135,7 @@
   .adm-head h2{margin:0;font-size:1.4rem;font-weight:800;}
   .adm-head p{margin:2px 0 0;}
   .adm-crumb{font-size:.82rem;color:var(--muted);}
-  .adm-tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:16px;}
+  .adm-tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:2px solid var(--line);margin-bottom:18px;}
   .adm-tab{background:transparent;color:var(--muted);border-radius:0;padding:11px 14px;font-weight:600;border-bottom:3px solid transparent;margin-bottom:-1px;}
   .adm-tab span{font-weight:500;color:var(--faint);}
   .adm-tab:hover{color:var(--text);}
@@ -149,8 +157,8 @@
   .adm-cardhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
   .adm-cardhead h2{margin:0;}
   .adm-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-  .adm-step{margin:22px 0 2px;padding-top:16px;border-top:1px solid var(--line);font-size:.95rem;font-weight:800;}
-  .adm-adv{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:0 14px;}
+  .adm-step{margin:26px 0 4px;padding:10px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);font-size:.95rem;font-weight:800;}
+  .adm-adv{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:0 14px;background:var(--surface);}
   .adm-adv > summary{cursor:pointer;padding:11px 0;font-weight:600;font-size:.88rem;color:var(--accent-text);}
   .adm-adv[open]{padding-bottom:14px;}
   .adm-fold > summary{cursor:pointer;}
@@ -167,6 +175,7 @@
   .adm-chip{min-height:32px;padding:4px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:.78rem;}
   .adm-chip:hover{background:var(--surface2);}
   .adm-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px;}
+  .adm-view > .card,.adm-pane > .card{margin-bottom:20px;}
   .adm-kpi{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px;align-items:flex-start;}
   .adm-kpi b{font-size:1.7rem;line-height:1.1;font-variant-numeric:tabular-nums;}
   .adm-kpi span{font-weight:600;font-size:.9rem;}
@@ -224,7 +233,7 @@
   .dbe-topic span{display:flex;gap:2px;flex:none;}
   .dbe-tname{background:none;padding:6px 8px;min-height:0;text-align:left;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);}
   .dbe-tname:hover{color:var(--accent-text);}
-  .dbe-var{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;padding:10px;border:1px solid var(--line);border-radius:12px;margin-top:8px;}
+  .dbe-var{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;padding:10px;border:1px solid var(--line);border-radius:12px;margin-top:8px;background:var(--surface2);}
   .dbe-var label{margin:0 0 4px;font-size:.74rem;color:var(--muted);}
   .dbe-var .k{flex:0 0 76px;} .dbe-var .ty{flex:0 0 130px;} .dbe-var .n{flex:0 0 96px;} .dbe-var .wide{flex:1 1 200px;}
   .dbe-calc{display:flex;gap:8px;align-items:center;margin-top:8px;}
@@ -464,7 +473,7 @@ async function renderMain(sets){
               <p class="muted" style="margin-top:-8px;">Chia theo Phần → Dạng. Mỗi dạng có một bài mẫu xem lời giải và vài bài tập để học viên tự làm. Nhập hàng loạt bằng Excel, lưu thẳng lên hệ thống.</p>
               <div id="calc-practice-panel"><span class="muted">Đang tải...</span></div>
             </div>
-            <div class="adm-head" style="margin-top:22px;"><h2 style="font-size:1.1rem;">2 · Khuôn đảo số (nút “Luyện thêm với bộ số khác”)</h2>
+            <div class="adm-head" style="margin-top:22px;"><h2 style="font-size:1.1rem;">2 · Khuôn đảo số (nút “Đổi số để luyện”)</h2>
               <p class="muted">Dạng nào ở mục 1 có khuôn <b>trùng tên</b> ở đây thì học viên thấy thêm nút luyện với bộ số tự đổi. Dạng không có khuôn vẫn chạy bình thường với bài mẫu và bài tập.</p></div>
             <div id="dbe-root"></div>
           </div>
@@ -1348,7 +1357,7 @@ async function dbeOpenFor(slug){
   if(dbe.slug === slug && dbe.data){ dbeRender(); return; }
   dbe = { slug, data: null, t: 0, d: 0, dirty: false, note: "" };
   if(!cfgOf(slug).dangbai){
-    root.innerHTML = `<div class="card"><h2>Môn này chưa có phần luyện theo dạng</h2><p class="muted" style="margin-top:-8px;">Mỗi dạng là một đề có các con số tự đổi. Học viên bấm “Bộ số khác” để luyện cùng một cách giải với nhiều bộ số.</p><button class="btn-primary" type="button" onclick="dbeCreate()">Tạo phần luyện theo dạng cho môn này</button></div>`;
+    root.innerHTML = `<div class="card"><h2>Môn này chưa có phần luyện theo dạng</h2><p class="muted" style="margin-top:-8px;">Mỗi dạng là một đề có các con số tự đổi. Học viên bấm “Đổi số để luyện” để luyện cùng một cách giải với nhiều bộ số.</p><button class="btn-primary" type="button" onclick="dbeCreate()">Tạo phần luyện theo dạng cho môn này</button></div>`;
     return;
   }
   root.innerHTML = `<div class="card"><p class="muted" style="margin:0;">Đang tải các dạng bài…</p></div>`;
@@ -2541,37 +2550,51 @@ async function importCalcPracticeExcel(){
 
   msgEl.innerHTML = `<div class="muted">Đang nhập các câu hỏi...</div>`;
 
-  // --- Bước 3: nhập tất cả các câu (song song) ---
-  let itemsOk = 0;
+  // --- Bước 3: nhập các câu, mỗi lúc chỉ gửi vài câu (gửi cả trăm câu cùng lúc làm máy chủ quá tải và từ chối hết) ---
+  let itemsOk = 0, itemsSkipped = 0, itemsDone = 0;
   const itemOrderCounter = {}; // groupId -> số thứ tự tiếp theo (nếu file không ghi thứ tự câu)
-  await Promise.all(parsed.map(async (p) => {
-    const sid = sectionIdByTitle[normalizeAnswerText(p.sectionTitle)];
-    const gkey = `${sid}::${normalizeAnswerText(p.groupTitle)}`;
-    const groupId = groupIdByKey[gkey];
-    if(groupId === undefined || groupId === null){
-      rowErrors.push(`Dòng ${p.rowNum}: không xác định được dạng cho câu này — đã bỏ qua.`);
-      return;
+  // Câu đã có sẵn trong dạng (trùng nội dung câu hỏi) thì bỏ qua, để nhập lại file không bị nhân đôi
+  const existing = {};
+  (currentCalcSections || []).forEach(s => (s.groups || []).forEach(g => (g.items || []).forEach(it => { existing[g.id + "::" + normalizeAnswerText(it.question || "")] = 1; })));
+  const errText = d => !d ? "không nhận được phản hồi" : (d.message || d.hint || d.details || d.status || d.code || "lỗi không rõ");
+  const queue = parsed.slice();
+  async function worker(){
+    while(queue.length){
+      const p = queue.shift();
+      const sid = sectionIdByTitle[normalizeAnswerText(p.sectionTitle)];
+      const groupId = groupIdByKey[`${sid}::${normalizeAnswerText(p.groupTitle)}`];
+      if(groupId === undefined || groupId === null){
+        rowErrors.push(`Dòng ${p.rowNum}: không xác định được dạng cho câu này — đã bỏ qua.`);
+      } else if(existing[groupId + "::" + normalizeAnswerText(p.question)]){
+        itemsSkipped++;
+      } else {
+        let order = p.itemOrder;
+        if(!order){ itemOrderCounter[groupId] = (itemOrderCounter[groupId] || 0) + 1; order = itemOrderCounter[groupId]; }
+        let data = null;
+        for(let attempt = 0; attempt < 3; attempt++){
+          try{
+            data = await callRpc("admin_upsert_calc_practice_item", {
+              p_password: PASSWORD, p_group_id: groupId, p_id: null,
+              p_item_type: p.itemType, p_order_index: order, p_question: p.question,
+              p_option_a: p.optionA, p_option_b: p.optionB, p_option_c: p.optionC, p_option_d: p.optionD,
+              p_correct_option: p.correctOption, p_solution_steps: p.solution || null
+            });
+          }catch(e){ data = { message: e && e.message }; }
+          if(data && data.status === "ok") break;
+          await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+        }
+        if(data && data.status === "ok"){ itemsOk++; existing[groupId + "::" + normalizeAnswerText(p.question)] = 1; }
+        else rowErrors.push(`Dòng ${p.rowNum}: chưa lưu được câu hỏi (${errText(data)}).`);
+      }
+      itemsDone++;
+      if(itemsDone % 5 === 0 || itemsDone === parsed.length){ const m = document.getElementById("calc-import-msg"); if(m) m.innerHTML = `<div class="muted">Đang nhập câu hỏi: ${itemsDone}/${parsed.length}. Vui lòng giữ nguyên trang này...</div>`; }
     }
-    let order = p.itemOrder;
-    if(!order){
-      itemOrderCounter[groupId] = (itemOrderCounter[groupId] || 0) + 1;
-      order = itemOrderCounter[groupId];
-    }
-    const data = await callRpc("admin_upsert_calc_practice_item", {
-      p_password: PASSWORD, p_group_id: groupId, p_id: null,
-      p_item_type: p.itemType, p_order_index: order, p_question: p.question,
-      p_option_a: p.optionA, p_option_b: p.optionB, p_option_c: p.optionC, p_option_d: p.optionD,
-      p_correct_option: p.correctOption, p_solution_steps: p.solution || null
-    });
-    if(data && data.status === "ok"){
-      itemsOk++;
-    } else {
-      rowErrors.push(`Dòng ${p.rowNum}: lỗi khi lưu câu hỏi (${esc(data && data.status)}).`);
-    }
-  }));
+  }
+  await Promise.all([worker(), worker(), worker(), worker()]);
+  rowErrors.sort((x, y) => (parseInt((x.match(/Dòng (\d+)/) || [])[1]) || 0) - (parseInt((y.match(/Dòng (\d+)/) || [])[1]) || 0));
 
-  const summary = `Đã nhập ${itemsOk}/${parsed.length} câu, tạo mới ${sectionsCreated} phần và ${groupsCreated} dạng (các phần/dạng trùng tên đã có sẵn được tự gộp chung).`;
-  const errHtml = rowErrors.length ? `<div class="msg err" style="margin-top:6px;">${rowErrors.map(esc).join("<br>")}</div>` : "";
+  const summary = `Đã nhập ${itemsOk}/${parsed.length} câu${itemsSkipped ? `, bỏ qua ${itemsSkipped} câu đã có sẵn` : ""}, tạo mới ${sectionsCreated} phần và ${groupsCreated} dạng (các phần/dạng trùng tên đã có sẵn được tự gộp chung).`;
+  const errHtml = rowErrors.length ? `<div class="msg err" style="margin-top:6px;">${rowErrors.length > 12 ? `Có ${rowErrors.length} dòng chưa nhập được. Bạn có thể bấm “Nhập từ Excel” lại với đúng file này: các câu đã vào sẽ tự được bỏ qua.<br>` : ""}${rowErrors.slice(0, 12).map(esc).join("<br>")}${rowErrors.length > 12 ? "<br>…" : ""}</div>` : "";
   const resultHtml = `<div class="msg ok">${esc(summary)}</div>${errHtml}`;
 
   // loadCalcPractice() sẽ render lại toàn bộ khung (kể cả khu vực nhập Excel),
