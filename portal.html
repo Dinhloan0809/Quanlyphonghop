@@ -301,6 +301,43 @@
   .calc-sample-box .lbl{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--accent-text);font-size:.82rem;margin-bottom:6px;}
   .calc-sample-box .txt{line-height:1.6;font-size:.93rem;}
   .calc-plain-q{line-height:1.6;font-size:.96rem;margin-bottom:16px;font-weight:600;}
+  /* Luyện theo dạng (bài mẫu + bài tập): một hộp, một hàng chọn Phần/Dạng, bên dưới chỉ có một câu */
+  .cp-card{max-width:860px;margin-left:auto;margin-right:auto;}
+  .cp-bar{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .cp-bar h2{margin:0;font-size:1.2rem;}
+  .cp-prog{font-size:.82rem;color:var(--muted);font-weight:600;}
+  .cp-pick{display:flex;gap:12px;flex-wrap:wrap;padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--line);}
+  .cp-field{flex:1 1 220px;min-width:0;}
+  .cp-field.grow{flex:2 1 320px;}
+  .cp-field label{display:block;margin:0 0 5px;font-size:.74rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+  .cp-field select{width:100%;min-height:46px;padding:0 12px;border:1.5px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-weight:600;font-size:.95rem;}
+  .cp-grp{display:flex;gap:6px;align-items:stretch;}
+  .cp-field select,.cp-step{margin:0;height:46px;box-sizing:border-box;}
+  .cp-grp select{flex:1;min-width:0;}
+  .cp-step{flex:none;width:46px;min-height:46px;border:1.5px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--text);font-size:1.2rem;font-weight:700;cursor:pointer;}
+  .cp-step:hover:not(:disabled){background:var(--surface2);}
+  .cp-step:disabled{opacity:.4;cursor:default;}
+  .cp-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+  .cp-kind{font-size:.8rem;font-weight:700;color:var(--accent-text);}
+  .cp-kind.sample{color:var(--warn);}
+  .cp-count{display:inline-flex;align-items:center;gap:10px;font-size:.82rem;color:var(--muted);font-weight:600;}
+  .cp-count .calc-dots{display:inline-flex;gap:5px;}
+  .cp-q{font-size:1.12rem;line-height:1.65;margin-bottom:18px;}
+  .cp-title{margin:0 0 6px;font-size:1.1rem;font-weight:800;}
+  .cp-label{display:block;margin:0 0 6px;font-size:.86rem;color:var(--muted);font-weight:600;}
+  .cp-input{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .cp-input input{flex:1 1 180px;max-width:280px;min-height:48px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-size:1.05rem;}
+  .cp-result{margin-top:4px;}
+  .cp-answer{display:flex;align-items:baseline;gap:12px;margin:0 0 16px;padding:12px 16px;border-radius:12px;background:var(--ok-soft);}
+  .cp-answer span{font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ok);}
+  .cp-answer b{font-size:1.3rem;font-variant-numeric:tabular-nums;}
+  .cp-sub{font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;}
+  .cp-steps{line-height:1.8;font-size:.98rem;}
+  .cp-actions{justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px solid var(--line);}
+  .cp-right{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;}
+  .cp-done{padding:4px 0;}
+  .calc-drill-btn{white-space:nowrap;}
+  @media (max-width:640px){ .cp-right{flex:1 1 100%;} .cp-right > *{flex:1 1 auto;} }
   .calc-drill-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;padding:10px 12px;border-radius:12px;background:var(--accent-soft);color:var(--accent-text);font-size:.88rem;}
   .link-btn{background:none;border:none;color:var(--accent-text);font-weight:700;padding:8px 0;font-size:.9rem;cursor:pointer;min-height:40px;}
   .fl-chapters{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
@@ -3392,14 +3429,22 @@ async function selectCalcPractice(keep){
   renderCalcPractice();
 }
 
-function calcParseNumber(raw){
-  const cleaned = String(raw||"").trim().replace(/\s/g, "").replace(/,/g, "");
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? null : n;
+/* Học viên có thể gõ số theo kiểu Việt Nam (28.889 hoặc 252,76) hoặc kiểu Anh (28,889 hoặc 252.76).
+   Lấy mọi cách hiểu hợp lý của chuỗi đã gõ; chỉ cần một cách hiểu khớp đáp số là tính đúng. */
+function calcCandidates(raw){
+  let t = String(raw == null ? "" : raw).trim().replace(/\s/g, "").replace(/−/g, "-").replace(/[^\d.,\-]/g, "");
+  if(!/\d/.test(t)) return [];
+  const out = [];
+  const add = x => { const n = parseFloat(x); if(!isNaN(n) && out.indexOf(n) < 0) out.push(n); };
+  add(t.replace(/\./g, "").replace(",", "."));   // kiểu Việt Nam: chấm ngăn nghìn, phẩy thập phân
+  add(t.replace(/,/g, ""));                       // kiểu Anh: phẩy ngăn nghìn, chấm thập phân
+  return out;
 }
+function calcParseNumber(raw){ const c = calcCandidates(raw); return c.length ? c[0] : null; }
 function calcIsCorrect(entered, correct, tolerance){
-  if(entered === null) return false;
-  return Math.abs(entered - correct) <= (Number(tolerance)||0) + 1e-9;
+  if(entered === null || entered === undefined) return false;
+  const list = typeof entered === "number" ? [entered] : calcCandidates(entered);
+  return list.some(x => Math.abs(x - correct) <= (Number(tolerance) || 0) + 1e-9);
 }
 
 function selectCalcSection(sectionIdx){
@@ -3420,18 +3465,19 @@ const CALC_PHAN_ICONS = ["📄","📋","🥧","📊","📈","📐","🧮","📑"
 /* Vẽ lại trang nhưng giữ nguyên vị trí cuộn của hàng thẻ dạng (đổi phần thì về đầu), và luôn để dạng đang chọn trong tầm nhìn */
 function renderCalcPractice(){
   const content = document.getElementById("content");
-  const old = content.querySelector(".calc-dang-tabs");
-  const keep = old && calcCtx.tabsKey === calcCtx.sectionIdx ? old.scrollLeft : null;
+  const old = content.querySelector(".cp-list");
+  const keep = old && calcCtx.tabsKey === calcCtx.sectionIdx ? { top: old.scrollTop, left: old.scrollLeft } : null;
   calcCtx.tabsKey = calcCtx.sectionIdx;
   renderCalcPracticeInner();
-  const tabs = content.querySelector(".calc-dang-tabs");
-  if(!tabs) return;
-  if(keep != null) tabs.scrollLeft = keep;
-  const on = tabs.querySelector("button.active");
+  const list = content.querySelector(".cp-list");
+  if(!list) return;
+  if(keep){ list.scrollTop = keep.top; list.scrollLeft = keep.left; }
+  const on = list.querySelector(".active");
   if(on){
-    const l = on.offsetLeft - tabs.offsetLeft, r = l + on.offsetWidth;
-    if(l < tabs.scrollLeft) tabs.scrollLeft = l - 8;
-    else if(r > tabs.scrollLeft + tabs.clientWidth) tabs.scrollLeft = r - tabs.clientWidth + 8;
+    if(on.offsetTop < list.scrollTop) list.scrollTop = on.offsetTop - 8;
+    else if(on.offsetTop + on.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = on.offsetTop + on.offsetHeight - list.clientHeight + 8;
+    if(on.offsetLeft < list.scrollLeft) list.scrollLeft = on.offsetLeft - 8;
+    else if(on.offsetLeft + on.offsetWidth > list.scrollLeft + list.clientWidth) list.scrollLeft = on.offsetLeft + on.offsetWidth - list.clientWidth + 8;
   }
 }
 function renderCalcPracticeInner(){
@@ -3439,99 +3485,73 @@ function renderCalcPracticeInner(){
   const sections = calcCtx.sections;
 
   if(!sections.length){
-    content.innerHTML = `<div class="card"><div class="empty">Môn học này chưa có nội dung luyện tính toán. Admin sẽ cập nhật sau.</div></div>`;
+    content.innerHTML = `<div class="card"><div class="empty">Môn học này chưa có nội dung luyện theo dạng. Nội dung sẽ được cập nhật sau.</div></div>`;
     return;
   }
 
   const section = sections[calcCtx.sectionIdx];
   const groups = section.groups || [];
+  const clean = (t, word) => String(t || "").replace(new RegExp("^" + word + "\\s*[\\d.]+\\s*[:.\\-–]?\\s*", "i"), "");
+  const fmtNum = v => { const n = Number(v); return isNaN(n) ? String(v) : n.toLocaleString("vi-VN", { maximumFractionDigits: 6 }); };
 
-  const isGroupDone = (si, gi, g) => (g.items||[]).every((it,ii) => it.item_type === "sample" || calcCtx.answered[`${si}-${gi}-${ii}`]);
-  const isSectionDone = (si, s) => (s.groups||[]).length > 0 && (s.groups||[]).every((g,gi) => isGroupDone(si, gi, g));
+  const isGroupDone = (si, gi, g) => (g.items||[]).length > 0 && (g.items||[]).every((it,ii) => it.item_type === "sample" || calcCtx.answered[`${si}-${gi}-${ii}`]);
+  const doneCount = groups.filter((g, gi) => isGroupDone(calcCtx.sectionIdx, gi, g)).length;
 
-  const phanGridHtml = `
-    <div class="calc-phan-grid">
-      ${sections.map((s,si) => `
-        <button type="button" class="calc-phan-card ${si===calcCtx.sectionIdx?"active":""} ${isSectionDone(si,s)?"done":""}" title="${esc(s.title)}" onclick="selectCalcSection(${si})">
-          <span class="icon">${CALC_PHAN_ICONS[si % CALC_PHAN_ICONS.length]}</span>
-          <span class="txt"><span class="num">Phần ${si+1}</span><span class="ttl">${esc(s.title.replace(/^Phần\s*\d+\s*[:.-]?\s*/i,""))}</span></span>
-        </button>
-      `).join("")}
-    </div>
-  `;
-  const videoCardHtml = section.video_url ? `
-    <details class="calc-video-details">
-      <summary>🎬 Xem video hướng dẫn phần này</summary>
-      ${renderVideoBlock({ label: section.video_label || "Video hướng dẫn", url: section.video_url })}
-    </details>
-  ` : "";
+  // Khung chung, gọn nhất có thể: một hàng chọn Phần và Dạng (hai ô xổ xuống), bên dưới chỉ còn đúng một câu đang làm
+  const gi0 = calcCtx.groupIdx;
+  const shell = (mainHtml) => `
+    <div class="card cp-card">
+      <div class="cp-bar">
+        <h2>Luyện theo dạng</h2>
+        <span class="cp-prog">${doneCount}/${groups.length} dạng đã xong</span>
+      </div>
+      <div class="cp-pick">
+        <div class="cp-field">
+          <label for="cp-sec">Phần</label>
+          <select id="cp-sec" onchange="selectCalcSection(Number(this.value))">
+            ${sections.map((s, si) => `<option value="${si}" ${si === calcCtx.sectionIdx ? "selected" : ""}>${si + 1}. ${esc(clean(s.title, "Phần"))}</option>`).join("")}
+          </select>
+        </div>
+        ${groups.length ? `<div class="cp-field grow">
+          <label for="cp-grp">Dạng</label>
+          <div class="cp-grp">
+            <button type="button" class="cp-step" aria-label="Dạng trước" ${gi0 <= 0 ? "disabled" : ""} onclick="jumpToCalcGroup(${gi0 - 1})">‹</button>
+            <select id="cp-grp" onchange="jumpToCalcGroup(Number(this.value))">
+              ${groups.map((g, gi) => `<option value="${gi}" ${gi === gi0 ? "selected" : ""}>${isGroupDone(calcCtx.sectionIdx, gi, g) ? "✓ " : ""}${calcCtx.sectionIdx + 1}.${gi + 1} ${esc(clean(g.title, "Dạng"))}</option>`).join("")}
+            </select>
+            <button type="button" class="cp-step" aria-label="Dạng sau" ${gi0 >= groups.length - 1 ? "disabled" : ""} onclick="jumpToCalcGroup(${gi0 + 1})">›</button>
+          </div>
+        </div>` : ""}
+      </div>
+      ${section.video_url ? `<details class="calc-video-details"><summary>Xem video hướng dẫn phần này</summary>${renderVideoBlock({ label: section.video_label || "Video hướng dẫn", url: section.video_url })}</details>` : ""}
+      <div class="cp-main">${mainHtml}</div>
+    </div>`;
 
-  if(!groups.length){
-    content.innerHTML = `${phanGridHtml}${videoCardHtml}<div class="card"><div class="empty">Phần này chưa có dạng bài tập nào. Admin sẽ cập nhật sau.</div></div>`;
-    return;
-  }
+  if(!groups.length){ content.innerHTML = shell(`<div class="empty">Phần này chưa có dạng bài nào. Nội dung sẽ được cập nhật sau.</div>`); return; }
 
   const group = groups[calcCtx.groupIdx];
   const items = group.items || [];
-
-  const dangTabsHtml = `
-    <div class="calc-dang-tabs">
-      ${groups.map((g,gi) => `
-        <button type="button" class="${gi===calcCtx.groupIdx?"active":""} ${isGroupDone(calcCtx.sectionIdx,gi,g)?"done":""}" title="${esc(g.title)}" onclick="jumpToCalcGroup(${gi})">
-          <span class="num">${calcCtx.sectionIdx+1}.${gi+1}</span>
-          <span class="lbl">${esc(g.title.replace(/^Dạng\s*[\d.]+\s*[:.-]?\s*/i,""))}</span>
-        </button>
-      `).join("")}
-    </div>
-    ${calcDrillBtn(group) ? `<div class="calc-drill-bar"><span>Dạng này có bộ đề tự đổi số để luyện đến khi thuộc cách giải.</span>${calcDrillBtn(group)}</div>` : ""}
-  `;
+  const groupTitle = clean(group.title, "Dạng");
+  const drillBtn = calcDrillBtn(group);
 
   if(!items.length){
-    content.innerHTML = `${phanGridHtml}${videoCardHtml}<div class="card">${dangTabsHtml}<div class="empty">Dạng này chưa có câu nào.</div></div>`;
+    content.innerHTML = shell(`
+      <div class="empty" style="text-align:left;padding:8px 0;">Dạng này chưa có bài mẫu và bài tập cố định.${drillBtn ? " Bạn luyện bằng đề tự đổi số nhé." : ""}</div>
+      ${drillBtn ? `<div class="dr-actions">${calcDrillBtn(group, true)}</div>` : ""}`);
     return;
   }
   if(calcCtx.itemIdx >= items.length){
-    // Đã xong hết câu của dạng này
-    if(calcCtx.groupIdx < groups.length - 1){
-      content.innerHTML = `
-        ${phanGridHtml}${videoCardHtml}
-        <div class="card">
-          ${dangTabsHtml}
-          <div class="calc-done-box">
-            <div class="big">✅</div>
-            <h2 style="margin:0 0 8px;">Xong ${esc(group.title)}!</h2>
-            <p class="muted">Sẵn sàng sang dạng tiếp theo chưa?</p>
-            <button class="${calcDrillBtn(group) ? "btn-secondary" : "btn-primary"}" style="margin-top:10px;" onclick="jumpToCalcGroup(${calcCtx.groupIdx+1})">Sang: ${esc(groups[calcCtx.groupIdx+1].title)} →</button>
-          </div>
+    const hasNextGroup = calcCtx.groupIdx < groups.length - 1, hasNextSection = calcCtx.sectionIdx < sections.length - 1;
+    content.innerHTML = shell(`
+      <div class="cp-done">
+        <h3 class="cp-title">${hasNextGroup || hasNextSection ? "Xong dạng “" + esc(groupTitle) + "”" : "Hoàn thành toàn bộ phần luyện theo dạng"}</h3>
+        <p class="muted">${hasNextGroup ? "Bạn có thể luyện thêm với bộ số khác, hoặc sang dạng tiếp theo." : hasNextSection ? "Bạn đã làm hết các dạng của phần này." : "Bạn đã làm xong tất cả các phần. Có thể quay lại ôn bất kỳ dạng nào ở danh sách bên cạnh."}</p>
+        <div class="dr-actions">
+          ${drillBtn}
+          ${hasNextGroup ? `<button type="button" class="btn-primary" onclick="jumpToCalcGroup(${calcCtx.groupIdx + 1})">Dạng tiếp theo: ${esc(clean(groups[calcCtx.groupIdx + 1].title, "Dạng"))} ›</button>`
+            : hasNextSection ? `<button type="button" class="btn-primary" onclick="selectCalcSection(${calcCtx.sectionIdx + 1})">Sang phần ${calcCtx.sectionIdx + 2}: ${esc(clean(sections[calcCtx.sectionIdx + 1].title, "Phần"))} ›</button>` : ""}
         </div>
-      `;
-    } else if(calcCtx.sectionIdx < sections.length - 1){
-      // hết dạng trong phần này -> mời sang phần tiếp theo
-      content.innerHTML = `
-        ${phanGridHtml}${videoCardHtml}
-        <div class="card">
-          ${dangTabsHtml}
-          <div class="calc-done-box">
-            <div class="big">✅</div>
-            <h2 style="margin:0 0 8px;">Xong ${esc(section.title)}!</h2>
-            <p class="muted">Sẵn sàng sang phần tiếp theo chưa?</p>
-            <button class="btn-primary" style="margin-top:10px;" onclick="selectCalcSection(${calcCtx.sectionIdx+1})">Sang: ${esc(sections[calcCtx.sectionIdx+1].title)} →</button>
-          </div>
-        </div>
-      `;
-    } else {
-      content.innerHTML = `
-        ${phanGridHtml}${videoCardHtml}
-        <div class="card">
-          ${dangTabsHtml}
-          <div class="calc-done-box">
-            <div class="big">🎉</div>
-            <h2 style="margin:0 0 8px;">Hoàn thành toàn bộ phần luyện tính toán!</h2>
-            <p class="muted">Bạn đã làm xong tất cả các phần/dạng của môn này. Có thể quay lại ôn bất kỳ phần hoặc dạng nào ở trên.</p>
-          </div>
-        </div>
-      `;
-    }
+      </div>`);
     return;
   }
 
@@ -3540,105 +3560,62 @@ function renderCalcPracticeInner(){
   const isSample = item.item_type === "sample";
   const already = !!calcCtx.answered[key];
   const isMcq = !!(item.correct_option && item.option_a && item.option_b && item.option_c && item.option_d);
-  const revealed = isSample || already; // đã lộ đáp án đúng + lời giải chưa
+  const revealed = isSample || already;
+  // Dòng nhắc "(Tự tính rồi nhập đáp số…)" tách khỏi đề: bài mẫu không cần, bài tập thì hiện thành gợi ý nhỏ
+  const qParts = String(item.question || "").split(/\n\(Tự tính rồi nhập đáp số/);
+  const qText = qParts[0];
+  const qHint = qParts[1] ? "Nhập đáp số" + qParts[1].replace(/\)\s*$/, "").replace(/\.$/, "") + "." : "";
+  const correctText = isMcq ? (item["option_" + item.correct_option.toLowerCase()] || "") : fmtNum(item.correct_value) + (item.unit ? (item.unit === "%" ? "" : " ") + item.unit : "");
 
-  const dotsHtml = `
-    <div class="calc-dots">
-      ${items.map((it,ii) => {
-        const k2 = `${calcCtx.sectionIdx}-${calcCtx.groupIdx}-${ii}`;
-        const doneDot = it.item_type === "sample" || calcCtx.answered[k2];
-        return `<span class="dot ${ii===calcCtx.itemIdx?"active":(doneDot?"done":"")}"></span>`;
-      }).join("")}
-    </div>
-  `;
-
-  const qTopHtml = `
-    <div class="calc-q-top">
-      <span><span class="calc-dang-pill">Dạng ${calcCtx.sectionIdx+1}.${calcCtx.groupIdx+1}</span><span class="calc-kind ${isSample ? "sample" : "practice"}">${isSample ? "📄 Bài mẫu" : "✍️ Tự làm"}</span></span>
-      <span class="calc-progress">Câu ${calcCtx.itemIdx+1}/${items.length}</span>
-    </div>
-  `;
-  const groupTitleClean = String(group.title || "").replace(/^Dạng\s*[\d.]+\s*[:.\-–]?\s*/i, "");
-
-  let leftBodyHtml;
+  let answerHtml = "";
   if(isMcq){
-    const optKeys = [["A","option_a"],["B","option_b"],["C","option_c"],["D","option_d"]];
     const selected = calcCtx.selected[key];
-    leftBodyHtml = `
-      <div class="calc-plain-q">${esc(item.question).replace(/\n/g,"<br>")}</div>
-      <div class="calc-opts">
-        ${optKeys.map(([letter,field]) => {
-          const isCorrectOpt = item.correct_option === letter;
-          const isSelectedOpt = selected === letter;
-          let cls = "";
-          if(revealed){
-            if(isCorrectOpt) cls = "correct";
-            else if(isSelectedOpt && !isCorrectOpt) cls = "wrong";
-          }
-          const clickable = !isSample && !already;
-          return `
-            <div class="calc-opt ${cls} ${clickable?"":"disabled"}" ${clickable?`onclick="selectCalcAnswer('${letter}')"`:""}>
-              <span class="badge">${letter}</span>
-              <span class="txt">${esc(item[field]||"")}</span>
-            </div>
-          `;
-        }).join("")}
-      </div>
-    `;
-  } else {
-    // Kiểu cũ: tự nhập đáp án số (câu nhập trước khi có trắc nghiệm)
-    const entered = calcCtx.entered[key];
-    leftBodyHtml = `
-      <div class="calc-plain-q">${esc(item.question).replace(/\n/g,"<br>")}</div>
-      ${isSample ? "" : already ? `
-        <div class="calc-feedback ${calcIsCorrect(entered, item.correct_value, item.tolerance) ? "correct" : "wrong"}">
-          <span class="verdict">${calcIsCorrect(entered, item.correct_value, item.tolerance) ? "✅ Chính xác!" : "❌ Chưa đúng."} Đáp số đúng: ${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}</span>
-        </div>
-      ` : `
-        <div class="calc-input-row">
-          <input type="text" id="calc-answer-input" placeholder="Nhập đáp án..." onkeydown="if(event.key==='Enter') submitCalcNumberAnswer()">
-          ${item.unit ? `<span class="calc-unit">${esc(item.unit)}</span>` : ""}
-        </div>
-        <button class="btn-primary" onclick="submitCalcNumberAnswer()">Nộp đáp án</button>
-      `}
-    `;
+    answerHtml = `<div class="calc-opts">
+      ${[["A","option_a"],["B","option_b"],["C","option_c"],["D","option_d"]].map(([letter, field]) => {
+        const cls = revealed ? (item.correct_option === letter ? "correct" : selected === letter ? "wrong" : "") : "";
+        const clickable = !isSample && !already;
+        return `<div class="calc-opt ${cls} ${clickable ? "" : "disabled"}" ${clickable ? `role="button" tabindex="0" onclick="selectCalcAnswer('${letter}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"` : ""}><span class="badge">${letter}</span><span class="txt">${esc(item[field] || "")}</span></div>`;
+      }).join("")}</div>`;
+  } else if(!isSample && !already){
+    answerHtml = `
+      <label class="cp-label" for="calc-answer-input">${esc(qHint || "Nhập đáp số của bạn")}</label>
+      <div class="cp-input">
+        <input type="text" id="calc-answer-input" inputmode="decimal" placeholder="Ví dụ: 28889" onkeydown="if(event.key==='Enter') submitCalcNumberAnswer()">
+        ${item.unit ? `<span class="calc-unit">${esc(item.unit)}</span>` : ""}
+        <button type="button" class="btn-primary" onclick="submitCalcNumberAnswer()">Nộp đáp số</button>
+      </div>`;
   }
-
-  const rightHtml = revealed ? `
-    <div class="calc-correct-box">
-      <div class="lbl">✅ Đáp án đúng</div>
-      <div class="val">${isMcq ? esc(item["option_"+item.correct_option.toLowerCase()]||"") : `${item.correct_value}${item.unit ? " "+esc(item.unit) : ""}`}</div>
-    </div>
-    ${item.solution_steps ? `
-      <div class="calc-sol-box">
-        <div class="lbl">💡 Lời giải chi tiết</div>
-        <div class="body">${esc(item.solution_steps).replace(/\n/g,"<br>")}</div>
-      </div>
-    ` : ""}
-  ` : `<div class="calc-ans-empty">${isMcq ? "Chọn 1 đáp án bên trái để xem kết quả và lời giải chi tiết." : "Nhập đáp án rồi bấm “Nộp đáp án” để xem kết quả và lời giải chi tiết."}</div>`;
+  let resultHtml = "";
+  if(revealed){
+    const entered = calcCtx.entered[key];
+    const ok = isSample ? null : isMcq ? calcCtx.selected[key] === item.correct_option : calcIsCorrect(entered, item.correct_value, item.tolerance);
+    resultHtml = `
+      <div class="cp-result">
+        ${ok === null ? "" : `<div class="dr-res ${ok ? "ok" : "no"}">${ok ? "Chính xác." : "Chưa đúng."}${!isMcq && entered != null && entered !== "" ? ` Bạn nhập: ${esc(entered)}.` : ""}</div>`}
+        <div class="cp-answer"><span>Đáp số</span><b>${esc(correctText)}</b></div>
+        ${item.solution_steps ? `<div class="cp-sub">Cách giải</div><div class="cp-steps">${esc(item.solution_steps).replace(/\n/g, "<br>")}</div>` : ""}
+      </div>`;
+  }
   const nextItem = items[calcCtx.itemIdx + 1];
-  const nextLabel = calcCtx.itemIdx + 1 >= items.length ? "Hoàn thành dạng này →" : (isSample && nextItem && nextItem.item_type !== "sample" ? "Đã hiểu, tự làm bài →" : "Câu tiếp theo →");
+  const nextLabel = calcCtx.itemIdx + 1 >= items.length ? "Hoàn thành dạng này ›" : (isSample && nextItem && nextItem.item_type !== "sample" ? "Đã hiểu, tự làm bài ›" : "Câu tiếp theo ›");
 
-  content.innerHTML = `
-    ${phanGridHtml}${videoCardHtml}
-    ${dangTabsHtml}
-    <div class="calc-main-grid">
-      <div class="calc-q-card">
-        ${qTopHtml}
-        <div class="calc-q-title">${esc(groupTitleClean)}</div>
-        ${leftBodyHtml}
-        ${isSample ? `<div class="calc-sample-note">Đây là bài mẫu đã có lời giải. Xem cách làm ở phần "Lời giải chi tiết", sau đó bấm “${calcCtx.itemIdx + 1 >= items.length ? "Hoàn thành" : "Đã hiểu"}” để tự làm.</div>` : ""}
-      </div>
-      <div class="calc-ans-card">${rightHtml}</div>
+  content.innerHTML = shell(`
+    <div class="cp-head">
+      <span class="cp-kind ${isSample ? "sample" : ""}">${isSample ? "Bài mẫu: xem cách giải" : "Tự làm"}</span>
+      <span class="cp-count">Câu ${calcCtx.itemIdx + 1}/${items.length}
+        <span class="calc-dots">${items.map((it, ii) => { const d = it.item_type === "sample" || calcCtx.answered[`${calcCtx.sectionIdx}-${calcCtx.groupIdx}-${ii}`]; return `<span class="dot ${ii === calcCtx.itemIdx ? "active" : (d ? "done" : "")}"></span>`; }).join("")}</span>
+      </span>
     </div>
-    <div class="calc-nav-row">
-      <button type="button" class="calc-nav-ghost" ${calcCtx.itemIdx<=0?"disabled":""} onclick="prevCalcItem()">← Câu trước</button>
-      ${dotsHtml}
-      <button type="button" class="calc-nav-next" ${(isSample||already)?"":"disabled"} onclick="nextCalcItem()">${nextLabel}</button>
-    </div>
-  `;
+    <div class="cp-q">${esc(qText).replace(/\n/g, "<br>")}</div>
+    ${answerHtml}
+    ${resultHtml}
+    <div class="dr-actions cp-actions">
+      <button type="button" class="btn-secondary" ${calcCtx.itemIdx <= 0 ? "disabled" : ""} onclick="prevCalcItem()">‹ Câu trước</button>
+      <span class="cp-right">${drillBtn}
+      <button type="button" class="btn-primary cp-next" ${revealed ? "" : "disabled"} onclick="nextCalcItem()">${nextLabel}</button></span>
+    </div>`);
   if(!isMcq && !isSample && !already){
-    setTimeout(() => { const inp = document.getElementById("calc-answer-input"); if(inp) inp.focus(); }, 0);
+    setTimeout(() => { const inp = document.getElementById("calc-answer-input"); if(inp) inp.focus({ preventScroll: true }); }, 0);
   }
 }
 
@@ -3652,8 +3629,8 @@ function selectCalcAnswer(letter){
 function submitCalcNumberAnswer(){
   const input = document.getElementById("calc-answer-input");
   if(!input) return;
-  const entered = calcParseNumber(input.value);
-  if(entered === null){ input.style.borderColor = "var(--red)"; input.focus(); return; }
+  const entered = input.value.trim();
+  if(!calcCandidates(entered).length){ input.style.borderColor = "var(--bad)"; input.focus(); return; }
   const key = `${calcCtx.sectionIdx}-${calcCtx.groupIdx}-${calcCtx.itemIdx}`;
   calcCtx.answered[key] = true;
   calcCtx.entered[key] = entered;
