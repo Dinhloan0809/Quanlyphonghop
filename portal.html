@@ -1595,9 +1595,10 @@ async function init(){
   const [data] = await Promise.all([callRpc("list_subjects_public", {}), loadContentConfig()]);
   allSubjects = (data && data.subjects) || [];
   loadHonor();
-  callRpc("list_subject_video_hours_public", {}).then(hd => {
+  // Tổng thời lượng video của từng môn (trang quản trị tự cộng từ thời lượng từng video rồi lưu lại, tính bằng giờ)
+  callRpc("list_subject_hours_public", {}).then(hd => {
     if(hd && hd.status === "ok"){
-      (hd.items||[]).forEach(it => { subjectHoursCache[it.slug] = it.total_hours; subjectMinutesCache[it.slug] = Number(it.total_minutes) || 0; });
+      (hd.items||[]).forEach(it => { const h = Number(it.estimated_hours != null ? it.estimated_hours : it.total_hours) || 0; subjectHoursCache[it.slug] = h; subjectMinutesCache[it.slug] = Number(it.total_minutes) || Math.round(h * 60); });
       renderSubjectHours();
       // có thời lượng rồi thì vẽ lại trang lộ trình để thẻ môn hiện số giờ/phút video
       if(homeMode === "home") renderHome();

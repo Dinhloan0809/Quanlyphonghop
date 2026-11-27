@@ -783,14 +783,14 @@ async function loadSubjects(){
   const [data, timeData, videoHoursData] = await Promise.all([
     callRpc("admin_list_subjects", { p_password: PASSWORD }),
     callRpc("admin_list_mock_exam_time_limits", { p_password: PASSWORD }).catch(() => null),
-    callRpc("list_subject_video_hours_public", {}).catch(() => null)
+    callRpc("list_subject_hours_public", {}).catch(() => null)
   ]);
   if(!data || data.status !== "ok") return;
   lastLoadedSubjects = data.subjects || [];
   allQuizSlugs = quizSets.map(s => s.slug);
   admTimeLimits = {}; admVideoHours = {};
   if(timeData && timeData.status === "ok") (timeData.items || []).forEach(it => { admTimeLimits[it.slug] = it.mock_exam_time_limit_minutes; });
-  if(videoHoursData && videoHoursData.status === "ok") (videoHoursData.items || []).forEach(it => { admVideoHours[it.slug] = it; });
+  if(videoHoursData && videoHoursData.status === "ok") (videoHoursData.items || []).forEach(it => { admVideoHours[it.slug] = it.estimated_hours == null ? null : Number(it.estimated_hours); });
   admRenderNav();
 }
 async function admUpsertSubject(f){
@@ -813,8 +813,28 @@ async function admCreateSubject(){
   await loadSubjects();
   admGo("subject", slug, "lessons");
 }
+/* Tổng thời lượng video của môn: cộng số phút đã nhập ở từng video; lưu lên hệ thống (theo giờ) để trang học viên hiện trên thẻ môn */
+function admVideoMinutes(slug){
+  let m = 0;
+  (lessonsBySubjectCache[slug] || []).forEach(l => (l.videos || []).forEach(v => { const d = Number(v.duration_seconds) > 0 ? Number(v.duration_seconds) / 60 : parseFloat(String(v.duration_minutes == null ? "" : v.duration_minutes).replace(",", ".")); if(d > 0) m += d; }));
+  return Math.round(m * 10) / 10;
+}
+function admFmtMinutes(m){ return m >= 60 ? (Math.round(m / 60 * 10) / 10).toLocaleString("vi-VN") + " giờ" : Math.round(m) + " phút"; }
+async function admSetHours(slug, hours){
+  const d = await callRpc("admin_set_subject_hours", { p_password: PASSWORD, p_subject_slug: slug, p_hours: hours }).catch(() => null);
+  if(d && d.status === "ok") admVideoHours[slug] = hours;
+  return d;
+}
+/* Gọi sau khi tải hoặc lưu bài học: nếu tổng phút của các video khác con số đang lưu thì cập nhật */
+async function admSyncHours(slug){
+  const m = admVideoMinutes(slug);
+  if(m <= 0) return;
+  const h = Math.round(m / 60 * 1000) / 1000;
+  if(admVideoHours[slug] != null && Math.abs(admVideoHours[slug] - h) < 0.002) return;
+  await admSetHours(slug, h);
+}
 function admRenderInfo(){
-  const s = admSubj(), cfg = cfgOf(s.slug), vh = admVideoHours[s.slug];
+  const s = admSubj(), cfg = cfgOf(s.slug), vh = admVideoHours[s.slug], sumMin = admVideoMinutes(s.slug);
   document.getElementById("adm-info-form").innerHTML = `
     <h2>Thông tin môn</h2>
     <label for="subj-title">Tên môn học</label><input type="text" id="subj-title" value="${esc(s.title)}">
@@ -826,7 +846,9 @@ function admRenderInfo(){
     <label for="subj-route">Thuộc môn nào trong lộ trình</label>
     ${admRouteSelect("subj-route", admRouteOf(s.slug))}
     <p class="muted">Trang học viên xếp môn này vào đúng ô đó của lộ trình CCHN. Chưa xếp thì môn chỉ hiện ở phần “Tất cả môn học”.</p>
-    <p class="muted" style="margin-top:10px;">Tổng thời lượng video: ${(vh && vh.total_minutes > 0) ? `${vh.total_hours.toLocaleString("vi-VN")} giờ (${vh.total_minutes.toLocaleString("vi-VN")} phút)` : "chưa có"}. Con số này tự cộng từ thời lượng video của từng bài.</p>
+    <label for="subj-minutes">Tổng thời lượng video của môn (phút)</label>
+    <input type="text" id="subj-minutes" value="${sumMin > 0 ? sumMin : (vh ? Math.round(vh * 60) : "")}" ${sumMin > 0 ? "disabled" : ""} placeholder="vd: 135">
+    <p class="muted">${sumMin > 0 ? `Tự cộng từ thời lượng của từng video trong các bài học (${admFmtMinutes(sumMin)}). Muốn đổi thì sửa thời lượng ở từng video.` : "Trang học viên hiện con số này trên thẻ môn (từ 60 phút trở lên ghi theo giờ). Bạn gõ tổng số phút ở đây, hoặc nhập thời lượng cho từng video trong các bài học thì hệ thống tự cộng."}</p>
     <h2 style="margin-top:18px;">Sổ tay của môn</h2>
     ${cfg.sotay ? `
       <label for="subj-hb-name">Tên sổ tay (hiện ở trang học viên)</label><input type="text" id="subj-hb-name" value="${esc(cfg.sotay.name || "")}">
@@ -853,6 +875,12 @@ async function admSaveInfo(){
     }
   }
   if(cfgChanged) extra = contentSavedMsg(await contentSave("cauhinh", CFG, "noi-dung.json"));
+  if(admVideoMinutes(s.slug) <= 0){
+    const raw = document.getElementById("subj-minutes").value.trim().replace(",", "."), mins = raw === "" ? null : parseFloat(raw);
+    if(raw !== "" && (isNaN(mins) || mins < 0)){ msg.innerHTML = `<div class="msg err">Tổng thời lượng video phải là số phút, ví dụ 135.</div>`; return; }
+    const hours = mins == null ? null : Math.round(mins / 60 * 1000) / 1000;
+    if((hours == null) !== (admVideoHours[s.slug] == null) || (hours != null && Math.abs(hours - admVideoHours[s.slug]) > 0.002)) await admSetHours(s.slug, hours);
+  }
   admLog("Sửa thông tin môn", s.slug);
   await loadSubjects();
   admRender();
@@ -899,6 +927,7 @@ async function openLessons(subjectSlug){
   document.getElementById("lessons-panel").innerHTML = `<p class="muted" style="margin:0;">Đang tải...</p>`;
   admHostDetail("adm-lesson-quiz", "");
   await loadLessonsTable(subjectSlug);
+  admSyncHours(subjectSlug);
   if(admLessonsFor !== subjectSlug) return;
   if(lastLoadedLessons.length) admSelectLesson(lastLoadedLessons[0].slug);
   else admNewLesson();
@@ -1061,6 +1090,7 @@ async function saveLesson(){
   if(!data || data.status !== "ok"){ msgEl.innerHTML = `<div class="msg err">Lỗi: ${esc(data && data.status)} ${esc((data && data.message) || "")}</div>`; return; }
   admLog((isNew ? "Thêm bài “" : "Sửa bài “") + title + "”", currentSubjectSlug);
   await Promise.all([loadLessonsTable(currentSubjectSlug), loadSubjects()]);
+  await admSyncHours(currentSubjectSlug);
   admSelectLesson(slug);
   admRenderSubject();
   const m = document.getElementById("les-msg"); if(m) m.innerHTML = `<div class="msg ok">Đã lưu bài “${esc(title)}”.</div>`;
@@ -1930,10 +1960,15 @@ function renderVideosList(){
   if(!currentLessonVideos.length){ el.innerHTML = `<p class="muted">Chưa có video nào cho bài này.</p>`; return; }
   el.innerHTML = currentLessonVideos.map((v,i) => `
     <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);">
-      <a href="${esc(v.url)}" target="_blank" rel="noopener" style="flex:1;font-weight:600;font-size:.88rem;">▶️ ${esc(v.label)} ${v.duration_seconds ? `<span class="muted" style="font-weight:400;">(${formatMinutes(v.duration_seconds/60)} phút)</span>` : ""}</a>
+      <a href="${esc(v.url)}" target="_blank" rel="noopener" style="flex:1;font-weight:600;font-size:.88rem;">▶️ ${esc(v.label)}</a>
+      <input type="text" value="${v.duration_seconds ? formatMinutes(v.duration_seconds/60) : ""}" placeholder="số phút" title="Thời lượng video (phút)" aria-label="Thời lượng video (phút)" style="width:86px;flex:none;margin:0;" onchange="setVideoMinutes(${i}, this.value)"><span class="muted" style="flex:none;font-size:.82rem;">phút</span>
       <button class="btn-danger" type="button" onclick="removeVideo(${i})">Xoá</button>
     </div>
   `).join("");
+}
+function setVideoMinutes(i, raw){
+  const m = parseFloat(String(raw || "").trim().replace(",", "."));
+  if(currentLessonVideos[i]) currentLessonVideos[i].duration_seconds = (!isNaN(m) && m > 0) ? Math.round(m * 60) : null;
 }
 function removeVideo(i){ currentLessonVideos.splice(i,1); renderVideosList(); }
 
