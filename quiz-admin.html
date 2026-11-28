@@ -819,7 +819,7 @@ function admVideoMinutes(slug){
   (lessonsBySubjectCache[slug] || []).forEach(l => (l.videos || []).forEach(v => { const d = Number(v.duration_seconds) > 0 ? Number(v.duration_seconds) / 60 : parseFloat(String(v.duration_minutes == null ? "" : v.duration_minutes).replace(",", ".")); if(d > 0) m += d; }));
   return Math.round(m * 10) / 10;
 }
-function admFmtMinutes(m){ return m >= 60 ? (Math.round(m / 60 * 10) / 10).toLocaleString("vi-VN") + " giờ" : Math.round(m) + " phút"; }
+function admFmtMinutes(m){ return Math.round(m) + " phút"; }
 async function admSetHours(slug, hours){
   const d = await callRpc("admin_set_subject_hours", { p_password: PASSWORD, p_subject_slug: slug, p_hours: hours }).catch(() => null);
   if(d && d.status === "ok") admVideoHours[slug] = hours;
@@ -848,7 +848,7 @@ function admRenderInfo(){
     <p class="muted">Trang học viên xếp môn này vào đúng ô đó của lộ trình CCHN. Chưa xếp thì môn chỉ hiện ở phần “Tất cả môn học”.</p>
     <label for="subj-minutes">Tổng thời lượng video của môn (phút)</label>
     <input type="text" id="subj-minutes" value="${sumMin > 0 ? sumMin : (vh ? Math.round(vh * 60) : "")}" ${sumMin > 0 ? "disabled" : ""} placeholder="vd: 135">
-    <p class="muted">${sumMin > 0 ? `Tự cộng từ thời lượng của từng video trong các bài học (${admFmtMinutes(sumMin)}). Muốn đổi thì sửa thời lượng ở từng video.` : "Trang học viên hiện con số này trên thẻ môn (từ 60 phút trở lên ghi theo giờ). Bạn gõ tổng số phút ở đây, hoặc nhập thời lượng cho từng video trong các bài học thì hệ thống tự cộng."}</p>
+    <p class="muted">${sumMin > 0 ? `Tự cộng từ thời lượng của từng video trong các bài học (${admFmtMinutes(sumMin)}). Muốn đổi thì sửa thời lượng ở từng video.` : "Trang học viên hiện con số này trên thẻ môn. Bạn gõ tổng số phút ở đây, hoặc nhập thời lượng cho từng video trong các bài học thì hệ thống tự cộng."}</p>
     <h2 style="margin-top:18px;">Sổ tay của môn</h2>
     ${cfg.sotay ? `
       <label for="subj-hb-name">Tên sổ tay (hiện ở trang học viên)</label><input type="text" id="subj-hb-name" value="${esc(cfg.sotay.name || "")}">

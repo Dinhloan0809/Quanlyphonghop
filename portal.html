@@ -1580,14 +1580,12 @@ let lessonQuizPrefetch = { lessonSlug: null, slug: null, questions: null };
 const initParams = new URLSearchParams(location.search);
 
 let subjectMinutesCache = {}; // subject slug -> tổng số phút video
-/* Thời lượng video: từ 1 giờ trở lên ghi theo giờ (2 giờ, 2,5 giờ), dưới 1 giờ ghi theo phút */
+/* Thời lượng video: luôn ghi theo phút, không quy đổi sang giờ */
 function durationText(slug){
   let m = Number(subjectMinutesCache[slug]) || 0;
   if(!m){ const h = Number(subjectHoursCache[slug]) || 0; m = h * 60; }
   if(m <= 0) return "";
-  if(m < 60) return Math.max(1, Math.round(m)) + " phút";
-  const h = Math.round(m / 60 * 10) / 10;
-  return h.toLocaleString("vi-VN") + " giờ";
+  return Math.max(1, Math.round(m)) + " phút";
 }
 let subjectHoursCache = {}; // subject slug -> tổng số giờ học (ước tính), nếu có khai báo
 
